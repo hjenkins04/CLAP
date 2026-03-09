@@ -1,0 +1,40 @@
+import type { Scene, Camera, WebGLRenderer } from 'three';
+import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import type { PointCloudOctree } from 'potree-core';
+import type { ComponentType } from 'react';
+import type { PointCloudEditor } from '../services/point-cloud-editor';
+
+export interface PluginHost {
+  getPlugin<T extends ViewerPlugin>(id: string): T | undefined;
+  getPlugins(): ViewerPlugin[];
+}
+
+export interface ViewerPluginContext {
+  scene: Scene;
+  getActiveCamera: () => Camera;
+  renderer: WebGLRenderer;
+  controls: OrbitControls;
+  getPointClouds: () => PointCloudOctree[];
+  getEditor: () => PointCloudEditor;
+  domElement: HTMLElement;
+  container: HTMLElement;
+  host: PluginHost;
+}
+
+export interface ViewerPlugin {
+  readonly id: string;
+  readonly name: string;
+  readonly order?: number;
+
+  onInit(ctx: ViewerPluginContext): void;
+  onUpdate?(delta: number): void;
+  onAfterRender?(): void;
+  onResize?(width: number, height: number): void;
+  onPointCloudLoaded?(pco: PointCloudOctree): void;
+  onPointCloudsUnloaded?(): void;
+  dispose(): void;
+
+  SidebarPanel?: ComponentType;
+  sidebarTitle?: string;
+  sidebarDefaultOpen?: boolean;
+}

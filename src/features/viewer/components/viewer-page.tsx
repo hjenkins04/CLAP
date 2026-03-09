@@ -1,0 +1,51 @@
+import { useRef } from 'react';
+import { Crosshair, Sun, Moon, Monitor } from 'lucide-react';
+import { Button } from '@clap/design-system';
+import { useUIStore, useViewerModeStore } from '@/app/stores';
+import { useViewerEngine } from '../hooks/use-viewer-engine';
+import { ViewerCanvas } from './viewer-canvas';
+import { ViewerToolbar } from './viewer-toolbar';
+import { ViewerSidebarPanel } from './viewer-sidebar-panel';
+import { TransformCommandPanel } from './transform-command-panel';
+import { PoiOverlay } from './poi-overlay';
+
+export function ViewerPage() {
+  const { theme, cycleTheme } = useUIStore();
+  const mode = useViewerModeStore((s) => s.mode);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const engine = useViewerEngine(containerRef);
+
+  const ThemeIcon =
+    theme === 'dark' ? Moon : theme === 'light' ? Sun : Monitor;
+
+  return (
+    <div className="flex h-full w-full">
+      {/* Sidebar */}
+      <aside className="flex w-64 flex-shrink-0 flex-col border-r border-border bg-card">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <div className="flex items-center gap-2">
+            <Crosshair className="h-5 w-5 text-primary" />
+            <span className="text-sm font-semibold">CLAP</span>
+          </div>
+          <Button variant="ghost" size="icon" onClick={cycleTheme}>
+            <ThemeIcon className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* Panel Content */}
+        <div className="flex-1 overflow-y-auto">
+          <ViewerSidebarPanel engine={engine} />
+        </div>
+      </aside>
+
+      {/* Main Viewport */}
+      <main className="relative flex-1 bg-background">
+        <ViewerToolbar engine={engine} />
+        <ViewerCanvas containerRef={containerRef} engine={engine} />
+        {mode === 'transform' && <TransformCommandPanel />}
+        <PoiOverlay engine={engine} />
+      </main>
+    </div>
+  );
+}

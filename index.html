@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>CLAP - LiDAR Segmentation</title>
+    <base href="/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <script>
+      (function() {
+        try {
+          var stored = localStorage.getItem('clap-ui-storage');
+          if (stored) {
+            var data = JSON.parse(stored);
+            var theme = data.state && data.state.theme;
+            if (theme === 'dark') {
+              document.documentElement.classList.add('dark');
+            } else if (theme === 'system') {
+              if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.classList.add('dark');
+              }
+            }
+          } else {
+            if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+              document.documentElement.classList.add('dark');
+            }
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

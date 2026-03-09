@@ -1,0 +1,23 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "bundler",
+    "importHelpers": true,
+    "target": "ES2020",
+    "module": "ESNext",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@ds/*": ["libs/design-system/src/*"],
+      "@ds": ["libs/design-system/src"],
+      "@clap/design-system": ["libs/design-system/src/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "tmp", "dist", "dist-electron"]
+}

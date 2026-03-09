@@ -1,0 +1,9 @@
+node_modules/
+dist/
+dist-electron/
+release/
+*.log
+.vite/
+coverage/
+.env
+.env.local

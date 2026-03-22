@@ -1,4 +1,4 @@
-import { FolderOpen, Monitor, Eye } from 'lucide-react';
+import { FolderOpen, Eye } from 'lucide-react';
 import { Button } from '@clap/design-system';
 import { useViewerStore } from '@/app/stores';
 import { formatNumber } from '../utils/format';
@@ -8,19 +8,21 @@ export function SidebarPointCloudPanel() {
   const numVisiblePoints = useViewerStore((s) => s.numVisiblePoints);
   const setLoadedFile = useViewerStore((s) => s.setLoadedFile);
 
-  const handleOpenFile = async () => {
-    if (window.electron) {
-      const filePath = await window.electron.invoke<string | null>(
-        'open-file-dialog'
-      );
-      if (filePath) {
-        setLoadedFile(filePath);
-      }
-    }
-  };
+  const handleOpenFolder = async () => {
+    if (!window.electron) return;
 
-  const handleLoadDemo = () => {
-    setLoadedFile('/pointclouds/test/');
+    const result = await window.electron.invoke<
+      { path: string } | { error: string } | null
+    >('open-pointcloud-dialog');
+
+    if (!result) return;
+
+    if ('error' in result) {
+      console.error('[CLAP]', result.error);
+      return;
+    }
+
+    setLoadedFile(result.path);
   };
 
   return (
@@ -33,19 +35,10 @@ export function SidebarPointCloudPanel() {
           variant="outline"
           size="sm"
           className="w-full justify-start gap-2"
-          onClick={handleOpenFile}
+          onClick={handleOpenFolder}
         >
           <FolderOpen className="h-4 w-4" />
-          Open File
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full justify-start gap-2"
-          onClick={handleLoadDemo}
-        >
-          <Monitor className="h-4 w-4" />
-          Load Demo Data
+          Open Folder
         </Button>
       </div>
       {loadedFile && (

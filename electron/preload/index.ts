@@ -7,8 +7,10 @@ const IpcChannels = {
   GET_PLATFORM: 'get-platform',
   OPEN_FILE_DIALOG: 'open-file-dialog',
   READ_FILE: 'read-file',
+  READ_FILE_RANGE: 'read-file-range',
   WRITE_FILE: 'write-file',
   SAVE_DIRECTORY_DIALOG: 'save-directory-dialog',
+  OPEN_POINTCLOUD_DIALOG: 'open-pointcloud-dialog',
 } as const;
 
 type IpcChannel = (typeof IpcChannels)[keyof typeof IpcChannels];
@@ -32,8 +34,10 @@ const INVOKE_CHANNELS: IpcChannel[] = [
   IpcChannels.GET_PLATFORM,
   IpcChannels.OPEN_FILE_DIALOG,
   IpcChannels.READ_FILE,
+  IpcChannels.READ_FILE_RANGE,
   IpcChannels.WRITE_FILE,
   IpcChannels.SAVE_DIRECTORY_DIALOG,
+  IpcChannels.OPEN_POINTCLOUD_DIALOG,
 ];
 
 const electronAPI: ElectronAPI = {

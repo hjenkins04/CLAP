@@ -7,3 +7,10 @@ release/
 coverage/
 .env
 .env.local
+
+# Point cloud data (too large for git)
+public/pointclouds/
+
+# Generated / large files
+cloth_nodes.txt
+*.las

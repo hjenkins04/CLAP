@@ -26,6 +26,7 @@ import type { Intersection, Object3D } from 'three';
 import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import type { ViewerPlugin, ViewerPluginContext } from '../../types';
 import { usePoiStore } from '../poi/poi-store';
+import { useViewerModeStore } from '@/app/stores';
 
 // ── Constants ──────────────────────────────────────────────────────────
 
@@ -49,6 +50,10 @@ const CORNER_COLOR = 0x555555;
 const CORNER_HOVER_COLOR = 0xffffff;
 const RING_COLOR = '#4b5563';
 const RING_HOVER_COLOR = '#2563eb';
+
+// Lock SVG icons (Lucide lock / lock-open, 16x16)
+const LOCK_CLOSED_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
+const LOCK_OPEN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>`;
 
 // ── Face / Edge / Corner definitions ───────────────────────────────────
 
@@ -128,6 +133,8 @@ export class ViewCubePlugin implements ViewerPlugin {
   private cubeCanvas: HTMLCanvasElement | null = null;
   private ringCanvas: HTMLCanvasElement | null = null;
   private homeBtn: HTMLButtonElement | null = null;
+  private lockBtn: HTMLButtonElement | null = null;
+  private unsubLock: (() => void) | null = null;
 
   // Mini 3D scene
   private miniRenderer: WebGLRenderer | null = null;
@@ -246,11 +253,15 @@ export class ViewCubePlugin implements ViewerPlugin {
       m.geometry.dispose();
     });
 
+    this.unsubLock?.();
+    this.unsubLock = null;
+
     this.wrapper?.remove();
     this.wrapper = null;
     this.cubeCanvas = null;
     this.ringCanvas = null;
     this.homeBtn = null;
+    this.lockBtn = null;
     this.cubeScene = null;
     this.cubeCam = null;
     this.cubeGroup = null;
@@ -260,8 +271,6 @@ export class ViewCubePlugin implements ViewerPlugin {
   // ── DOM Construction ───────────────────────────────────────────────
 
   private buildDOM(container: HTMLElement): void {
-    container.style.position = 'relative';
-
     // Wrapper
     this.wrapper = document.createElement('div');
     this.wrapper.style.cssText = `
@@ -306,8 +315,7 @@ export class ViewCubePlugin implements ViewerPlugin {
     this.homeBtn.style.cssText = `
       position: absolute;
       bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
+      left: calc(50% - ${HOME_BTN_SIZE + 1}px);
       width: ${HOME_BTN_SIZE}px; height: ${HOME_BTN_SIZE}px;
       border: none; border-radius: 6px;
       background: #1f2937; color: #9ca3af;
@@ -329,6 +337,45 @@ export class ViewCubePlugin implements ViewerPlugin {
     });
     this.homeBtn.addEventListener('click', this.onHomeClick);
     this.wrapper.appendChild(this.homeBtn);
+
+    // Lock button (right of home)
+    this.lockBtn = document.createElement('button');
+    this.lockBtn.innerHTML = LOCK_OPEN_SVG;
+    this.lockBtn.title = 'Lock camera orientation';
+    this.lockBtn.style.cssText = `
+      position: absolute;
+      bottom: 0;
+      left: calc(50% + 1px);
+      width: ${HOME_BTN_SIZE}px; height: ${HOME_BTN_SIZE}px;
+      border: none; border-radius: 6px;
+      background: #1f2937; color: #9ca3af;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; pointer-events: auto;
+      transition: background 0.15s, color 0.15s;
+    `;
+    this.lockBtn.addEventListener('mouseenter', () => {
+      if (this.lockBtn && !useViewerModeStore.getState().cameraLocked) {
+        this.lockBtn.style.background = '#2563eb';
+        this.lockBtn.style.color = '#ffffff';
+      }
+    });
+    this.lockBtn.addEventListener('mouseleave', () => {
+      if (this.lockBtn && !useViewerModeStore.getState().cameraLocked) {
+        this.lockBtn.style.background = '#1f2937';
+        this.lockBtn.style.color = '#9ca3af';
+      }
+    });
+    this.lockBtn.addEventListener('click', this.onLockClick);
+    this.wrapper.appendChild(this.lockBtn);
+
+    // Subscribe to camera lock changes to update button style + controls
+    let prevLocked = useViewerModeStore.getState().cameraLocked;
+    this.unsubLock = useViewerModeStore.subscribe((state) => {
+      if (state.cameraLocked !== prevLocked) {
+        prevLocked = state.cameraLocked;
+        this.onCameraLockChanged(state.cameraLocked);
+      }
+    });
 
     // Event listeners
     this.cubeCanvas.addEventListener('mousedown', this.onCubeMouseDown);
@@ -757,7 +804,7 @@ export class ViewCubePlugin implements ViewerPlugin {
       const ndy = e.clientY - this.dragStart.y;
 
       this.dragSpherical.theta -= ndx * sensitivity;
-      this.dragSpherical.phi += ndy * sensitivity;
+      this.dragSpherical.phi -= ndy * sensitivity;
       this.dragSpherical.phi = Math.max(0.05, Math.min(Math.PI - 0.05, this.dragSpherical.phi));
 
       this.dragStart.set(e.clientX, e.clientY);
@@ -796,6 +843,49 @@ export class ViewCubePlugin implements ViewerPlugin {
     (this as Record<string, unknown>)._dragReady = false;
     (this as Record<string, unknown>)._pendingSnap = null;
   };
+
+  // ── Camera Lock ──────────────────────────────────────────────────
+
+  private readonly onLockClick = (e: MouseEvent): void => {
+    e.stopPropagation();
+    useViewerModeStore.getState().toggleCameraLocked();
+  };
+
+  private onCameraLockChanged(locked: boolean): void {
+    if (!this.ctx) return;
+    const controls = this.ctx.controls;
+    controls.enableRotate = !locked;
+    controls.enablePan = !locked;
+    controls.enableZoom = !locked;
+
+    if (this.lockBtn) {
+      this.lockBtn.innerHTML = locked ? LOCK_CLOSED_SVG : LOCK_OPEN_SVG;
+      this.lockBtn.title = locked ? 'Unlock camera' : 'Lock camera orientation';
+      this.lockBtn.style.background = locked ? '#2563eb' : '#1f2937';
+      this.lockBtn.style.color = locked ? '#ffffff' : '#9ca3af';
+    }
+  }
+
+  /**
+   * Snap the main camera to a top-down view looking down the Y axis.
+   * Uses the same smooth animation as face clicks.
+   */
+  snapToTopDown(): void {
+    if (!this.ctx) return;
+    // TOP face: dir = (0,1,0), up = (0,0,-1)
+    const target = FACES[2]; // TOP
+    const cam = this.ctx.getActiveCamera();
+    const controls = this.ctx.controls;
+
+    this.animFromPos.copy(cam.position);
+    this.animFromUp.copy(cam.up);
+    this.animToDir.copy(target.dir);
+    this.animToUp.copy(target.up);
+    this.animDist = cam.position.distanceTo(controls.target);
+    this.animStart = performance.now();
+    this.animating = true;
+    this.animIsHome = false;
+  }
 
   private readonly onHomeClick = (e: MouseEvent): void => {
     e.stopPropagation();
@@ -899,11 +989,28 @@ export class ViewCubePlugin implements ViewerPlugin {
     const dir = new Vector3(0, 0, 1).applyQuaternion(qCurrent);
 
     cam.position.copy(controls.target).add(dir.multiplyScalar(currentDist));
+
+    // During animation, interpolate the up vector for visual smoothness
     cam.up.lerpVectors(this.animFromUp, this.animToUp, t);
     controls.update();
 
     if (t >= 1) {
       this.animating = false;
+
+      // After snap completes, restore camera.up to the standard Y-up.
+      // OrbitControls derives its internal coordinate frame from camera.up;
+      // a non-standard up (e.g. (0,0,-1) for top-down) breaks pan/orbit axes.
+      // We offset the polar angle slightly from the poles to avoid gimbal lock.
+      const finalDir = this.animToDir.clone();
+      const absY = Math.abs(finalDir.y);
+      if (absY > 0.99) {
+        // Looking straight down or up — nudge camera slightly off-axis
+        // so OrbitControls can resolve the up direction from (0,1,0)
+        const nudge = 0.001 * currentDist;
+        cam.position.z += finalDir.y > 0 ? -nudge : nudge;
+      }
+      cam.up.set(0, 1, 0);
+      controls.update();
     }
   }
 }

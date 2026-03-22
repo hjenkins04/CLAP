@@ -24,6 +24,6 @@ export const DEFAULT_VIEWER_CONFIG: ViewerConfig = {
 export const COLOR_MODE_MAP: Record<ColorMode, number> = {
   rgb: 0,
   height: 3,
-  classification: 5,
+  classification: 8,
   intensity: 4,
 };

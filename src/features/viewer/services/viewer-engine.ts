@@ -4,8 +4,10 @@ import {
   OrthographicCamera,
   WebGLRenderer,
   Vector3,
+  Vector4,
   Box3,
   AmbientLight,
+  MOUSE,
   type Camera,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -20,6 +22,34 @@ import {
   type PluginHost,
 } from '../types';
 import { PointCloudEditor } from './point-cloud-editor';
+import { DemTerrain } from './dem-terrain';
+import { electronFetch } from './electron-fetch';
+
+/**
+ * Classification color map for the AutoDrive / FLAINet dataset.
+ * Keys are classification IDs, values are RGBA Vector4 (0-1 range).
+ */
+export const CLASSIFICATION_COLORS: Record<string, Vector4> = {
+  1:  new Vector4(0.50, 0.50, 0.50, 1.0), // Other — gray
+  2:  new Vector4(0.40, 0.40, 0.40, 1.0), // Roads — dark gray
+  3:  new Vector4(0.70, 0.70, 0.70, 1.0), // Sidewalks — light gray
+  4:  new Vector4(0.55, 0.45, 0.30, 1.0), // OtherGround — brown
+  5:  new Vector4(0.80, 0.80, 0.20, 1.0), // TrafficIslands — yellow-green
+  6:  new Vector4(0.90, 0.30, 0.20, 1.0), // Buildings — red
+  7:  new Vector4(0.10, 0.65, 0.15, 1.0), // Trees — green
+  8:  new Vector4(0.40, 0.80, 0.30, 1.0), // OtherVegetation — light green
+  9:  new Vector4(1.00, 0.85, 0.00, 1.0), // TrafficLights — amber
+  10: new Vector4(1.00, 0.55, 0.00, 1.0), // TrafficSigns — orange
+  11: new Vector4(0.00, 0.70, 0.90, 1.0), // Wires — cyan
+  12: new Vector4(0.60, 0.30, 0.80, 1.0), // Masts — purple
+  13: new Vector4(1.00, 0.40, 0.70, 1.0), // Pedestrians — pink
+  15: new Vector4(0.00, 0.45, 0.85, 1.0), // TwoWheel — blue
+  16: new Vector4(0.20, 0.20, 0.80, 1.0), // MobFourWheel — dark blue
+  17: new Vector4(0.00, 0.30, 0.60, 1.0), // StaFourWheel — navy
+  18: new Vector4(0.90, 0.10, 0.10, 1.0), // Noise — bright red
+  40: new Vector4(0.55, 0.35, 0.15, 1.0), // TreeTrunks — dark brown
+  DEFAULT: new Vector4(0.30, 0.30, 0.30, 1.0),
+};
 
 export class ViewerEngine implements PluginHost {
   private scene: Scene;
@@ -41,7 +71,10 @@ export class ViewerEngine implements PluginHost {
   private activeColorMode: ColorMode = 'rgb';
   private intensityRange: [number, number] | null = null;
   private intensityRangeRefined = false;
+  private dem: DemTerrain | null = null;
   private onStatsUpdate?: (numVisiblePoints: number) => void;
+  private readonly onModifierDown: (e: KeyboardEvent) => void;
+  private readonly onModifierUp: (e: KeyboardEvent) => void;
 
   constructor(
     container: HTMLElement,
@@ -49,6 +82,7 @@ export class ViewerEngine implements PluginHost {
     plugins: ViewerPlugin[] = []
   ) {
     this.container = container;
+    this.container.style.position = 'relative';
     this.projection = config.cameraProjection;
 
     this.scene = new Scene();
@@ -84,6 +118,9 @@ export class ViewerEngine implements PluginHost {
     });
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(window.devicePixelRatio);
+    this.renderer.domElement.style.position = 'absolute';
+    this.renderer.domElement.style.top = '0';
+    this.renderer.domElement.style.left = '0';
     container.appendChild(this.renderer.domElement);
 
     this.controls = new OrbitControls(
@@ -92,6 +129,25 @@ export class ViewerEngine implements PluginHost {
     );
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.1;
+
+    // Free LMB for selection/drawing — orbit on MMB, pan on RMB
+    this.controls.mouseButtons = {
+      LEFT: null as unknown as MOUSE,
+      MIDDLE: MOUSE.ROTATE,
+      RIGHT: MOUSE.PAN,
+    };
+
+    // Ctrl+Shift+LMB = orbit (laptop alternative for no middle mouse button)
+    const syncOrbitModifier = (e: KeyboardEvent) => {
+      this.controls.mouseButtons.LEFT =
+        e.ctrlKey && e.shiftKey
+          ? MOUSE.ROTATE
+          : (null as unknown as MOUSE);
+    };
+    this.onModifierDown = syncOrbitModifier;
+    this.onModifierUp = syncOrbitModifier;
+    window.addEventListener('keydown', this.onModifierDown);
+    window.addEventListener('keyup', this.onModifierUp);
 
     this.potree = new Potree();
     this.potree.pointBudget = config.pointBudget;
@@ -116,6 +172,7 @@ export class ViewerEngine implements PluginHost {
       controls: this.controls,
       getPointClouds: () => this.pointClouds,
       getEditor: () => this.editor,
+      getDem: () => this.dem,
       domElement: this.renderer.domElement,
       container: this.container,
       host: this,
@@ -159,7 +216,11 @@ export class ViewerEngine implements PluginHost {
   // --- Point Cloud ---
 
   async loadPointCloud(url: string, baseUrl: string): Promise<void> {
-    const pco = await this.potree.loadPointCloud(url, baseUrl);
+    const requestManager = {
+      getUrl: async (relativeUrl: string) => `${baseUrl}${relativeUrl}`,
+      fetch: electronFetch,
+    };
+    const pco = await this.potree.loadPointCloud(url, requestManager);
 
     pco.material.size = 0.1;
     pco.material.shape = 2; // PARABOLOID
@@ -176,6 +237,9 @@ export class ViewerEngine implements PluginHost {
     // Apply gamma to spread mid-tones for better intensity visualization
     pco.material.intensityGamma = 0.6;
 
+    // Custom classification colors
+    pco.material.classification = CLASSIFICATION_COLORS;
+
     this.scene.add(pco);
     this.pointClouds.push(pco);
 
@@ -187,6 +251,27 @@ export class ViewerEngine implements PluginHost {
     for (const plugin of this.plugins.values()) {
       plugin.onPointCloudLoaded?.(pco);
     }
+  }
+
+  async loadDem(url: string): Promise<void> {
+    if (this.dem) {
+      this.dem.dispose();
+      this.dem = null;
+    }
+    try {
+      this.dem = await DemTerrain.load(url);
+      // Add the DEM mesh to the transform group so it shares the
+      // same local→world transform as the point cloud.
+      const tg = this.editor.getTransformGroup();
+      tg.add(this.dem.mesh);
+      console.info('[CLAP] DEM loaded:', url);
+    } catch (err) {
+      console.warn('[CLAP] DEM load failed:', err);
+    }
+  }
+
+  getDem(): DemTerrain | null {
+    return this.dem;
   }
 
   unloadAll(): void {
@@ -201,6 +286,10 @@ export class ViewerEngine implements PluginHost {
     this.pointClouds = [];
     this.intensityRange = null;
     this.intensityRangeRefined = false;
+    if (this.dem) {
+      this.dem.dispose();
+      this.dem = null;
+    }
   }
 
   // --- Settings ---
@@ -290,6 +379,8 @@ export class ViewerEngine implements PluginHost {
     this.plugins.clear();
 
     this.unloadAll();
+    window.removeEventListener('keydown', this.onModifierDown);
+    window.removeEventListener('keyup', this.onModifierUp);
     this.controls.dispose();
     this.renderer.dispose();
 
@@ -376,7 +467,7 @@ export class ViewerEngine implements PluginHost {
     metadataUrl: string
   ): Promise<void> {
     try {
-      const resp = await fetch(`${baseUrl}${metadataUrl}`);
+      const resp = await electronFetch(`${baseUrl}${metadataUrl}`);
       if (!resp.ok) return;
 
       const metadata = await resp.json();

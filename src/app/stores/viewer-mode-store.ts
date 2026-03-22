@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 
 // --- Mode definitions ---
 
-export type ViewerMode = 'idle' | 'transform' | 'poi';
+export type ViewerMode = 'idle' | 'transform' | 'poi' | 'virtual-tiles' | 'roi-selection' | 'point-select' | 'annotate';
 export type TransformSubMode = 'translate' | 'rotate';
 
 // --- State ---
@@ -15,6 +15,9 @@ interface ViewerModeState {
   /** Sub-mode when in transform mode */
   transformSubMode: TransformSubMode;
 
+  /** Whether the camera orientation is locked (no rotate/pan/zoom) */
+  cameraLocked: boolean;
+
   /** Whether the command popup is expanded (persisted per-mode) */
   commandPanelExpanded: Record<string, boolean>;
 
@@ -22,7 +25,13 @@ interface ViewerModeState {
   enterTransformMode: (subMode?: TransformSubMode) => void;
   setTransformSubMode: (subMode: TransformSubMode) => void;
   enterPoiMode: () => void;
+  enterVirtualTilesMode: () => void;
+  enterRoiSelectionMode: () => void;
+  enterPointSelectMode: () => void;
+  enterAnnotateMode: () => void;
   exitMode: () => void;
+  setCameraLocked: (locked: boolean) => void;
+  toggleCameraLocked: () => void;
 
   isCommandPanelExpanded: () => boolean;
   setCommandPanelExpanded: (expanded: boolean) => void;
@@ -33,6 +42,7 @@ export const useViewerModeStore = create<ViewerModeState>()(
     (set, get) => ({
       mode: 'idle',
       transformSubMode: 'translate',
+      cameraLocked: false,
       commandPanelExpanded: {},
 
       enterTransformMode: (subMode) =>
@@ -45,7 +55,18 @@ export const useViewerModeStore = create<ViewerModeState>()(
 
       enterPoiMode: () => set({ mode: 'poi' }),
 
-      exitMode: () => set({ mode: 'idle' }),
+      enterVirtualTilesMode: () => set({ mode: 'virtual-tiles' }),
+
+      enterRoiSelectionMode: () => set({ mode: 'roi-selection' }),
+
+      enterPointSelectMode: () => set({ mode: 'point-select' }),
+
+      enterAnnotateMode: () => set({ mode: 'annotate' }),
+
+      exitMode: () => set({ mode: 'idle', cameraLocked: false }),
+
+      setCameraLocked: (cameraLocked) => set({ cameraLocked }),
+      toggleCameraLocked: () => set((s) => ({ cameraLocked: !s.cameraLocked })),
 
       isCommandPanelExpanded: () => {
         const { mode, commandPanelExpanded } = get();

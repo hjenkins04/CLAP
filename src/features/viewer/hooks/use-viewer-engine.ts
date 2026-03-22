@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useMemo, type RefObject } from 'react';
 import { ViewerEngine } from '../services/viewer-engine';
 import { DEFAULT_VIEWER_CONFIG } from '../types';
-import { GridPlugin, PoiPlugin, TransformPlugin, ViewCubePlugin } from '../plugins';
+import { GridPlugin, PoiPlugin, TransformPlugin, ViewCubePlugin, VirtualTilesPlugin, RoiSelectionPlugin, PointSelectPlugin, AnnotatePlugin } from '../plugins';
 
 export function useViewerEngine(
   containerRef: RefObject<HTMLDivElement | null>
@@ -10,7 +10,7 @@ export function useViewerEngine(
   const engineRef = useRef<ViewerEngine | null>(null);
 
   const plugins = useMemo(
-    () => [new TransformPlugin(), new PoiPlugin(), new GridPlugin(), new ViewCubePlugin()],
+    () => [new TransformPlugin(), new PoiPlugin(), new VirtualTilesPlugin(), new RoiSelectionPlugin(), new PointSelectPlugin(), new AnnotatePlugin(), new GridPlugin(), new ViewCubePlugin()],
     []
   );
 

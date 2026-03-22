@@ -3,6 +3,7 @@ import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js
 import type { PointCloudOctree } from 'potree-core';
 import type { ComponentType } from 'react';
 import type { PointCloudEditor } from '../services/point-cloud-editor';
+import type { DemTerrain } from '../services/dem-terrain';
 
 export interface PluginHost {
   getPlugin<T extends ViewerPlugin>(id: string): T | undefined;
@@ -16,6 +17,7 @@ export interface ViewerPluginContext {
   controls: OrbitControls;
   getPointClouds: () => PointCloudOctree[];
   getEditor: () => PointCloudEditor;
+  getDem: () => DemTerrain | null;
   domElement: HTMLElement;
   container: HTMLElement;
   host: PluginHost;

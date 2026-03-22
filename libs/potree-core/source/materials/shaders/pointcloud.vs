@@ -1,7 +1,9 @@
 precision highp float;
 precision highp int;
 
-#define max_clip_boxes 30  // Maximum number of clipping boxes
+#define max_clip_boxes 30      // Maximum number of clipping boxes
+#define max_clip_cylinders 10  // Maximum number of clipping cylinders
+#define max_clip_polygon_vertices 32 // Maximum polygon vertices
 
 // Input Attributes
 in vec3 position;
@@ -37,6 +39,35 @@ uniform float orthoHeight;
 	uniform mat4 clipBoxes[max_clip_boxes]; // Clipping box transforms
 #endif
 
+#if defined use_clip_cylinder
+	uniform mat4 clipCylinders[max_clip_cylinders]; // Clipping cylinder transforms
+#endif
+
+#if defined use_clip_polygon
+	uniform vec2 clipPolygonVertices[max_clip_polygon_vertices];
+	uniform float clipPolygonVertexCount;
+	uniform mat4 clipPolygonWorldToLocal;
+	uniform float clipPolygonZMin;
+	uniform float clipPolygonZMax;
+
+	// Ray-casting point-in-polygon test (works for convex and concave polygons)
+	bool pointInPolygon(vec2 p, int count) {
+		bool inside = false;
+		int j = count - 1;
+		for (int i = 0; i < max_clip_polygon_vertices; i++) {
+			if (i >= count) break;
+			vec2 vi = clipPolygonVertices[i];
+			vec2 vj = clipPolygonVertices[j];
+			if ((vi.y > p.y) != (vj.y > p.y) &&
+				p.x < (vj.x - vi.x) * (p.y - vi.y) / (vj.y - vi.y) + vi.x) {
+				inside = !inside;
+			}
+			j = i;
+		}
+		return inside;
+	}
+#endif
+
 uniform float heightMin;
 uniform float heightMax;
 uniform float size; // Base pixel size
@@ -47,6 +78,7 @@ uniform vec3 bbSize;
 uniform vec3 uColor;
 uniform float opacity;
 uniform float clipBoxCount;
+uniform float clipCylinderCount;
 uniform float level;
 uniform float vnStart;
 uniform bool isLeafNode;
@@ -473,7 +505,7 @@ void main() {
 		vColor = getCompositeColor();
 	#endif
 	
-	#if !defined color_type_composite && defined color_type_classification
+	#if !defined color_type_composite
 		if (getClassification().a == 0.0) {
 			gl_Position = vec4(100.0, 100.0, 100.0, 0.0); // Cull point if classification alpha is zero
 			return;
@@ -482,19 +514,40 @@ void main() {
 
 
 	// CLIPPING
-	#if defined use_clip_box
+	#if defined use_clip_box || defined use_clip_cylinder || defined use_clip_polygon
 		bool insideAny = false;
+
+		#if defined use_clip_box
 		for (int i = 0; i < max_clip_boxes; i++) {
 			if (i == int(clipBoxCount)) break;
 			vec4 clipPosition = clipBoxes[i] * modelMatrix * vec4(position, 1.0);
 			bool inside = abs(clipPosition.x) <= 0.5 && abs(clipPosition.y) <= 0.5 && abs(clipPosition.z) <= 0.5;
 			insideAny = insideAny || inside;
 		}
+		#endif
+
+		#if defined use_clip_cylinder
+		for (int i = 0; i < max_clip_cylinders; i++) {
+			if (i == int(clipCylinderCount)) break;
+			vec4 cp = clipCylinders[i] * modelMatrix * vec4(position, 1.0);
+			bool inside = (cp.x * cp.x + cp.y * cp.y) <= 0.25 && abs(cp.z) <= 0.5;
+			insideAny = insideAny || inside;
+		}
+		#endif
+
+		#if defined use_clip_polygon
+		{
+			vec4 localPos = clipPolygonWorldToLocal * modelMatrix * vec4(position, 1.0);
+			bool inZ = localPos.z >= clipPolygonZMin && localPos.z <= clipPolygonZMax;
+			bool inPoly = pointInPolygon(localPos.xy, int(clipPolygonVertexCount));
+			insideAny = insideAny || (inZ && inPoly);
+		}
+		#endif
 
 		#if defined clip_outside
-			if (!insideAny) { gl_Position = vec4(1000.0); } // Cull if outside any clip box
+			if (!insideAny) { gl_Position = vec4(1000.0); } // Cull if outside any clip region
 		#elif defined clip_inside
-			if (insideAny) { gl_Position = vec4(1000.0); } // Cull if inside any clip box
+			if (insideAny) { gl_Position = vec4(1000.0); } // Cull if inside any clip region
 		#elif defined clip_highlight_inside && !defined(color_type_depth)
 			if (!insideAny) { /* additional processing if needed */ }
 		#endif

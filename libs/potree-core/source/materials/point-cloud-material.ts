@@ -32,7 +32,7 @@ import {PointCloudOctree} from '../point-cloud-octree';
 import {PointCloudOctreeNode} from '../point-cloud-octree-node';
 import {byLevelAndIndex} from '../utils/utils';
 import {DEFAULT_CLASSIFICATION} from './classification';
-import {ClipMode, IClipBox} from './clipping';
+import {ClipMode, IClipBox, IClipCylinder, IClipPolygon} from './clipping';
 import {PointColorType, PointOpacityType, PointShape, PointSizeType, TreeType} from './enums';
 import {SPECTRAL} from './gradients';
 import {
@@ -99,6 +99,20 @@ export interface IPointCloudMaterialUniforms {
 	clipBoxCount: IUniform<number>;
 	/** Array containing clipping box parameters */
 	clipBoxes: IUniform<Float32Array>;
+	/** Number of active clipping cylinders */
+	clipCylinderCount: IUniform<number>;
+	/** Array containing clipping cylinder parameters */
+	clipCylinders: IUniform<Float32Array>;
+	/** Array containing clipping polygon vertex positions (vec2 packed) */
+	clipPolygonVertices: IUniform<Float32Array>;
+	/** Number of vertices in the clipping polygon */
+	clipPolygonVertexCount: IUniform<number>;
+	/** Matrix to transform world-space points into polygon local space */
+	clipPolygonWorldToLocal: IUniform<Float32Array | number[]>;
+	/** Minimum Z for polygon extrusion */
+	clipPolygonZMin: IUniform<number>;
+	/** Maximum Z for polygon extrusion */
+	clipPolygonZMax: IUniform<number>;
 	/** Depth map texture for depth-based effects, null if not used */
 	depthMap: IUniform<Texture | null>;
 	/** Diffuse color as RGB values [r, g, b] */
@@ -260,6 +274,14 @@ export class PointCloudMaterial extends RawShaderMaterial
 
 	clipBoxes: IClipBox[] = [];
 
+	numClipCylinders: number = 0;
+
+	clipCylinders: IClipCylinder[] = [];
+
+	numClipPolygons: number = 0;
+
+	clipPolygons: IClipPolygon[] = [];
+
 	visibleNodesTexture: Texture | undefined;
 
 	private visibleNodeTextureOffsets = new Map<string, number>();
@@ -281,6 +303,13 @@ export class PointCloudMaterial extends RawShaderMaterial
 		classificationLUT: makeUniform('t', this.classificationTexture || new Texture()),
 		clipBoxCount: makeUniform('f', 0),
 		clipBoxes: makeUniform('Matrix4fv', [] as any),
+		clipCylinderCount: makeUniform('f', 0),
+		clipCylinders: makeUniform('Matrix4fv', [] as any),
+		clipPolygonVertices: makeUniform('fv', new Float32Array(64)),
+		clipPolygonVertexCount: makeUniform('f', 0),
+		clipPolygonWorldToLocal: makeUniform('Matrix4f', []),
+		clipPolygonZMin: makeUniform('f', 0),
+		clipPolygonZMax: makeUniform('f', 0),
 		depthMap: makeUniform('t', null),
 		diffuse: makeUniform('fv', [1, 1, 1] as [number, number, number]),
 		fov: makeUniform('f', 1.0),
@@ -410,6 +439,10 @@ export class PointCloudMaterial extends RawShaderMaterial
 
   // Declare PointCloudMaterial attributes that need shader updates upon change, and set default values.
   @requiresShaderUpdate() useClipBox: boolean = false;
+
+  @requiresShaderUpdate() useClipCylinder: boolean = false;
+
+  @requiresShaderUpdate() useClipPolygon: boolean = false;
 
   @requiresShaderUpdate() weighted: boolean = false;
 
@@ -603,9 +636,19 @@ export class PointCloudMaterial extends RawShaderMaterial
   		define('weighted_splats');
   	}
 
-  	if (this.numClipBoxes > 0) 
+  	if (this.numClipBoxes > 0)
   	{
   		define('use_clip_box');
+  	}
+
+  	if (this.numClipCylinders > 0)
+  	{
+  		define('use_clip_cylinder');
+  	}
+
+  	if (this.numClipPolygons > 0)
+  	{
+  		define('use_clip_polygon');
   	}
 
   	if (this.highlightPoint) 
@@ -672,7 +715,87 @@ export class PointCloudMaterial extends RawShaderMaterial
   	this.setUniform('clipBoxes', clipBoxesArray);
   }
 
-  get gradient(): IGradient 
+  setClipCylinders(clipCylinders: IClipCylinder[]): void
+  {
+  	if (!clipCylinders)
+  	{
+  		return;
+  	}
+
+  	this.clipCylinders = clipCylinders;
+
+  	const doUpdate =
+	  this.numClipCylinders !== clipCylinders.length && (clipCylinders.length === 0 || this.numClipCylinders === 0);
+
+  	this.numClipCylinders = clipCylinders.length;
+  	this.setUniform('clipCylinderCount', this.numClipCylinders);
+
+  	if (doUpdate)
+  	{
+  		this.updateShaderSource();
+  	}
+
+  	const len = this.numClipCylinders * 16;
+  	const arr = new Float32Array(len);
+
+  	for (let i = 0; i < this.numClipCylinders; i++)
+  	{
+  		arr.set(clipCylinders[i].inverse.elements, 16 * i);
+  	}
+
+  	for (let i = 0; i < len; i++)
+  	{
+  		if (isNaN(arr[i]))
+  		{
+  			arr[i] = Infinity;
+  		}
+  	}
+
+  	this.setUniform('clipCylinders', arr);
+  }
+
+  setClipPolygons(clipPolygons: IClipPolygon[]): void
+  {
+  	if (!clipPolygons)
+  	{
+  		return;
+  	}
+
+  	this.clipPolygons = clipPolygons;
+
+  	const doUpdate =
+	  this.numClipPolygons !== clipPolygons.length && (clipPolygons.length === 0 || this.numClipPolygons === 0);
+
+  	this.numClipPolygons = clipPolygons.length;
+
+  	if (doUpdate)
+  	{
+  		this.updateShaderSource();
+  	}
+
+  	if (clipPolygons.length > 0)
+  	{
+  		const poly = clipPolygons[0]; // Support one polygon at a time
+  		const count = Math.min(poly.vertices.length, 32);
+  		const verts = new Float32Array(64); // 32 vec2s
+  		for (let i = 0; i < count; i++)
+  		{
+  			verts[i * 2] = poly.vertices[i].x;
+  			verts[i * 2 + 1] = poly.vertices[i].y;
+  		}
+  		this.setUniform('clipPolygonVertices', verts);
+  		this.setUniform('clipPolygonVertexCount', count);
+  		this.setUniform('clipPolygonWorldToLocal', poly.worldToLocal.elements);
+  		this.setUniform('clipPolygonZMin', poly.zMin);
+  		this.setUniform('clipPolygonZMax', poly.zMax);
+  	}
+  	else
+  	{
+  		this.setUniform('clipPolygonVertexCount', 0);
+  	}
+  }
+
+  get gradient(): IGradient
   {
   	return this._gradient;
   }

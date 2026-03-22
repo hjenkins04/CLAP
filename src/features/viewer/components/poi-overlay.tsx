@@ -29,7 +29,7 @@ export function PoiOverlay({ engine }: PoiOverlayProps) {
       e.preventDefault();
       plugin?.confirmAdjustment();
     },
-    { enabled: isConfirming }
+    { enabled: isConfirming, conflictBehavior: 'allow' }
   );
 
   // Escape → cancel current POI phase
@@ -45,7 +45,7 @@ export function PoiOverlay({ engine }: PoiOverlayProps) {
         exitMode();
       }
     },
-    { enabled: isPoiMode }
+    { enabled: isPoiMode, conflictBehavior: 'allow' }
   );
 
   // Delete → remove existing POI (during confirming phase)
@@ -56,7 +56,7 @@ export function PoiOverlay({ engine }: PoiOverlayProps) {
       plugin?.cancelAdjustment();
       usePoiStore.getState().clearPosition();
     },
-    { enabled: isConfirming }
+    { enabled: isConfirming, conflictBehavior: 'allow' }
   );
 
   if (!isPoiMode) return null;

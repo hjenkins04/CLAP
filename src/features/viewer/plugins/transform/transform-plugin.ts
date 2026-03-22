@@ -201,6 +201,7 @@ export class TransformPlugin implements ViewerPlugin {
     if (!this.editor) return;
 
     const group = this.editor.getTransformGroup();
+    group.updateMatrix();
     this.editor.setGlobalTransform(group.matrix.clone());
   }
 

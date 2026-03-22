@@ -5,9 +5,16 @@ import { useUIStore, useViewerModeStore } from '@/app/stores';
 import { useViewerEngine } from '../hooks/use-viewer-engine';
 import { ViewerCanvas } from './viewer-canvas';
 import { ViewerToolbar } from './viewer-toolbar';
+import { ViewportToolbar } from './viewport-toolbar';
 import { ViewerSidebarPanel } from './viewer-sidebar-panel';
 import { TransformCommandPanel } from './transform-command-panel';
+import { VirtualTilesCommandPanel } from './virtual-tiles-command-panel';
 import { PoiOverlay } from './poi-overlay';
+import { VirtualTilesOverlay } from './virtual-tiles-overlay';
+import { RoiCommandPanel } from './roi-command-panel';
+import { RoiOverlay } from './roi-overlay';
+import { PointSelectOverlay } from './point-select-overlay';
+import { AnnotatePanel } from '../plugins/annotate';
 
 export function ViewerPage() {
   const { theme, cycleTheme } = useUIStore();
@@ -41,10 +48,17 @@ export function ViewerPage() {
 
       {/* Main Viewport */}
       <main className="relative flex-1 bg-background">
+        <ViewportToolbar engine={engine} />
         <ViewerToolbar engine={engine} />
         <ViewerCanvas containerRef={containerRef} engine={engine} />
         {mode === 'transform' && <TransformCommandPanel />}
+        <VirtualTilesCommandPanel engine={engine} />
         <PoiOverlay engine={engine} />
+        <VirtualTilesOverlay engine={engine} />
+        <RoiCommandPanel engine={engine} />
+        <RoiOverlay engine={engine} />
+        <PointSelectOverlay engine={engine} />
+        <AnnotatePanel />
       </main>
     </div>
   );

@@ -50,11 +50,50 @@ export function registerIpcHandlers(): void {
     return result.filePaths[0];
   });
 
+  ipcMain.handle(IpcChannels.OPEN_POINTCLOUD_DIALOG, async () => {
+    const window = getMainWindow();
+    if (!window) return null;
+
+    const result = await dialog.showOpenDialog(window, {
+      title: 'Select Point Cloud Folder',
+      properties: ['openDirectory'],
+    });
+
+    if (result.canceled || result.filePaths.length === 0) return null;
+
+    const dir = result.filePaths[0];
+    const metadataPath = path.join(dir, 'metadata.json');
+
+    if (!fs.existsSync(metadataPath)) {
+      return { error: `No metadata.json found in ${dir}. Select a folder containing a Potree point cloud.` };
+    }
+
+    // Return the folder path with trailing slash
+    return { path: dir.endsWith('/') ? dir : dir + '/' };
+  });
+
   ipcMain.handle(IpcChannels.READ_FILE, async (_event, args: { path: string }) => {
     try {
       const resolved = resolveFilePath(args.path);
       const data = await fs.promises.readFile(resolved);
       return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+    } catch {
+      return null;
+    }
+  });
+
+  ipcMain.handle(IpcChannels.READ_FILE_RANGE, async (_event, args: { path: string; start: number; end: number }) => {
+    try {
+      const resolved = resolveFilePath(args.path);
+      const length = args.end - args.start + 1;
+      const buffer = Buffer.alloc(length);
+      const fh = await fs.promises.open(resolved, 'r');
+      try {
+        await fh.read(buffer, 0, length, args.start);
+      } finally {
+        await fh.close();
+      }
+      return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
     } catch {
       return null;
     }
@@ -89,7 +128,9 @@ export function removeIpcHandlers(): void {
   ipcMain.removeHandler(IpcChannels.GET_APP_VERSION);
   ipcMain.removeHandler(IpcChannels.GET_PLATFORM);
   ipcMain.removeHandler(IpcChannels.OPEN_FILE_DIALOG);
+  ipcMain.removeHandler(IpcChannels.OPEN_POINTCLOUD_DIALOG);
   ipcMain.removeHandler(IpcChannels.READ_FILE);
+  ipcMain.removeHandler(IpcChannels.READ_FILE_RANGE);
   ipcMain.removeHandler(IpcChannels.WRITE_FILE);
   ipcMain.removeHandler(IpcChannels.SAVE_DIRECTORY_DIALOG);
   ipcMain.removeAllListeners(IpcChannels.TO_MAIN);

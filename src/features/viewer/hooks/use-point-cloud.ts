@@ -32,6 +32,10 @@ export function usePointCloud(
         engine.unloadAll();
         await engine.loadPointCloud(url, baseUrl);
         console.info('[CLAP] Point cloud loaded successfully');
+
+        // Try to load a co-located DEM (dem.json next to metadata.json)
+        const demUrl = `${baseUrl}dem.json`;
+        await engine.loadDem(demUrl);
       } catch (err) {
         const message =
           err instanceof Error ? err.message : 'Failed to load point cloud';

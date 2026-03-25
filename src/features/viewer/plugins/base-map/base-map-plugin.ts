@@ -9,6 +9,7 @@ import {
   Box3,
   Vector3,
   Matrix4,
+  PlaneGeometry,
 } from 'three';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import type { Texture } from 'three';
@@ -39,6 +40,7 @@ export interface GeoRefData {
     zoomLevel: number;
     flipX: boolean;
     flipZ: boolean;
+    zOffset?: number;
   };
   grid?: {
     visible: boolean;
@@ -52,7 +54,7 @@ const GEOREF_FILENAME = 'georef.json';
 const TILE_URL =
   'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
 
-const DEM_OFFSET = 2;
+const DEFAULT_Z_OFFSET = -1;
 const TERRAIN_SEGMENTS = 32; // subdivisions per tile for DEM draping
 
 // ──────────────────────────────────────────────────────────────────────
@@ -71,6 +73,7 @@ export class BaseMapPlugin implements ViewerPlugin {
 
   private ctx: ViewerPluginContext | null = null;
   private tileGroup: Group | null = null;
+  private zOffsetProxy: Mesh | null = null;
   private tileMeshes = new Map<string, Mesh>();
   private tileTextures = new Map<string, Texture>();
   private loadingTiles = new Set<string>();
@@ -99,12 +102,19 @@ export class BaseMapPlugin implements ViewerPlugin {
     this.unsubBaseMap = useBaseMapStore.subscribe((state, prev) => {
       if (state.visible !== prev.visible) this.applyVisibility();
       if (state.opacity !== prev.opacity) this.applyOpacity();
-      if (state.zoomLevel !== prev.zoomLevel) { this.clearTiles(); this.updateTiles(); }
+      if (state.zoomLevel !== prev.zoomLevel || state.zOffset !== prev.zOffset) { this.clearTiles(); this.updateTiles(); }
       if (state.editing !== prev.editing) {
         if (state.editing) this.startEditing(); else this.stopEditing();
       }
       if (state.gizmoMode !== prev.gizmoMode && state.editing) this.applyGizmoMode(state.gizmoMode);
       if (state.flipX !== prev.flipX || state.flipZ !== prev.flipZ) this.applyFlip();
+      if (state.editingZOffset !== prev.editingZOffset) {
+        if (state.editingZOffset) this.showZOffsetProxy();
+        else this.hideZOffsetProxy();
+      }
+      if (state.pendingZOffset !== prev.pendingZOffset && state.editingZOffset) {
+        this.updateZOffsetProxy(state.pendingZOffset);
+      }
     });
 
     useBaseMapStore.getState()._setOnSave(async () => {
@@ -156,13 +166,15 @@ export class BaseMapPlugin implements ViewerPlugin {
       const center = box.getCenter(new Vector3());
       const size = box.getSize(new Vector3());
       const minDim = Math.min(size.x, size.y, size.z);
-      this.tileElevation = center.y - minDim / 2 - DEM_OFFSET;
+      const zOff = useBaseMapStore.getState().zOffset;
+      this.tileElevation = center.y - minDim / 2 + zOff;
     }
 
     this.loadGeoRef().then(() => this.updateTiles());
   }
 
   dispose(): void {
+    this.hideZOffsetProxy();
     this.stopEditing();
     this.clearTiles();
     this.unsubWorldFrame?.();
@@ -378,6 +390,67 @@ export class BaseMapPlugin implements ViewerPlugin {
     }
   }
 
+  // ── Z-Offset Proxy Plane ────────────────────────────────────────────
+
+  private showZOffsetProxy(): void {
+    if (!this.ctx || !this.pcBounds || !this.tileGroup) return;
+
+    // Hide real tiles
+    this.tileGroup.visible = false;
+
+    // Create a flat semi-transparent plane covering the PC extent
+    const size = this.pcBounds.getSize(new Vector3());
+    const center = this.pcBounds.getCenter(new Vector3());
+    const planeSize = Math.max(size.x, size.z) * 1.2;
+
+    const geo = new PlaneGeometry(planeSize, planeSize);
+    geo.rotateX(-Math.PI / 2); // lay flat in XZ
+    const mat = new MeshBasicMaterial({
+      color: 0x3b82f6,
+      transparent: true,
+      opacity: 0.25,
+      side: DoubleSide,
+      depthWrite: false,
+    });
+    this.zOffsetProxy = new Mesh(geo, mat);
+    this.zOffsetProxy.position.set(center.x, 0, center.z);
+    this.zOffsetProxy.renderOrder = -1;
+
+    // Set initial Y from current pending offset — use DEM min as reference
+    this.updateZOffsetProxy(useBaseMapStore.getState().pendingZOffset);
+
+    this.ctx.scene.add(this.zOffsetProxy);
+  }
+
+  private hideZOffsetProxy(): void {
+    if (this.zOffsetProxy && this.ctx) {
+      this.ctx.scene.remove(this.zOffsetProxy);
+      this.zOffsetProxy.geometry.dispose();
+      (this.zOffsetProxy.material as MeshBasicMaterial).dispose();
+      this.zOffsetProxy = null;
+    }
+    // Rebuild real tiles with confirmed offset
+    this.clearTiles();
+    this.updateTiles();
+  }
+
+  private updateZOffsetProxy(zOffset: number): void {
+    if (!this.zOffsetProxy || !this.ctx) return;
+
+    // Compute the base DEM elevation in world space (same logic as onPointCloudLoaded)
+    const dem = this.ctx.getDem();
+    if (dem) {
+      dem.mesh.updateMatrixWorld(true);
+      const demBox = new Box3().setFromObject(dem.mesh);
+      this.zOffsetProxy.position.y = demBox.min.y + zOffset;
+    } else if (this.pcBounds) {
+      const size = this.pcBounds.getSize(new Vector3());
+      const center = this.pcBounds.getCenter(new Vector3());
+      const minDim = Math.min(size.x, size.y, size.z);
+      this.zOffsetProxy.position.y = center.y - minDim / 2 + zOffset;
+    }
+  }
+
   // ── DEM Draping ─────────────────────────────────────────────────────
 
   /**
@@ -408,7 +481,8 @@ export class BaseMapPlugin implements ViewerPlugin {
       // DEM uses X/Y horizontal, Z = elevation.
       // Use clamped lookup so out-of-bounds vertices get the nearest edge elevation.
       const elev = dem.getElevationClamped(demLocal.x, demLocal.y);
-      demLocal.z = elev - DEM_OFFSET;
+      const zOff = useBaseMapStore.getState().zOffset;
+      demLocal.z = elev + zOff;
       // DEM local → world → tile-group local
       demLocal.applyMatrix4(tg.matrixWorld);
       demLocal.applyMatrix4(invTile);
@@ -542,7 +616,7 @@ export class BaseMapPlugin implements ViewerPlugin {
       anchor2: wf.anchor2 ? { geo: wf.anchor2.geo, pc: wf.anchor2.pc } : null,
       rotationOffset: wf.rotationOffset,
       translationOffset: wf.translationOffset,
-      baseMap: { opacity: bm.opacity, zoomLevel: bm.zoomLevel, flipX: bm.flipX, flipZ: bm.flipZ },
+      baseMap: { opacity: bm.opacity, zoomLevel: bm.zoomLevel, flipX: bm.flipX, flipZ: bm.flipZ, zOffset: bm.zOffset },
       grid: { visible: gr.visible, size: gr.size, cellSize: gr.cellSize },
     };
 
@@ -588,6 +662,7 @@ export class BaseMapPlugin implements ViewerPlugin {
       bm.setZoomLevel(data.baseMap.zoomLevel);
       if (data.baseMap.flipX) bm.toggleFlipX();
       if (data.baseMap.flipZ) bm.toggleFlipZ();
+      if (data.baseMap.zOffset !== undefined) bm.setZOffset(data.baseMap.zOffset);
 
       // Restore grid settings
       if (data.grid) {

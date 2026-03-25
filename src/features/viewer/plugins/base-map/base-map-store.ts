@@ -13,6 +13,9 @@ interface BaseMapState {
   visible: boolean;
   opacity: number;
   zoomLevel: number;
+  zOffset: number;
+  editingZOffset: boolean;
+  pendingZOffset: number;
   editing: boolean;
   gizmoMode: BaseMapGizmoMode;
   flipX: boolean;
@@ -28,6 +31,10 @@ interface BaseMapState {
   setVisible: (v: boolean) => void;
   setOpacity: (o: number) => void;
   setZoomLevel: (z: number) => void;
+  setZOffset: (offset: number) => void;
+  setEditingZOffset: (editing: boolean) => void;
+  setPendingZOffset: (offset: number) => void;
+  confirmZOffset: () => void;
   setEditing: (editing: boolean) => void;
   setGizmoMode: (mode: BaseMapGizmoMode) => void;
   toggleFlipX: () => void;
@@ -55,6 +62,9 @@ export const useBaseMapStore = create<BaseMapState>()(
       visible: true,
       opacity: 0.7,
       zoomLevel: 18,
+      zOffset: -1,
+      editingZOffset: false,
+      pendingZOffset: -1,
       editing: false,
       gizmoMode: 'translate',
       flipX: false,
@@ -68,6 +78,16 @@ export const useBaseMapStore = create<BaseMapState>()(
       setVisible: (visible) => set({ visible }),
       setOpacity: (opacity) => set({ opacity }),
       setZoomLevel: (zoomLevel) => set({ zoomLevel }),
+      setZOffset: (zOffset) => set({ zOffset }),
+      setEditingZOffset: (editingZOffset) => set((s) => ({
+        editingZOffset,
+        pendingZOffset: editingZOffset ? s.zOffset : s.pendingZOffset,
+      })),
+      setPendingZOffset: (pendingZOffset) => set({ pendingZOffset }),
+      confirmZOffset: () => set((s) => ({
+        zOffset: s.pendingZOffset,
+        editingZOffset: false,
+      })),
       setEditing: (editing) => set({ editing }),
       setGizmoMode: (gizmoMode) => set({ gizmoMode }),
       toggleFlipX: () => set((s) => ({ flipX: !s.flipX })),

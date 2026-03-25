@@ -1,4 +1,4 @@
-import { Move, RotateCw, Pencil, Check, FlipHorizontal2, FlipVertical2, Save } from 'lucide-react';
+import { Move, RotateCw, Pencil, Check, FlipHorizontal2, FlipVertical2, Save, ArrowUpDown, X } from 'lucide-react';
 import { Button } from '@clap/design-system';
 import { useBaseMapStore } from './base-map-store';
 import { useWorldFrameStore } from '../world-frame';
@@ -11,7 +11,13 @@ export function BaseMapPanel() {
   const gizmoMode = useBaseMapStore((s) => s.gizmoMode);
   const setVisible = useBaseMapStore((s) => s.setVisible);
   const setOpacity = useBaseMapStore((s) => s.setOpacity);
+  const zOffset = useBaseMapStore((s) => s.zOffset);
+  const editingZOffset = useBaseMapStore((s) => s.editingZOffset);
+  const pendingZOffset = useBaseMapStore((s) => s.pendingZOffset);
   const setZoomLevel = useBaseMapStore((s) => s.setZoomLevel);
+  const setEditingZOffset = useBaseMapStore((s) => s.setEditingZOffset);
+  const setPendingZOffset = useBaseMapStore((s) => s.setPendingZOffset);
+  const confirmZOffset = useBaseMapStore((s) => s.confirmZOffset);
   const flipX = useBaseMapStore((s) => s.flipX);
   const flipZ = useBaseMapStore((s) => s.flipZ);
   const setEditing = useBaseMapStore((s) => s.setEditing);
@@ -81,6 +87,61 @@ export function BaseMapPanel() {
           disabled={!visible}
           className="w-full accent-primary disabled:opacity-40"
         />
+      </div>
+
+      {/* Z Offset */}
+      <div className="mb-3">
+        {!editingZOffset ? (
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">
+              Z Offset: {zOffset.toFixed(1)}m
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 gap-1 px-1.5 text-xs"
+              disabled={!visible}
+              onClick={() => setEditingZOffset(true)}
+            >
+              <ArrowUpDown className="h-3 w-3" />
+              Edit
+            </Button>
+          </div>
+        ) : (
+          <>
+            <label className="mb-1 block text-xs text-muted-foreground">
+              Z Offset: {pendingZOffset.toFixed(1)}m
+            </label>
+            <input
+              type="range"
+              min="-20"
+              max="20"
+              step="0.5"
+              value={pendingZOffset}
+              onChange={(e) => setPendingZOffset(Number(e.target.value))}
+              className="mb-2 w-full accent-primary"
+            />
+            <div className="flex gap-1">
+              <Button
+                variant="default"
+                size="sm"
+                className="h-6 flex-1 gap-1 text-xs"
+                onClick={confirmZOffset}
+              >
+                <Check className="h-3 w-3" />
+                Apply
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 gap-1 px-1.5 text-xs"
+                onClick={() => setEditingZOffset(false)}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Edit / Refine */}

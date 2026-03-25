@@ -68,7 +68,7 @@ export class BaseMapPlugin implements ViewerPlugin {
   readonly name = 'Base Map';
   readonly order = 5;
   readonly SidebarPanel = BaseMapPanel;
-  readonly sidebarTitle = 'Base Map';
+  readonly sidebarTitle = 'Base Satellite Map';
   readonly sidebarDefaultOpen = false;
 
   private ctx: ViewerPluginContext | null = null;
@@ -77,6 +77,7 @@ export class BaseMapPlugin implements ViewerPlugin {
   private tileMeshes = new Map<string, Mesh>();
   private tileTextures = new Map<string, Texture>();
   private loadingTiles = new Set<string>();
+  private tileGeneration = 0;
   private tileElevation = 0;
   private pcBounds: Box3 | null = null;
   private gizmo: TransformControls | null = null;
@@ -97,16 +98,7 @@ export class BaseMapPlugin implements ViewerPlugin {
       if (state.transform !== prev.transform || state.phase !== prev.phase) {
         this.updateTiles();
       }
-    });
-
-    this.unsubBaseMap = useBaseMapStore.subscribe((state, prev) => {
-      if (state.visible !== prev.visible) this.applyVisibility();
-      if (state.opacity !== prev.opacity) this.applyOpacity();
-      if (state.zoomLevel !== prev.zoomLevel || state.zOffset !== prev.zOffset) { this.clearTiles(); this.updateTiles(); }
-      if (state.editing !== prev.editing) {
-        if (state.editing) this.startEditing(); else this.stopEditing();
-      }
-      if (state.gizmoMode !== prev.gizmoMode && state.editing) this.applyGizmoMode(state.gizmoMode);
+      if (state.zOffset !== prev.zOffset) { this.clearTiles(); this.updateTiles(); }
       if (state.flipX !== prev.flipX || state.flipZ !== prev.flipZ) this.applyFlip();
       if (state.editingZOffset !== prev.editingZOffset) {
         if (state.editingZOffset) this.showZOffsetProxy();
@@ -115,6 +107,16 @@ export class BaseMapPlugin implements ViewerPlugin {
       if (state.pendingZOffset !== prev.pendingZOffset && state.editingZOffset) {
         this.updateZOffsetProxy(state.pendingZOffset);
       }
+    });
+
+    this.unsubBaseMap = useBaseMapStore.subscribe((state, prev) => {
+      if (state.visible !== prev.visible) this.applyVisibility();
+      if (state.opacity !== prev.opacity) this.applyOpacity();
+      if (state.zoomLevel !== prev.zoomLevel) { this.clearTiles(); this.updateTiles(); }
+      if (state.editing !== prev.editing) {
+        if (state.editing) this.startEditing(); else this.stopEditing();
+      }
+      if (state.gizmoMode !== prev.gizmoMode && state.editing) this.applyGizmoMode(state.gizmoMode);
     });
 
     useBaseMapStore.getState()._setOnSave(async () => {
@@ -166,7 +168,7 @@ export class BaseMapPlugin implements ViewerPlugin {
       const center = box.getCenter(new Vector3());
       const size = box.getSize(new Vector3());
       const minDim = Math.min(size.x, size.y, size.z);
-      const zOff = useBaseMapStore.getState().zOffset;
+      const zOff = useWorldFrameStore.getState().zOffset;
       this.tileElevation = center.y - minDim / 2 + zOff;
     }
 
@@ -263,6 +265,7 @@ export class BaseMapPlugin implements ViewerPlugin {
   private loadTile(z: number, x: number, y: number, transform: WorldFrameTransform): void {
     const key = `${z}/${x}/${y}`;
     this.loadingTiles.add(key);
+    const gen = this.tileGeneration;
 
     const url = TILE_URL.replace('{z}', String(z))
       .replace('{y}', String(y))
@@ -272,7 +275,8 @@ export class BaseMapPlugin implements ViewerPlugin {
     img.crossOrigin = 'anonymous';
     img.onload = () => {
       this.loadingTiles.delete(key);
-      if (!this.tileGroup) return;
+      // Discard if tiles were cleared while this image was loading
+      if (!this.tileGroup || gen !== this.tileGeneration) return;
 
       const canvas = document.createElement('canvas');
       canvas.width = 256;
@@ -357,6 +361,8 @@ export class BaseMapPlugin implements ViewerPlugin {
 
   private clearTiles(): void {
     if (!this.tileGroup) return;
+    // Bump generation so in-flight img.onload callbacks are discarded
+    this.tileGeneration++;
     for (const [key, mesh] of this.tileMeshes) {
       this.tileGroup.remove(mesh);
       mesh.geometry.dispose();
@@ -378,7 +384,7 @@ export class BaseMapPlugin implements ViewerPlugin {
 
   private applyFlip(): void {
     if (!this.tileGroup) return;
-    const { flipX, flipZ } = useBaseMapStore.getState();
+    const { flipX, flipZ } = useWorldFrameStore.getState();
     this.tileGroup.scale.x = flipX ? -1 : 1;
     this.tileGroup.scale.z = flipZ ? -1 : 1;
   }
@@ -417,7 +423,7 @@ export class BaseMapPlugin implements ViewerPlugin {
     this.zOffsetProxy.renderOrder = -1;
 
     // Set initial Y from current pending offset — use DEM min as reference
-    this.updateZOffsetProxy(useBaseMapStore.getState().pendingZOffset);
+    this.updateZOffsetProxy(useWorldFrameStore.getState().pendingZOffset);
 
     this.ctx.scene.add(this.zOffsetProxy);
   }
@@ -481,7 +487,7 @@ export class BaseMapPlugin implements ViewerPlugin {
       // DEM uses X/Y horizontal, Z = elevation.
       // Use clamped lookup so out-of-bounds vertices get the nearest edge elevation.
       const elev = dem.getElevationClamped(demLocal.x, demLocal.y);
-      const zOff = useBaseMapStore.getState().zOffset;
+      const zOff = useWorldFrameStore.getState().zOffset;
       demLocal.z = elev + zOff;
       // DEM local → world → tile-group local
       demLocal.applyMatrix4(tg.matrixWorld);
@@ -616,7 +622,7 @@ export class BaseMapPlugin implements ViewerPlugin {
       anchor2: wf.anchor2 ? { geo: wf.anchor2.geo, pc: wf.anchor2.pc } : null,
       rotationOffset: wf.rotationOffset,
       translationOffset: wf.translationOffset,
-      baseMap: { opacity: bm.opacity, zoomLevel: bm.zoomLevel, flipX: bm.flipX, flipZ: bm.flipZ, zOffset: bm.zOffset },
+      baseMap: { opacity: bm.opacity, zoomLevel: bm.zoomLevel, flipX: wf.flipX, flipZ: wf.flipZ, zOffset: wf.zOffset },
       grid: { visible: gr.visible, size: gr.size, cellSize: gr.cellSize },
     };
 
@@ -660,9 +666,10 @@ export class BaseMapPlugin implements ViewerPlugin {
       const bm = useBaseMapStore.getState();
       bm.setOpacity(data.baseMap.opacity);
       bm.setZoomLevel(data.baseMap.zoomLevel);
-      if (data.baseMap.flipX) bm.toggleFlipX();
-      if (data.baseMap.flipZ) bm.toggleFlipZ();
-      if (data.baseMap.zOffset !== undefined) bm.setZOffset(data.baseMap.zOffset);
+      // Restore flip/zOffset to world-frame store (shared by all overlays)
+      if (data.baseMap.flipX) wf.toggleFlipX();
+      if (data.baseMap.flipZ) wf.toggleFlipZ();
+      if (data.baseMap.zOffset !== undefined) wf.setZOffset(data.baseMap.zOffset);
 
       // Restore grid settings
       if (data.grid) {

@@ -8,3 +8,4 @@ export { PointSelectPlugin } from './point-select';
 export { AnnotatePlugin } from './annotate';
 export { WorldFramePlugin } from './world-frame';
 export { BaseMapPlugin } from './base-map';
+export { OsmFeaturesPlugin } from './osm-features';

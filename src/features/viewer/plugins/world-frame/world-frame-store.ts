@@ -42,8 +42,21 @@ interface WorldFrameState {
   transform: WorldFrameTransform | null;
   markersVisible: boolean;
 
+  /** Shared overlay alignment — used by base satellite map + OSM features */
+  flipX: boolean;
+  flipZ: boolean;
+  zOffset: number;
+  editingZOffset: boolean;
+  pendingZOffset: number;
+
   setPhase: (phase: WorldFramePhase) => void;
   setMarkersVisible: (visible: boolean) => void;
+  toggleFlipX: () => void;
+  toggleFlipZ: () => void;
+  setZOffset: (offset: number) => void;
+  setEditingZOffset: (editing: boolean) => void;
+  setPendingZOffset: (offset: number) => void;
+  confirmZOffset: () => void;
   setGeoPoint1: (pt: GeoPoint) => void;
   setGeoPoint2: (pt: GeoPoint | null) => void;
   setAnchor1Pc: (pt: PcPoint) => void;
@@ -90,9 +103,26 @@ export const useWorldFrameStore = create<WorldFrameState>()(
       translationOffset: { x: 0, z: 0 },
       transform: null,
       markersVisible: true,
+      flipX: false,
+      flipZ: false,
+      zOffset: -1,
+      editingZOffset: false,
+      pendingZOffset: -1,
 
       setPhase: (phase) => set({ phase }),
       setMarkersVisible: (markersVisible) => set({ markersVisible }),
+      toggleFlipX: () => set((s) => ({ flipX: !s.flipX })),
+      toggleFlipZ: () => set((s) => ({ flipZ: !s.flipZ })),
+      setZOffset: (zOffset) => set({ zOffset }),
+      setEditingZOffset: (editingZOffset) => set((s) => ({
+        editingZOffset,
+        pendingZOffset: editingZOffset ? s.zOffset : s.pendingZOffset,
+      })),
+      setPendingZOffset: (pendingZOffset) => set({ pendingZOffset }),
+      confirmZOffset: () => set((s) => ({
+        zOffset: s.pendingZOffset,
+        editingZOffset: false,
+      })),
 
       setGeoPoint1: (pt) => set({ geoPoint1: pt }),
       setGeoPoint2: (pt) => set({ geoPoint2: pt }),
@@ -140,6 +170,9 @@ export const useWorldFrameStore = create<WorldFrameState>()(
           rotationOffset: 0,
           translationOffset: { x: 0, z: 0 },
           transform: null,
+          flipX: false,
+          flipZ: false,
+          zOffset: -1,
         }),
 
       recomputeTransform: () => {
@@ -157,6 +190,9 @@ export const useWorldFrameStore = create<WorldFrameState>()(
         rotationOffset: state.rotationOffset,
         translationOffset: state.translationOffset,
         transform: state.transform,
+        flipX: state.flipX,
+        flipZ: state.flipZ,
+        zOffset: state.zOffset,
       }),
     },
   ),

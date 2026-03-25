@@ -15,6 +15,8 @@ import { RoiCommandPanel } from './roi-command-panel';
 import { RoiOverlay } from './roi-overlay';
 import { PointSelectOverlay } from './point-select-overlay';
 import { AnnotatePanel } from '../plugins/annotate';
+import { WorldFrameOverlay } from './world-frame-overlay';
+import { WorldFrameMapModal } from './world-frame-map-modal';
 
 export function ViewerPage() {
   const { theme, cycleTheme } = useUIStore();
@@ -59,6 +61,8 @@ export function ViewerPage() {
         <RoiOverlay engine={engine} />
         <PointSelectOverlay engine={engine} />
         <AnnotatePanel />
+        <WorldFrameOverlay engine={engine} />
+        <WorldFrameMapModal engine={engine} />
       </main>
     </div>
   );

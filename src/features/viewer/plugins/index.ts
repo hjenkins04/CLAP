@@ -6,3 +6,5 @@ export { VirtualTilesPlugin } from './virtual-tiles';
 export { RoiSelectionPlugin } from './roi-selection';
 export { PointSelectPlugin } from './point-select';
 export { AnnotatePlugin } from './annotate';
+export { WorldFramePlugin } from './world-frame';
+export { BaseMapPlugin } from './base-map';

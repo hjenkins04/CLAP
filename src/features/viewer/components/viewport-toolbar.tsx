@@ -7,6 +7,7 @@ import {
   PowerOff,
   PenLine,
   Trash2,
+  MapPin,
 } from 'lucide-react';
 import {
   Button,
@@ -23,6 +24,8 @@ import { useViewerModeStore } from '@/app/stores';
 import { useVirtualTilesStore } from '../plugins/virtual-tiles';
 import { useRoiStore } from '../plugins/roi-selection';
 import { RoiSelectionPlugin } from '../plugins/roi-selection';
+import { useWorldFrameStore } from '../plugins/world-frame';
+import type { WorldFramePlugin } from '../plugins/world-frame/world-frame-plugin';
 import type { ViewerEngine } from '../services/viewer-engine';
 
 interface ViewportToolbarProps {
@@ -30,7 +33,7 @@ interface ViewportToolbarProps {
 }
 
 export function ViewportToolbar({ engine }: ViewportToolbarProps) {
-  const { mode, enterVirtualTilesMode, enterRoiSelectionMode, exitMode } =
+  const { mode, enterVirtualTilesMode, enterRoiSelectionMode, enterWorldFrameMode, exitMode } =
     useViewerModeStore();
 
   const tilesPhase = useVirtualTilesStore((s) => s.phase);
@@ -46,6 +49,20 @@ export function ViewportToolbar({ engine }: ViewportToolbarProps) {
   const hasAppliedRoi = roiShapeCount > 0 && (roiPhase === 'applied' || roiClipEnabled);
 
   const roiPlugin = engine?.getPlugin<RoiSelectionPlugin>('roi-selection');
+  const worldFramePlugin = engine?.getPlugin<WorldFramePlugin>('world-frame');
+
+  // World Frame state
+  const isWorldFrame = mode === 'world-frame';
+  const worldFramePhase = useWorldFrameStore((s) => s.phase);
+  const hasWorldFrame = worldFramePhase === 'confirmed';
+
+  const handleWorldFrameClick = () => {
+    if (isWorldFrame) {
+      exitMode();
+    } else {
+      enterWorldFrameMode();
+    }
+  };
 
   const handleTilesClick = () => {
     if (isTiles) {
@@ -145,6 +162,49 @@ export function ViewportToolbar({ engine }: ViewportToolbarProps) {
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="right">ROI Selection</TooltipContent>
+            </Tooltip>
+          )}
+
+          {hasWorldFrame && !isWorldFrame ? (
+            <DropdownMenu>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="default"
+                      size="icon"
+                      className="h-7 w-7"
+                    >
+                      <MapPin className="h-3.5 w-3.5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                </TooltipTrigger>
+                <TooltipContent side="right">World Frame</TooltipContent>
+              </Tooltip>
+              <DropdownMenuContent align="start" side="right">
+                <DropdownMenuItem onClick={() => worldFramePlugin?.redefine()}>
+                  <PenLine className="h-3.5 w-3.5" />
+                  Redefine
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => useWorldFrameStore.getState().resetWorldFrame()}>
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Clear
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={isWorldFrame ? 'default' : 'ghost'}
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={handleWorldFrameClick}
+                >
+                  <MapPin className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">World Frame</TooltipContent>
             </Tooltip>
           )}
         </div>

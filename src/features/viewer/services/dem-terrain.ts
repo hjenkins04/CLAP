@@ -105,26 +105,41 @@ export class DemTerrain {
    * Returns null if outside the DEM extent.
    */
   getElevation(x: number, y: number): number | null {
+    return this.sampleElevation(x, y, false);
+  }
+
+  /**
+   * Same as getElevation but clamps to the nearest edge cell instead of
+   * returning null for out-of-bounds coordinates.
+   */
+  getElevationClamped(x: number, y: number): number {
+    return this.sampleElevation(x, y, true) ?? 0;
+  }
+
+  private sampleElevation(x: number, y: number, clamp: boolean): number | null {
     const { xMin, yMin, cellSize, cols, rows, elevation } = this.data;
 
-    // Convert to grid coordinates (floating point)
-    const gx = (x - xMin) / cellSize - 0.5;
-    const gy = (y - yMin) / cellSize - 0.5;
+    let gx = (x - xMin) / cellSize - 0.5;
+    let gy = (y - yMin) / cellSize - 0.5;
 
-    if (gx < 0 || gy < 0 || gx >= cols - 1 || gy >= rows - 1) {
-      return null;
+    if (!clamp) {
+      if (gx < 0 || gy < 0 || gx >= cols - 1 || gy >= rows - 1) {
+        return null;
+      }
+    } else {
+      gx = Math.max(0, Math.min(cols - 1 - 1e-6, gx));
+      gy = Math.max(0, Math.min(rows - 1 - 1e-6, gy));
     }
 
-    // Bilinear interpolation
     const ix = Math.floor(gx);
     const iy = Math.floor(gy);
     const fx = gx - ix;
     const fy = gy - iy;
 
     const z00 = elevation[iy][ix];
-    const z10 = elevation[iy][ix + 1];
-    const z01 = elevation[iy + 1][ix];
-    const z11 = elevation[iy + 1][ix + 1];
+    const z10 = elevation[iy][Math.min(ix + 1, cols - 1)];
+    const z01 = elevation[Math.min(iy + 1, rows - 1)][ix];
+    const z11 = elevation[Math.min(iy + 1, rows - 1)][Math.min(ix + 1, cols - 1)];
 
     return (
       z00 * (1 - fx) * (1 - fy) +

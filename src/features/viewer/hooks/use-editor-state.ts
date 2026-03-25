@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { ViewerEngine } from '../services/viewer-engine';
+import { useBaseMapStore } from '../plugins/base-map';
 
 interface EditorState {
   canUndo: boolean;
@@ -12,77 +13,79 @@ interface EditorState {
 }
 
 export function useEditorState(engine: ViewerEngine | null): EditorState {
-  const [canUndo, setCanUndo] = useState(false);
-  const [canRedo, setCanRedo] = useState(false);
+  const [editorCanUndo, setEditorCanUndo] = useState(false);
+  const [editorCanRedo, setEditorCanRedo] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Base map editing state — when active, toolbar undo/redo drives base map history
+  const bmEditing = useBaseMapStore((s) => s.editing);
+  const bmCanUndo = useBaseMapStore((s) => s.canUndoEdit);
+  const bmCanRedo = useBaseMapStore((s) => s.canRedoEdit);
+  const bmOnUndo = useBaseMapStore((s) => s._onUndo);
+  const bmOnRedo = useBaseMapStore((s) => s._onRedo);
 
   const sync = useCallback(() => {
     if (!engine) return;
     const editor = engine.getEditor();
-    setCanUndo(editor.canUndo());
-    setCanRedo(editor.canRedo());
+    setEditorCanUndo(editor.canUndo());
+    setEditorCanRedo(editor.canRedo());
     setDirty(editor.isDirty());
   }, [engine]);
 
   useEffect(() => {
     if (!engine) return;
     const editor = engine.getEditor();
-
-    // Sync initial state
     sync();
-
-    // Subscribe to all relevant events
     const unsubs = [
       editor.on('operationAdded', sync),
       editor.on('undoRedo', sync),
       editor.on('saved', sync),
       editor.on('loaded', sync),
     ];
-
-    return () => {
-      for (const unsub of unsubs) unsub();
-    };
+    return () => { for (const unsub of unsubs) unsub(); };
   }, [engine, sync]);
 
   const undo = useCallback(() => {
-    engine?.getEditor().undo();
-  }, [engine]);
+    if (bmEditing && bmOnUndo) {
+      bmOnUndo();
+    } else {
+      engine?.getEditor().undo();
+    }
+  }, [engine, bmEditing, bmOnUndo]);
 
   const redo = useCallback(() => {
-    engine?.getEditor().redo();
-  }, [engine]);
+    if (bmEditing && bmOnRedo) {
+      bmOnRedo();
+    } else {
+      engine?.getEditor().redo();
+    }
+  }, [engine, bmEditing, bmOnRedo]);
 
   const save = useCallback(async () => {
     if (!engine) return;
-
     const editor = engine.getEditor();
     const basePath = editor.getBasePath();
-
-    // If basePath is a URL (not a real filesystem path), ask user where to save
     const needsPrompt = !basePath || !isFilesystemPath(basePath);
     if (needsPrompt) {
       if (!window.electron) {
-        // Browser fallback: save to IndexedDB with current basePath
+        // Browser fallback
       } else {
-        const dir = await window.electron.invoke<string | null>(
-          'save-directory-dialog'
-        );
-        if (!dir) return; // User cancelled
+        const dir = await window.electron.invoke<string | null>('save-directory-dialog');
+        if (!dir) return;
         const normalized = dir.endsWith('/') ? dir : `${dir}/`;
         editor.setBasePath(normalized);
       }
     }
-
     setSaving(true);
-    try {
-      await editor.save();
-    } catch (err) {
-      console.error('[CLAP] Failed to save edits:', err);
-    } finally {
-      setSaving(false);
-    }
+    try { await editor.save(); }
+    catch (err) { console.error('[CLAP] Failed to save edits:', err); }
+    finally { setSaving(false); }
   }, [engine]);
+
+  // When base map editing is active, expose base map undo/redo state
+  const canUndo = bmEditing ? bmCanUndo : editorCanUndo;
+  const canRedo = bmEditing ? bmCanRedo : editorCanRedo;
 
   return { canUndo, canRedo, dirty, saving, undo, redo, save };
 }

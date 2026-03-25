@@ -24,19 +24,25 @@ interface PoiState {
   /** Preview position shown during hover (not committed) */
   previewPosition: PoiPosition | null;
 
+  /** Whether the POI marker is visible in the scene */
+  markerVisible: boolean;
+
   setPosition: (x: number, y: number, z: number) => void;
   clearPosition: () => void;
   setPhase: (phase: PoiPhase) => void;
   setPreviewPosition: (pos: PoiPosition | null) => void;
+  setMarkerVisible: (visible: boolean) => void;
 }
 
 export const usePoiStore = create<PoiState>()((set) => ({
   position: null,
   phase: 'idle',
   previewPosition: null,
+  markerVisible: true,
 
   setPosition: (x, y, z) => set({ position: { x, y, z } }),
   clearPosition: () => set({ position: null }),
   setPhase: (phase) => set({ phase }),
   setPreviewPosition: (previewPosition) => set({ previewPosition }),
+  setMarkerVisible: (markerVisible) => set({ markerVisible }),
 }));

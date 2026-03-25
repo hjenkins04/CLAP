@@ -43,7 +43,7 @@ export function ViewerPage() {
         </div>
 
         {/* Panel Content */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex flex-1 flex-col overflow-hidden">
           <ViewerSidebarPanel engine={engine} />
         </div>
       </aside>

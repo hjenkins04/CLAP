@@ -90,6 +90,9 @@ export class WorldFramePlugin implements ViewerPlugin {
       if (state.previewPcPoint !== prev.previewPcPoint) {
         this.onPreviewChanged(state.previewPcPoint);
       }
+      if (state.markersVisible !== prev.markersVisible) {
+        this.applyMarkerVisibility(state.markersVisible);
+      }
     });
 
     // Restore markers if world frame was previously confirmed
@@ -200,6 +203,12 @@ export class WorldFramePlugin implements ViewerPlugin {
         this.marker2!.visible = false;
         break;
     }
+  }
+
+  private applyMarkerVisibility(visible: boolean): void {
+    const { anchor1, anchor2 } = useWorldFrameStore.getState();
+    if (this.marker1) this.marker1.visible = visible && !!anchor1;
+    if (this.marker2) this.marker2.visible = visible && !!anchor2;
   }
 
   private onPreviewChanged(pt: { x: number; y: number; z: number } | null): void {

@@ -40,8 +40,10 @@ interface WorldFrameState {
   rotationOffset: number;
   translationOffset: { x: number; z: number };
   transform: WorldFrameTransform | null;
+  markersVisible: boolean;
 
   setPhase: (phase: WorldFramePhase) => void;
+  setMarkersVisible: (visible: boolean) => void;
   setGeoPoint1: (pt: GeoPoint) => void;
   setGeoPoint2: (pt: GeoPoint | null) => void;
   setAnchor1Pc: (pt: PcPoint) => void;
@@ -87,8 +89,10 @@ export const useWorldFrameStore = create<WorldFrameState>()(
       rotationOffset: 0,
       translationOffset: { x: 0, z: 0 },
       transform: null,
+      markersVisible: true,
 
       setPhase: (phase) => set({ phase }),
+      setMarkersVisible: (markersVisible) => set({ markersVisible }),
 
       setGeoPoint1: (pt) => set({ geoPoint1: pt }),
       setGeoPoint2: (pt) => set({ geoPoint2: pt }),

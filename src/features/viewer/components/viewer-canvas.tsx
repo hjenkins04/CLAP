@@ -20,6 +20,7 @@ export function ViewerCanvas({ containerRef, engine }: ViewerCanvasProps) {
   const cameraProjection = useViewerStore((s) => s.cameraProjection);
   const loadedFile = useViewerStore((s) => s.loadedFile);
   const setNumVisiblePoints = useViewerStore((s) => s.setNumVisiblePoints);
+  const pointCloudVisible = useViewerStore((s) => s.pointCloudVisible);
 
   useEffect(() => {
     engine?.setPointSize(pointSize);
@@ -44,6 +45,10 @@ export function ViewerCanvas({ containerRef, engine }: ViewerCanvasProps) {
   useEffect(() => {
     engine?.setOnStatsUpdate(setNumVisiblePoints);
   }, [engine, setNumVisiblePoints]);
+
+  useEffect(() => {
+    engine?.setPointCloudVisible(pointCloudVisible);
+  }, [engine, pointCloudVisible]);
 
   const handleLoad = useCallback(async () => {
     if (!loadedFile || !engine) return;

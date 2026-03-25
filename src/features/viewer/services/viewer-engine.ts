@@ -294,6 +294,12 @@ export class ViewerEngine implements PluginHost {
 
   // --- Settings ---
 
+  setPointCloudVisible(visible: boolean): void {
+    this.pointClouds.forEach((pco) => {
+      pco.visible = visible;
+    });
+  }
+
   setPointSize(size: number): void {
     this.pointClouds.forEach((pco) => {
       pco.material.size = size;

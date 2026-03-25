@@ -26,6 +26,7 @@ import {
 import { useViewerModeStore } from '@/app/stores';
 import { usePoiStore } from '../plugins/poi';
 import { usePointSelectStore, PointSelectPlugin } from '../plugins/point-select';
+import { useBaseMapStore } from '../plugins/base-map';
 import type { ViewerEngine } from '../services/viewer-engine';
 import { useEditorState } from '../hooks/use-editor-state';
 
@@ -53,6 +54,7 @@ export function ViewerToolbar({ engine }: ViewerToolbarProps) {
   const isPoi = mode === 'poi';
   const hasPoi = poiPosition !== null;
   const isPoiActive = isPoi && (poiPhase === 'selecting' || poiPhase === 'confirming');
+  const baseMapEditing = useBaseMapStore((s) => s.editing);
 
   const handleTranslate = () => {
     if (isTranslate) {
@@ -103,6 +105,7 @@ export function ViewerToolbar({ engine }: ViewerToolbarProps) {
                 variant={isPointSelect ? 'default' : 'ghost'}
                 size="icon"
                 className="h-7 w-7"
+                disabled={baseMapEditing}
                 onClick={() => {
                   if (isPointSelect) {
                     exitMode();
@@ -184,6 +187,7 @@ export function ViewerToolbar({ engine }: ViewerToolbarProps) {
                 variant={isTranslate ? 'default' : 'ghost'}
                 size="icon"
                 className="h-7 w-7"
+                disabled={baseMapEditing}
                 onClick={handleTranslate}
               >
                 <Move className="h-3.5 w-3.5" />
@@ -198,6 +202,7 @@ export function ViewerToolbar({ engine }: ViewerToolbarProps) {
                 variant={isRotate ? 'default' : 'ghost'}
                 size="icon"
                 className="h-7 w-7"
+                disabled={baseMapEditing}
                 onClick={handleRotate}
               >
                 <RotateCw className="h-3.5 w-3.5" />
@@ -243,6 +248,7 @@ export function ViewerToolbar({ engine }: ViewerToolbarProps) {
                   variant={isPoiActive ? 'default' : 'ghost'}
                   size="icon"
                   className="h-7 w-7"
+                  disabled={baseMapEditing}
                   onClick={handlePoiClick}
                 >
                   <Crosshair className="h-3.5 w-3.5" />
@@ -263,6 +269,7 @@ export function ViewerToolbar({ engine }: ViewerToolbarProps) {
                 variant={isAnnotate ? 'default' : 'ghost'}
                 size="icon"
                 className="h-7 w-7"
+                disabled={baseMapEditing}
                 onClick={() => isAnnotate ? exitMode() : enterAnnotateMode()}
               >
                 <Tags className="h-3.5 w-3.5" />

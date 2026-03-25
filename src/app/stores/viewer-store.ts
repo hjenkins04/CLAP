@@ -13,6 +13,7 @@ interface ViewerState {
   cameraProjection: CameraProjection;
   loadedFile: string | null;
   numVisiblePoints: number;
+  pointCloudVisible: boolean;
 
   setPointBudget: (budget: number) => void;
   setPointSize: (size: number) => void;
@@ -23,6 +24,7 @@ interface ViewerState {
   setCameraProjection: (projection: CameraProjection) => void;
   setLoadedFile: (file: string | null) => void;
   setNumVisiblePoints: (count: number) => void;
+  setPointCloudVisible: (visible: boolean) => void;
 }
 
 export const useViewerStore = create<ViewerState>()((set) => ({
@@ -35,6 +37,7 @@ export const useViewerStore = create<ViewerState>()((set) => ({
   cameraProjection: 'orthographic',
   loadedFile: null,
   numVisiblePoints: 0,
+  pointCloudVisible: true,
 
   setPointBudget: (pointBudget) => set({ pointBudget }),
   setPointSize: (pointSize) => set({ pointSize }),
@@ -45,4 +48,5 @@ export const useViewerStore = create<ViewerState>()((set) => ({
   setCameraProjection: (cameraProjection) => set({ cameraProjection }),
   setLoadedFile: (loadedFile) => set({ loadedFile }),
   setNumVisiblePoints: (numVisiblePoints) => set({ numVisiblePoints }),
+  setPointCloudVisible: (pointCloudVisible) => set({ pointCloudVisible }),
 }));

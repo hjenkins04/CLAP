@@ -25,6 +25,7 @@ import {
   type GeoPoint,
 } from '../world-frame/geo-utils';
 import { BaseMapPanel } from './base-map-panel';
+import { useGridStore } from '../grid/grid-store';
 
 // ── Persisted geo-reference data ─────────────────────────────────────
 
@@ -38,6 +39,11 @@ export interface GeoRefData {
     zoomLevel: number;
     flipX: boolean;
     flipZ: boolean;
+  };
+  grid?: {
+    visible: boolean;
+    size: number;
+    cellSize: number;
   };
 }
 
@@ -106,6 +112,11 @@ export class BaseMapPlugin implements ViewerPlugin {
       try { await this.saveGeoRef(); }
       finally { useBaseMapStore.getState().setSaving(false); }
     });
+
+    useBaseMapStore.getState()._setUndoRedo(
+      () => this.undoEdit(),
+      () => this.redoEdit(),
+    );
 
     const { transform, phase } = useWorldFrameStore.getState();
     if (transform && (phase === 'confirmed' || phase === 'preview')) {
@@ -409,6 +420,11 @@ export class BaseMapPlugin implements ViewerPlugin {
 
   private startEditing(): void {
     if (!this.ctx || !this.tileGroup || this.gizmo) return;
+
+    // Push initial snapshot so the first move can be undone
+    useBaseMapStore.getState().clearEditHistory();
+    this.pushCurrentSnapshot();
+
     this.gizmo = new TransformControls(this.ctx.getActiveCamera(), this.ctx.domElement);
     this.gizmo.setSpace('local');
     this.gizmo.attach(this.tileGroup);
@@ -421,6 +437,7 @@ export class BaseMapPlugin implements ViewerPlugin {
   private stopEditing(): void {
     if (!this.gizmo) return;
     this.syncGizmoToStore();
+    useBaseMapStore.getState().clearEditHistory();
     this.gizmo.removeEventListener('dragging-changed', this.onGizmoDragChanged);
     this.gizmo.removeEventListener('objectChange', this.onGizmoObjectChange);
     this.gizmo.detach();
@@ -439,14 +456,50 @@ export class BaseMapPlugin implements ViewerPlugin {
     this.gizmo.showZ = mode === 'translate';
   }
 
+  private isDragging = false;
+
   private readonly onGizmoDragChanged = (event: { value: boolean }): void => {
     if (this.ctx) this.ctx.controls.enabled = !event.value;
+    if (event.value) {
+      // Drag started
+      this.isDragging = true;
+    } else if (this.isDragging) {
+      // Drag ended — push the new position as a snapshot
+      this.isDragging = false;
+      this.pushCurrentSnapshot();
+    }
   };
 
   private readonly onGizmoObjectChange = (): void => {
     // Lock Y to tile elevation
     if (this.tileGroup) this.tileGroup.position.y = this.tileElevation;
   };
+
+  private pushCurrentSnapshot(): void {
+    if (!this.tileGroup) return;
+    useBaseMapStore.getState().pushEditSnapshot({
+      posX: this.tileGroup.position.x,
+      posZ: this.tileGroup.position.z,
+      rotY: this.tileGroup.rotation.y,
+    });
+  }
+
+  private applySnapshot(snap: { posX: number; posZ: number; rotY: number }): void {
+    if (!this.tileGroup) return;
+    this.tileGroup.position.x = snap.posX;
+    this.tileGroup.position.z = snap.posZ;
+    this.tileGroup.rotation.y = snap.rotY;
+  }
+
+  undoEdit(): void {
+    const snap = useBaseMapStore.getState().undoEdit();
+    if (snap) this.applySnapshot(snap);
+  }
+
+  redoEdit(): void {
+    const snap = useBaseMapStore.getState().redoEdit();
+    if (snap) this.applySnapshot(snap);
+  }
 
   private syncGizmoToStore(): void {
     if (!this.tileGroup) return;
@@ -482,12 +535,15 @@ export class BaseMapPlugin implements ViewerPlugin {
     if (!wf.anchor1) return;
     const bm = useBaseMapStore.getState();
 
+    const gr = useGridStore.getState();
+
     const data: GeoRefData = {
       anchor1: { geo: wf.anchor1.geo, pc: wf.anchor1.pc },
       anchor2: wf.anchor2 ? { geo: wf.anchor2.geo, pc: wf.anchor2.pc } : null,
       rotationOffset: wf.rotationOffset,
       translationOffset: wf.translationOffset,
       baseMap: { opacity: bm.opacity, zoomLevel: bm.zoomLevel, flipX: bm.flipX, flipZ: bm.flipZ },
+      grid: { visible: gr.visible, size: gr.size, cellSize: gr.cellSize },
     };
 
     const buf = new TextEncoder().encode(JSON.stringify(data, null, 2)).buffer;
@@ -532,6 +588,15 @@ export class BaseMapPlugin implements ViewerPlugin {
       bm.setZoomLevel(data.baseMap.zoomLevel);
       if (data.baseMap.flipX) bm.toggleFlipX();
       if (data.baseMap.flipZ) bm.toggleFlipZ();
+
+      // Restore grid settings
+      if (data.grid) {
+        const gr = useGridStore.getState();
+        gr.setVisible(data.grid.visible);
+        gr.setSize(data.grid.size);
+        gr.setCellSize(data.grid.cellSize);
+      }
+
       console.info('[CLAP] Loaded georef from', `${basePath}${GEOREF_FILENAME}`);
     } catch (err) {
       console.warn('[CLAP] Failed to parse georef.json:', err);

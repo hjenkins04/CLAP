@@ -81,6 +81,9 @@ export class PoiPlugin implements ViewerPlugin {
       if (state.previewPosition !== prev.previewPosition) {
         this.onPreviewChanged(state.previewPosition);
       }
+      if (state.markerVisible !== prev.markerVisible) {
+        if (this.marker) this.marker.visible = state.markerVisible && !!state.position;
+      }
     });
 
     // Subscribe to mode store — enter/exit POI mode
@@ -263,7 +266,7 @@ export class PoiPlugin implements ViewerPlugin {
 
     if (position) {
       this.marker.position.set(position.x, position.y, position.z);
-      this.marker.visible = true;
+      this.marker.visible = usePoiStore.getState().markerVisible;
 
       if (this.marker.scale.x < 0.01) {
         this.marker.scale.setScalar(1);

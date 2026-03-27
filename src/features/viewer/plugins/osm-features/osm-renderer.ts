@@ -5,11 +5,9 @@ import {
   Float32BufferAttribute,
   LineBasicMaterial,
   Mesh,
-  ShapeGeometry,
   MeshBasicMaterial,
   DoubleSide,
-  Shape,
-  Vector2,
+  ShapeUtils,
 } from 'three';
 import type { WorldFrameTransform } from '../world-frame/geo-utils';
 import { geoToMeters } from '../world-frame/geo-utils';
@@ -237,39 +235,55 @@ export function buildPolygonGeometry(
   outline.renderOrder = 2;
   group.add(outline);
 
-  // Filled polygon — ShapeGeometry at average elevation
-  const shape = new Shape();
-  shape.moveTo(meters[0].x, meters[0].y);
-  for (let i = 1; i < meters.length; i++) {
-    shape.lineTo(meters[i].x, meters[i].y);
-  }
-  shape.closePath();
-
+  // Filled polygon — triangulate directly in XZ plane using Earcut
+  // This avoids ShapeGeometry + rotateX which flips the Z axis.
+  const contour = meters.map((pt) => [pt.x, pt.y]);
+  const holes: number[][][] = [];
   for (let r = 1; r < coords.length; r++) {
     const holePts = coordsToMeters(coords[r], transform.refGeo);
     if (holePts.length < 3) continue;
-    const hole = new Shape();
-    hole.moveTo(holePts[0].x, holePts[0].y);
-    for (let i = 1; i < holePts.length; i++) {
-      hole.lineTo(holePts[i].x, holePts[i].y);
-    }
-    hole.closePath();
-    shape.holes.push(hole);
+    holes.push(holePts.map((pt) => [pt.x, pt.y]));
   }
 
-  const fillGeo = new ShapeGeometry(shape);
-  fillGeo.rotateX(-Math.PI / 2);
-  const fillMat = new MeshBasicMaterial({
-    color,
-    transparent: true,
-    opacity: opacity * 0.3,
-    side: DoubleSide,
-    depthWrite: false,
-  });
-  const fill = new Mesh(fillGeo, fillMat);
-  fill.position.y = avgY;
-  fill.renderOrder = 0;
-  group.add(fill);
+  // Flatten for earcut: contour + holes
+  const allPts: number[][] = [...contour];
+  const holeIndices: number[] = [];
+  for (const hole of holes) {
+    holeIndices.push(allPts.length);
+    allPts.push(...hole);
+  }
+
+  const flat = allPts.flat();
+  const triIndices = ShapeUtils.triangulateShape(
+    allPts.map(([x, y]) => ({ x, y })) as never,
+    holes.map((h) => h.map(([x, y]) => ({ x, y }))) as never,
+  );
+
+  if (triIndices.length > 0) {
+    const positions: number[] = [];
+    for (const pt of allPts) {
+      positions.push(pt[0], avgY, pt[1]); // x, Y=elevation, z=north
+    }
+    const fillGeo = new BufferGeometry();
+    fillGeo.setAttribute('position', new Float32BufferAttribute(positions, 3));
+    const idxFlat: number[] = [];
+    for (const [a, b, c] of triIndices) {
+      idxFlat.push(a, b, c);
+    }
+    fillGeo.setIndex(idxFlat);
+    fillGeo.computeVertexNormals();
+
+    const fillMat = new MeshBasicMaterial({
+      color,
+      transparent: true,
+      opacity: opacity * 0.3,
+      side: DoubleSide,
+      depthWrite: false,
+    });
+    const fill = new Mesh(fillGeo, fillMat);
+    fill.renderOrder = 0;
+    group.add(fill);
+  }
 
   return group;
 }

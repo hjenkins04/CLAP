@@ -134,6 +134,8 @@ export class ViewCubePlugin implements ViewerPlugin {
   private ringCanvas: HTMLCanvasElement | null = null;
   private homeBtn: HTMLButtonElement | null = null;
   private lockBtn: HTMLButtonElement | null = null;
+  private viewBtn: HTMLButtonElement | null = null;
+  private is2D = false;
   private unsubLock: (() => void) | null = null;
 
   // Mini 3D scene
@@ -256,12 +258,14 @@ export class ViewCubePlugin implements ViewerPlugin {
     this.unsubLock?.();
     this.unsubLock = null;
 
+    this.viewBtn?.remove();
     this.wrapper?.remove();
     this.wrapper = null;
     this.cubeCanvas = null;
     this.ringCanvas = null;
     this.homeBtn = null;
     this.lockBtn = null;
+    this.viewBtn = null;
     this.cubeScene = null;
     this.cubeCam = null;
     this.cubeGroup = null;
@@ -367,6 +371,38 @@ export class ViewCubePlugin implements ViewerPlugin {
     });
     this.lockBtn.addEventListener('click', this.onLockClick);
     this.wrapper.appendChild(this.lockBtn);
+
+    // 2D/3D toggle button — placed outside the wrapper, directly in the container
+    this.viewBtn = document.createElement('button');
+    this.viewBtn.textContent = '2D';
+    this.viewBtn.title = 'Switch to 2D top-down view';
+    this.viewBtn.style.cssText = `
+      position: absolute;
+      top: ${OFFSET_TOP + TOTAL_SIZE + HOME_BTN_SIZE + 8}px;
+      right: ${OFFSET_RIGHT + (TOTAL_SIZE - HOME_BTN_SIZE * 2) / 2}px;
+      width: ${HOME_BTN_SIZE * 2}px; height: ${HOME_BTN_SIZE}px;
+      border: none; border-radius: 6px;
+      background: #1f2937; color: #9ca3af;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; pointer-events: auto;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+      transition: background 0.15s, color 0.15s;
+      z-index: 10;
+    `;
+    this.viewBtn.addEventListener('mouseenter', () => {
+      if (this.viewBtn && !this.is2D) {
+        this.viewBtn.style.background = '#2563eb';
+        this.viewBtn.style.color = '#ffffff';
+      }
+    });
+    this.viewBtn.addEventListener('mouseleave', () => {
+      if (this.viewBtn && !this.is2D) {
+        this.viewBtn.style.background = '#1f2937';
+        this.viewBtn.style.color = '#9ca3af';
+      }
+    });
+    this.viewBtn.addEventListener('click', this.onViewToggle);
+    container.appendChild(this.viewBtn);
 
     // Subscribe to camera lock changes to update button style + controls
     let prevLocked = useViewerModeStore.getState().cameraLocked;
@@ -863,6 +899,58 @@ export class ViewCubePlugin implements ViewerPlugin {
       this.lockBtn.title = locked ? 'Unlock camera' : 'Lock camera orientation';
       this.lockBtn.style.background = locked ? '#2563eb' : '#1f2937';
       this.lockBtn.style.color = locked ? '#ffffff' : '#9ca3af';
+    }
+  }
+
+  // ── 2D / 3D Toggle ─────────────────────────────────────────────────
+
+  private readonly onViewToggle = (e: MouseEvent): void => {
+    e.stopPropagation();
+    if (this.is2D) {
+      this.enterMode3D();
+    } else {
+      this.enterMode2D();
+    }
+  };
+
+  private enterMode2D(): void {
+    if (!this.ctx) return;
+    this.is2D = true;
+
+    // Snap to top-down
+    this.snapToTopDown();
+
+    // Lock rotation but keep pan + zoom
+    const controls = this.ctx.controls;
+    controls.enableRotate = false;
+
+    this.updateViewBtn();
+  }
+
+  private enterMode3D(): void {
+    if (!this.ctx) return;
+    this.is2D = false;
+
+    // Restore rotation (unless camera is globally locked)
+    const locked = useViewerModeStore.getState().cameraLocked;
+    const controls = this.ctx.controls;
+    controls.enableRotate = !locked;
+
+    this.updateViewBtn();
+  }
+
+  private updateViewBtn(): void {
+    if (!this.viewBtn) return;
+    if (this.is2D) {
+      this.viewBtn.textContent = '3D';
+      this.viewBtn.title = 'Switch to 3D view';
+      this.viewBtn.style.background = '#2563eb';
+      this.viewBtn.style.color = '#ffffff';
+    } else {
+      this.viewBtn.textContent = '2D';
+      this.viewBtn.title = 'Switch to 2D top-down view';
+      this.viewBtn.style.background = '#1f2937';
+      this.viewBtn.style.color = '#9ca3af';
     }
   }
 

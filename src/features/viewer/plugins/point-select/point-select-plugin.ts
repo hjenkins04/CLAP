@@ -9,6 +9,8 @@ import {
 import { ClipMode } from 'potree-core';
 import type { ViewerPlugin, ViewerPluginContext } from '../../types';
 import { useViewerModeStore } from '@/app/stores';
+import { makePointId } from '../../services/point-cloud-editor/point-id';
+import type { PointId } from '../../services/point-cloud-editor/types';
 import { usePointSelectStore } from './point-select-store';
 
 /** Stored selection frustum (NDC bounds + VP matrix at capture time) */
@@ -42,6 +44,7 @@ export class PointSelectPlugin implements ViewerPlugin {
   private selectionFrustum: SelectionFrustum | null = null;
   private processedNodes = new Set<string>();
   private selectedPositions: number[] = [];
+  private selectedPointIds: PointId[] = [];
 
   // Highlight overlay
   private highlightPoints: Points | null = null;
@@ -106,9 +109,14 @@ export class PointSelectPlugin implements ViewerPlugin {
     this.selectionFrustum = null;
     this.processedNodes.clear();
     this.selectedPositions = [];
+    this.selectedPointIds = [];
     this.clearHighlight();
     usePointSelectStore.getState().setSelectedCount(0);
     usePointSelectStore.getState().setPhase('selecting');
+  }
+
+  getSelectedPointIds(): PointId[] {
+    return [...this.selectedPointIds];
   }
 
   // --- Pointer events ---
@@ -269,6 +277,7 @@ export class PointSelectPlugin implements ViewerPlugin {
     const m = vpMatrix.elements;
 
     const kept: number[] = [];
+    const keptIds: PointId[] = [];
     const len = this.selectedPositions.length;
 
     for (let i = 0; i < len; i += 3) {
@@ -289,9 +298,11 @@ export class PointSelectPlugin implements ViewerPlugin {
       }
 
       kept.push(wx, wy, wz);
+      keptIds.push(this.selectedPointIds[i / 3]);
     }
 
     this.selectedPositions = kept;
+    this.selectedPointIds = keptIds;
     this.rebuildHighlight();
     const pointCount = kept.length / 3;
     usePointSelectStore.getState().setSelectedCount(pointCount);
@@ -363,6 +374,7 @@ export class PointSelectPlugin implements ViewerPlugin {
             }
 
             this.selectedPositions.push(wx, wy, wz);
+            this.selectedPointIds.push(makePointId(nodeKey, i));
           }
         }
       }

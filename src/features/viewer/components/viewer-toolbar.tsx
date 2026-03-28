@@ -11,6 +11,7 @@ import {
   MousePointer2,
   Tags,
 } from 'lucide-react';
+import { useHotkey } from '@tanstack/react-hotkeys';
 import {
   Button,
   Tooltip,
@@ -36,6 +37,10 @@ interface ViewerToolbarProps {
 export function ViewerToolbar({ engine }: ViewerToolbarProps) {
   const { canUndo, canRedo, dirty, saving, undo, redo, save } =
     useEditorState(engine);
+
+  useHotkey('ctrl+z', (e) => { e.preventDefault(); undo(); }, { enabled: canUndo });
+  useHotkey('ctrl+y', (e) => { e.preventDefault(); redo(); }, { enabled: canRedo });
+  useHotkey('ctrl+shift+z', (e) => { e.preventDefault(); redo(); }, { enabled: canRedo });
 
   const { mode, transformSubMode, enterTransformMode, enterPoiMode, enterPointSelectMode, enterAnnotateMode, exitMode } =
     useViewerModeStore();

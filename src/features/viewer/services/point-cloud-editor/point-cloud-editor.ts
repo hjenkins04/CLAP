@@ -175,6 +175,16 @@ export class PointCloudEditor {
     const op = this.journal.undo();
     if (!op) return;
     this.invalidateFlatCache();
+
+    // Immediately revert the visual effect of the undone operation.
+    // rebuildVisuals() alone won't restore GPU buffers for nodes whose
+    // only edit was the undone op — applyImmediateMany handles that gap.
+    if (op.type === 'SetClassification') {
+      this.visualUpdater.applyImmediateMany(op.pointIds, 'classification', op.previousValues);
+    } else if (op.type === 'SetIntensity') {
+      this.visualUpdater.applyImmediateMany(op.pointIds, 'intensity', op.previousValues);
+    }
+
     this.rebuildVisuals();
     this.applyGlobalTransformFromFlattened();
     this.emit('undoRedo');

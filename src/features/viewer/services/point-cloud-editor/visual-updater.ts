@@ -88,6 +88,47 @@ export class VisualUpdater {
   }
 
   /**
+   * Apply per-point varying values to loaded geometry. Used when undoing
+   * an operation where each point needs its own distinct previous value restored.
+   */
+  applyImmediateMany(
+    pointIds: PointId[],
+    attribute: 'classification' | 'intensity',
+    values: number[],
+  ): void {
+    if (!this.pco) return;
+
+    const nodeGroups = new Map<string, { pointIndex: number; value: number }[]>();
+    for (let i = 0; i < pointIds.length; i++) {
+      const { nodeName, pointIndex } = parsePointId(pointIds[i]);
+      let arr = nodeGroups.get(nodeName);
+      if (!arr) {
+        arr = [];
+        nodeGroups.set(nodeName, arr);
+      }
+      arr.push({ pointIndex, value: values[i] });
+    }
+
+    for (const node of this.pco.visibleNodes) {
+      const entries = nodeGroups.get(node.geometryNode.name);
+      if (!entries) continue;
+
+      const geometry = node.sceneNode?.geometry;
+      if (!geometry) continue;
+
+      const attr = geometry.getAttribute(attribute);
+      if (!attr) continue;
+
+      for (const { pointIndex, value } of entries) {
+        if (pointIndex < attr.count) {
+          attr.setX(pointIndex, value);
+        }
+      }
+      attr.needsUpdate = true;
+    }
+  }
+
+  /**
    * Called each frame. Checks for newly loaded nodes and patches them
    * with any pending edits from the flattened state.
    */

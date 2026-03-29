@@ -1,9 +1,9 @@
 import {
-  PlaneGeometry,
   Mesh,
   MeshBasicMaterial,
   DoubleSide,
-  BufferAttribute,
+  BufferGeometry,
+  Float32BufferAttribute,
 } from 'three';
 import { electronFetch } from './electron-fetch';
 
@@ -25,9 +25,12 @@ export interface DemData {
 /**
  * DEM terrain service — loads a JSON DEM and provides:
  * - A Three.js mesh for raycasting (invisible by default)
- * - Elevation lookup at any (x,y) in local space
+ * - Elevation lookup at any (x, z) in Three.js Y-up world space
  *
- * The mesh lives in LiDAR local space (Z-up), same as point cloud geometry.
+ * Coordinate convention (Y-up, matches pre-transformed point clouds):
+ *   DEM JSON xMin/xMax  = east  range  → Three.js X
+ *   DEM JSON yMin/yMax  = north range  → Three.js Z
+ *   DEM JSON elevation  = elevation    → Three.js Y
  */
 export class DemTerrain {
   readonly data: DemData;
@@ -47,80 +50,76 @@ export class DemTerrain {
   }
 
   /**
-   * Build a PlaneGeometry in the XY plane (Z = elevation) for local LiDAR space.
-   * The geometry has (cols) x (rows) vertices with Z values from the DEM grid.
+   * Build a mesh in Three.js Y-up world space.
+   *
+   * Vertices are placed at cell centres:
+   *   position.x = xMin + (col + 0.5) * cellSize   (east)
+   *   position.y = elevation[row][col]              (up)
+   *   position.z = yMin + (row + 0.5) * cellSize   (north, using JSON "y" axis)
    */
   private static buildMesh(dem: DemData): Mesh {
-    const { cols, rows, xMin, yMin, xMax, yMax, elevation } = dem;
-    const width = xMax - xMin;
-    const height = yMax - yMin;
+    const { cols, rows, xMin, yMin, cellSize, elevation } = dem;
 
-    // PlaneGeometry(width, height, widthSegments, heightSegments)
-    // Creates a plane in XY with (widthSegments+1) x (heightSegments+1) vertices
-    const geo = new PlaneGeometry(width, height, cols - 1, rows - 1);
+    const vertCount = cols * rows;
+    const positions = new Float32Array(vertCount * 3);
 
-    // PlaneGeometry creates vertices in X=[−w/2, w/2], Y=[h/2, −h/2], Z=0
-    // We need to:
-    //   1. Offset X/Y so they match [xMin, xMax] / [yMin, yMax]
-    //   2. Set Z from the DEM elevation grid
-    const pos = geo.getAttribute('position') as BufferAttribute;
-    const centerX = (xMin + xMax) / 2;
-    const centerY = (yMin + yMax) / 2;
-
-    for (let iy = 0; iy < rows; iy++) {
-      for (let ix = 0; ix < cols; ix++) {
-        const vertIdx = iy * cols + ix;
-        // PlaneGeometry goes top-to-bottom (Y: h/2 → −h/2),
-        // but our grid row 0 = yMin (bottom). So flip the row index.
-        const demRow = rows - 1 - iy;
-        const z = elevation[demRow][ix];
-
-        // Shift from centered coordinates to local LiDAR coordinates
-        pos.setX(vertIdx, pos.getX(vertIdx) + centerX);
-        pos.setY(vertIdx, pos.getY(vertIdx) + centerY);
-        pos.setZ(vertIdx, z);
+    for (let ir = 0; ir < rows; ir++) {
+      for (let ic = 0; ic < cols; ic++) {
+        const vi = ir * cols + ic;
+        positions[vi * 3 + 0] = xMin + (ic + 0.5) * cellSize;  // east  → X
+        positions[vi * 3 + 1] = elevation[ir][ic];               // elev  → Y
+        positions[vi * 3 + 2] = yMin + (ir + 0.5) * cellSize;   // north → Z
       }
     }
 
-    pos.needsUpdate = true;
+    const indices: number[] = [];
+    for (let ir = 0; ir < rows - 1; ir++) {
+      for (let ic = 0; ic < cols - 1; ic++) {
+        const a = ir * cols + ic;
+        const b = a + 1;
+        const c = a + cols;
+        const d = c + 1;
+        indices.push(a, b, d, a, d, c);
+      }
+    }
+
+    const geo = new BufferGeometry();
+    geo.setIndex(indices);
+    geo.setAttribute('position', new Float32BufferAttribute(positions, 3));
     geo.computeVertexNormals();
     geo.computeBoundingBox();
     geo.computeBoundingSphere();
 
-    const mat = new MeshBasicMaterial({
-      visible: false, // invisible — only used for raycasting
-      side: DoubleSide,
-    });
-
+    const mat = new MeshBasicMaterial({ visible: false, side: DoubleSide });
     const mesh = new Mesh(geo, mat);
     mesh.name = 'dem-terrain';
-    // Don't render at all — we only use it for raycasting
     mesh.layers.set(2);
     return mesh;
   }
 
   /**
-   * Look up elevation at a given (x, y) in local LiDAR space.
-   * Uses bilinear interpolation between grid cells.
-   * Returns null if outside the DEM extent.
+   * Look up the elevation (Three.js Y) at a ground-plane position.
+   *
+   * @param x  Three.js X — east offset in metres
+   * @param z  Three.js Z — north offset in metres (stored as "y" in the DEM JSON)
+   * Returns null if the position is outside the DEM extent.
    */
-  getElevation(x: number, y: number): number | null {
-    return this.sampleElevation(x, y, false);
+  getElevation(x: number, z: number): number | null {
+    return this.sampleElevation(x, z, false);
   }
 
   /**
-   * Same as getElevation but clamps to the nearest edge cell instead of
-   * returning null for out-of-bounds coordinates.
+   * Same as getElevation but clamps out-of-bounds positions to the nearest edge cell.
    */
-  getElevationClamped(x: number, y: number): number {
-    return this.sampleElevation(x, y, true) ?? 0;
+  getElevationClamped(x: number, z: number): number {
+    return this.sampleElevation(x, z, true) ?? 0;
   }
 
-  private sampleElevation(x: number, y: number, clamp: boolean): number | null {
+  private sampleElevation(x: number, z: number, clamp: boolean): number | null {
     const { xMin, yMin, cellSize, cols, rows, elevation } = this.data;
-
+    // xMin = east min, yMin = north min (JSON "y" axis = Three.js Z)
     let gx = (x - xMin) / cellSize - 0.5;
-    let gy = (y - yMin) / cellSize - 0.5;
+    let gy = (z - yMin) / cellSize - 0.5;
 
     if (!clamp) {
       if (gx < 0 || gy < 0 || gx >= cols - 1 || gy >= rows - 1) {

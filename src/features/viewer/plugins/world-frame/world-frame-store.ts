@@ -67,6 +67,8 @@ interface WorldFrameState {
   confirmWorldFrame: () => void;
   resetWorldFrame: () => void;
   recomputeTransform: () => void;
+  /** Auto-confirm the world frame from a known CRS geo-reference point (origin at PC {0,0,0}). */
+  autoConfirmFromCrs: (refGeo: GeoPoint) => void;
 }
 
 /**
@@ -178,6 +180,30 @@ export const useWorldFrameStore = create<WorldFrameState>()(
       recomputeTransform: () => {
         const state = get();
         set({ transform: buildTransform(state) });
+      },
+
+      autoConfirmFromCrs: (refGeo: GeoPoint) => {
+        // The pre-transformed point cloud has its origin at (0,0,0) in Three.js
+        // space, which corresponds to refGeo in the real world.
+        // East = +X, North = +Z, elevation = +Y — no rotation needed.
+        const anchor1: WorldFrameAnchor = { geo: refGeo, pc: { x: 0, y: 0, z: 0 } };
+        const transform: WorldFrameTransform = {
+          refGeo,
+          translation: { x: 0, z: 0 },
+          rotation: 0,
+        };
+        set({
+          phase: 'confirmed',
+          geoPoint1: refGeo,
+          geoPoint2: null,
+          anchor1,
+          anchor2: null,
+          rotationOffset: 0,
+          translationOffset: { x: 0, z: 0 },
+          transform,
+          flipX: false,
+          flipZ: false,
+        });
       },
     }),
     {

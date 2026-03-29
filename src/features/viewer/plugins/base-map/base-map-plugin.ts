@@ -24,6 +24,7 @@ import {
   computeWorldFrameTransform,
   type WorldFrameTransform,
   type GeoPoint,
+  type CrsInfo,
 } from '../world-frame/geo-utils';
 import { BaseMapPanel } from './base-map-panel';
 import { useGridStore } from '../grid/grid-store';
@@ -172,7 +173,11 @@ export class BaseMapPlugin implements ViewerPlugin {
       this.tileElevation = center.y - minDim / 2 + zOff;
     }
 
-    this.loadGeoRef().then(() => this.updateTiles());
+    // Always try both: georef.json for full manual calibration,
+    // crs.json for auto world-frame + base-map visibility.
+    this.loadGeoRef()
+      .then(() => this.loadCrs())
+      .then(() => this.updateTiles());
   }
 
   dispose(): void {
@@ -484,11 +489,10 @@ export class BaseMapPlugin implements ViewerPlugin {
       // World → DEM local (editor transform-group space)
       const demLocal = pos.clone().applyMatrix4(invTg);
 
-      // DEM uses X/Y horizontal, Z = elevation.
-      // Use clamped lookup so out-of-bounds vertices get the nearest edge elevation.
-      const elev = dem.getElevationClamped(demLocal.x, demLocal.y);
+      // Y-up convention: DEM uses (x=east, z=north) for lookup, elevation → Y.
+      const elev = dem.getElevationClamped(demLocal.x, demLocal.z);
       const zOff = useWorldFrameStore.getState().zOffset;
-      demLocal.z = elev + zOff;
+      demLocal.y = elev + zOff;
       // DEM local → world → tile-group local
       demLocal.applyMatrix4(tg.matrixWorld);
       demLocal.applyMatrix4(invTile);
@@ -682,6 +686,44 @@ export class BaseMapPlugin implements ViewerPlugin {
       console.info('[CLAP] Loaded georef from', `${basePath}${GEOREF_FILENAME}`);
     } catch (err) {
       console.warn('[CLAP] Failed to parse georef.json:', err);
+    }
+  }
+
+  /**
+   * Read crs.json (written by preprocess.py) and auto-configure the world frame.
+   * Only called when no georef.json was found for this point cloud.
+   */
+  async loadCrs(): Promise<void> {
+    const basePath = this.ctx?.getEditor().getBasePath();
+    if (!basePath) return;
+
+    let buffer: ArrayBuffer | null = null;
+    if (window.electron) {
+      buffer = await window.electron.invoke<ArrayBuffer | null>('read-file', {
+        path: `${basePath}crs.json`,
+      });
+    } else {
+      try {
+        const resp = await fetch(`${basePath}crs.json?t=${Date.now()}`);
+        if (resp.ok) buffer = await resp.arrayBuffer();
+      } catch { /* not found */ }
+    }
+    if (!buffer) return;
+
+    try {
+      const crs: CrsInfo = JSON.parse(new TextDecoder().decode(buffer));
+      if (crs.type === 'utm' && crs.refLngLat) {
+        const refGeo: GeoPoint = { lng: crs.refLngLat.lng, lat: crs.refLngLat.lat };
+        // Only set world frame anchors if not already confirmed (e.g. from georef.json or localStorage)
+        if (useWorldFrameStore.getState().phase !== 'confirmed') {
+          useWorldFrameStore.getState().autoConfirmFromCrs(refGeo);
+        }
+        // Always enable the base map when a known CRS is present
+        useBaseMapStore.getState().setVisible(true);
+        console.info('[CLAP] CRS detected — base map enabled:', crs.epsg, refGeo);
+      }
+    } catch (err) {
+      console.warn('[CLAP] Failed to parse crs.json:', err);
     }
   }
 }

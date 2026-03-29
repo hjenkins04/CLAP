@@ -94,8 +94,15 @@ export function WorldFrameMapModal(_props: WorldFrameMapModalProps) {
         },
         layers: [{ id: 'imagery', type: 'raster', source: 'esri-imagery' }],
       },
-      center: [-79.68, 47.5], // Default to Ontario area
-      zoom: 12,
+      // If a world frame (e.g. from crs.json auto-detection) is already confirmed,
+      // center the map on the known reference location and zoom in close.
+      center: ((): [number, number] => {
+        const existing = useWorldFrameStore.getState().transform;
+        return existing?.refGeo
+          ? [existing.refGeo.lng, existing.refGeo.lat]
+          : [-79.68, 47.5];
+      })(),
+      zoom: useWorldFrameStore.getState().transform?.refGeo ? 15 : 12,
     });
 
     map.addControl(new maplibregl.NavigationControl(), 'top-left');

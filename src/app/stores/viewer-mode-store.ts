@@ -73,7 +73,7 @@ export const useViewerModeStore = create<ViewerModeState>()(
 
       isCommandPanelExpanded: () => {
         const { mode, commandPanelExpanded } = get();
-        return commandPanelExpanded[mode] ?? false;
+        return commandPanelExpanded[mode] ?? true;
       },
 
       setCommandPanelExpanded: (expanded) => {

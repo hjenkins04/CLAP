@@ -216,9 +216,9 @@ export class OsmFeaturesPlugin implements ViewerPlugin {
       const world = new Vector3(geoX, 0, geoZ).applyMatrix4(groupMat);
       // World → DEM-local
       const demLocal = world.applyMatrix4(invTg);
-      // Look up elevation (DEM uses X/Y horizontal, Z = elevation)
-      const elev = dem.getElevationClamped(demLocal.x, demLocal.y);
-      demLocal.z = elev + zOffset;
+      // Y-up convention: DEM uses (x=east, z=north), elevation → Y
+      const elev = dem.getElevationClamped(demLocal.x, demLocal.z);
+      demLocal.y = elev + zOffset;
       // DEM-local → world → group-local
       demLocal.applyMatrix4(tgMat);
       demLocal.applyMatrix4(invGroup);

@@ -693,12 +693,17 @@ export class RoiSelectionPlugin implements ViewerPlugin {
     this.editGroup.matrix.copy(tg.matrixWorld);
     this.ctx.scene.add(this.editGroup);
 
-    // Position anchor at shape center in local space
+    // Position anchor at shape center in Three.js local space
     this.shapeAnchor = new Object3D();
     const center = getShapeCenter(pending);
     const centerZ = getShapeCenterZ(pending);
-    const z = centerZ !== 0 ? centerZ : this.getDrawZ(center.x, center.y);
-    this.shapeAnchor.position.set(center.x, center.y, z);
+    // centerZ is elevation in shape space; center.x=east, center.y=north
+    const elev = centerZ !== 0 ? centerZ : this.getDrawZ(center.x, center.y);
+    if (this.isLocalYUp()) {
+      this.shapeAnchor.position.set(center.x, elev, center.y);
+    } else {
+      this.shapeAnchor.position.set(center.x, center.y, elev);
+    }
     this.editGroup.add(this.shapeAnchor);
 
     // TransformControls gizmo
@@ -748,9 +753,13 @@ export class RoiSelectionPlugin implements ViewerPlugin {
     if (!pending) return;
     const center = getShapeCenter(pending);
     const centerZ = getShapeCenterZ(pending);
-    // 3D shapes store absolute Z in PCO local space; 2D shapes use DEM
-    const z = centerZ !== 0 ? centerZ : this.getDrawZ(center.x, center.y);
-    this.shapeAnchor.position.set(center.x, center.y, z);
+    // 3D shapes store absolute elevation in shape space; 2D shapes use DEM
+    const elev = centerZ !== 0 ? centerZ : this.getDrawZ(center.x, center.y);
+    if (this.isLocalYUp()) {
+      this.shapeAnchor.position.set(center.x, elev, center.y);
+    } else {
+      this.shapeAnchor.position.set(center.x, center.y, elev);
+    }
     this.shapeAnchor.rotation.set(0, 0, 0);
   }
 
@@ -763,7 +772,10 @@ export class RoiSelectionPlugin implements ViewerPlugin {
       this.originalShape = useRoiStore.getState().pendingShape;
       if (this.shapeAnchor) {
         this.originalAnchorPos.copy(this.shapeAnchor.position);
-        this.originalAnchorRotZ = this.shapeAnchor.rotation.z;
+        // Horizontal rotation axis: Y for Y-up local space, Z for Z-up
+        this.originalAnchorRotZ = this.isLocalYUp()
+          ? this.shapeAnchor.rotation.y
+          : this.shapeAnchor.rotation.z;
       }
     } else {
       // Drag ended — re-sync anchor to updated shape center
@@ -776,24 +788,33 @@ export class RoiSelectionPlugin implements ViewerPlugin {
     if (!this.originalShape || !this.shapeAnchor) return;
     const store = useRoiStore.getState();
     const subMode = store.editSubMode;
-    const dx = this.shapeAnchor.position.x - this.originalAnchorPos.x;
-    const dy = this.shapeAnchor.position.y - this.originalAnchorPos.y;
-    const dz = this.shapeAnchor.position.z - this.originalAnchorPos.z;
+    const yUp = this.isLocalYUp();
+    // Anchor position delta in Three.js local space
+    const dpx = this.shapeAnchor.position.x - this.originalAnchorPos.x;
+    const dpy = this.shapeAnchor.position.y - this.originalAnchorPos.y;
+    const dpz = this.shapeAnchor.position.z - this.originalAnchorPos.z;
+    // Remap to shape-space deltas: (dEast, dNorth, dElev)
+    // Y-up local: (x=east, y=elev, z=north) → dEast=dpx, dNorth=dpz, dElev=dpy
+    // Z-up local: (x=east, y=north, z=elev) → dEast=dpx, dNorth=dpy, dElev=dpz
+    const dEast = dpx;
+    const dNorth = yUp ? dpz : dpy;
+    const dElev = yUp ? dpy : dpz;
 
     if (subMode === 'points') {
-      // Move only the selected control points
+      // Move only the selected control points (east/north only)
       const updated = moveSelectedPoints(
         this.originalShape,
         store.selectedPoints,
-        dx,
-        dy,
+        dEast,
+        dNorth,
       );
       store.setPendingShape(updated);
     } else if (subMode === 'translate') {
-      store.setPendingShape(translateShape(this.originalShape, dx, dy, dz));
+      store.setPendingShape(translateShape(this.originalShape, dEast, dNorth, dElev));
     } else if (subMode === 'rotate') {
-      const deltaRot =
-        this.shapeAnchor.rotation.z - this.originalAnchorRotZ;
+      // Rotation around the elevation axis: .y for Y-up, .z for Z-up
+      const deltaRot = (yUp ? this.shapeAnchor.rotation.y : this.shapeAnchor.rotation.z)
+        - this.originalAnchorRotZ;
       const center = getShapeCenter(this.originalShape);
       store.setPendingShape(
         rotateShapeZ(this.originalShape, deltaRot, center.x, center.y),
@@ -867,7 +888,12 @@ export class RoiSelectionPlugin implements ViewerPlugin {
     cy /= count;
     cz /= count;
 
-    this.shapeAnchor.position.set(cx, cy, hasExplicitZ ? cz : this.getDrawZ(cx, cy));
+    const elev = hasExplicitZ ? cz : this.getDrawZ(cx, cy);
+    if (this.isLocalYUp()) {
+      this.shapeAnchor.position.set(cx, elev, cy);
+    } else {
+      this.shapeAnchor.position.set(cx, cy, elev);
+    }
     this.shapeAnchor.rotation.set(0, 0, 0);
     this.editGizmo.visible = true;
     this.editGizmo.enabled = true;
@@ -1084,27 +1110,55 @@ export class RoiSelectionPlugin implements ViewerPlugin {
     }
   }
 
+  // ---- Coordinate convention detection ----
+
+  /**
+   * Detect whether the PCO local space is Y-up (X=east, Y=elevation, Z=north)
+   * or Z-up (X=east, Y=north, Z=elevation). This is determined by checking
+   * which local axis the world "up" vector (0,1,0) maps to via the inverse
+   * of the transform group's world matrix.
+   *
+   * Y-up (pre-transformed clouds, no GlobalTransform): localUp.y ≈ 1
+   * Z-up (GlobalTransform has -90° X rotation):        localUp.z ≈ 1
+   */
+  private isLocalYUp(): boolean {
+    if (!this.ctx) return false;
+    const tg = this.ctx.getEditor().getTransformGroup();
+    tg.updateMatrixWorld(true);
+    const inverseMat = tg.matrixWorld.clone().invert();
+    const localUp = new Vector3(0, 1, 0).transformDirection(inverseMat).normalize();
+    return Math.abs(localUp.y) > 0.5;
+  }
+
   // ---- Raycasting ----
 
   /**
-   * Get the draw-plane Z for a given (x,y) in local space.
+   * Get the draw-plane elevation for a given (east, north) in shape space.
    * Uses DEM elevation when available, otherwise falls back to bbox midpoint.
+   * The bbox fallback reads the elevation axis: Y for Y-up, Z for Z-up.
    */
-  private getDrawZ(x: number, y: number): number {
+  private getDrawZ(east: number, north: number): number {
     const dem = this.ctx?.getDem();
     if (dem) {
-      const z = dem.getElevation(x, y);
+      const z = dem.getElevation(east, north);
       if (z !== null) return z;
     }
-    return this.localBBox
-      ? (this.localBBox.min.z + this.localBBox.max.z) / 2
-      : 0;
+    if (this.localBBox) {
+      return this.isLocalYUp()
+        ? (this.localBBox.min.y + this.localBBox.max.y) / 2
+        : (this.localBBox.min.z + this.localBBox.max.z) / 2;
+    }
+    return 0;
   }
 
   private raycastDrawPlane(e: PointerEvent): Vector3 | null {
     return this.raycastAtScreen(e.clientX, e.clientY);
   }
 
+  /**
+   * Cast a screen-space ray and return the intersection point in shape space:
+   * x=east, y=north, z=elevation — regardless of the PCO's Y-up/Z-up convention.
+   */
   private raycastAtScreen(clientX: number, clientY: number): Vector3 | null {
     if (!this.ctx || !this.localBBox) return null;
 
@@ -1123,42 +1177,74 @@ export class RoiSelectionPlugin implements ViewerPlugin {
     const worldMat = tg.matrixWorld;
     const inverseMat = worldMat.clone().invert();
 
-    // Transform ray into local space
+    // Transform ray into PCO local space
     const localOrigin = raycaster.ray.origin.clone().applyMatrix4(inverseMat);
     const localDir = raycaster.ray.direction
       .clone()
       .transformDirection(inverseMat)
       .normalize();
 
-    // First pass: intersect flat plane at DEM mean or bbox midpoint
-    // to get an approximate (x,y), then refine Z from the DEM.
-    const zGuess = this.getDrawZ(0, 0);
-    if (Math.abs(localDir.z) < 1e-8) return null;
-    const t = (zGuess - localOrigin.z) / localDir.z;
-    if (t < 0) return null;
-    const hit = localOrigin.clone().addScaledVector(localDir, t);
+    const yUp = this.isLocalYUp();
 
-    // Refine: look up actual DEM elevation at the hit (x,y),
-    // then re-intersect at that Z for a more accurate position.
-    const demZ = this.getDrawZ(hit.x, hit.y);
-    if (Math.abs(demZ - zGuess) > 0.01) {
-      const t2 = (demZ - localOrigin.z) / localDir.z;
-      if (t2 > 0) {
-        hit.copy(localOrigin).addScaledVector(localDir, t2);
-        hit.z = demZ;
+    if (yUp) {
+      // Y-up local space: X=east, Y=elevation, Z=north.
+      // Intersect the horizontal plane at Y = elevGuess.
+      const elevGuess = this.getDrawZ(0, 0);
+      if (Math.abs(localDir.y) < 1e-8) return null;
+      const t = (elevGuess - localOrigin.y) / localDir.y;
+      if (t < 0) return null;
+      const hit = localOrigin.clone().addScaledVector(localDir, t);
+      // hit.x=east, hit.y=elevation, hit.z=north in local space
+      // DEM lookup uses (east, north):
+      const demElev = this.getDrawZ(hit.x, hit.z);
+      if (Math.abs(demElev - elevGuess) > 0.01) {
+        const t2 = (demElev - localOrigin.y) / localDir.y;
+        if (t2 > 0) {
+          hit.copy(localOrigin).addScaledVector(localDir, t2);
+          hit.y = demElev;
+        }
+      } else {
+        hit.y = demElev;
       }
+      // Return in shape space: x=east, y=north, z=elevation
+      return new Vector3(hit.x, hit.z, hit.y);
     } else {
-      hit.z = demZ;
+      // Z-up local space: X=east, Y=north, Z=elevation.
+      // Intersect the horizontal plane at Z = elevGuess.
+      const elevGuess = this.getDrawZ(0, 0);
+      if (Math.abs(localDir.z) < 1e-8) return null;
+      const t = (elevGuess - localOrigin.z) / localDir.z;
+      if (t < 0) return null;
+      const hit = localOrigin.clone().addScaledVector(localDir, t);
+      // hit.x=east, hit.y=north, hit.z=elevation in local space
+      const demElev = this.getDrawZ(hit.x, hit.y);
+      if (Math.abs(demElev - elevGuess) > 0.01) {
+        const t2 = (demElev - localOrigin.z) / localDir.z;
+        if (t2 > 0) {
+          hit.copy(localOrigin).addScaledVector(localDir, t2);
+          hit.z = demElev;
+        }
+      } else {
+        hit.z = demElev;
+      }
+      // Already in shape space: x=east, y=north, z=elevation
+      return hit;
     }
-
-    return hit;
   }
 
-  private localToScreen(lx: number, ly: number): { x: number; y: number } | null {
+  /**
+   * Project a shape-space (east, north) point to screen coordinates.
+   * Elevation is looked up from the DEM / bbox fallback.
+   */
+  private localToScreen(east: number, north: number): { x: number; y: number } | null {
     if (!this.ctx || !this.localBBox) return null;
     const tg = this.ctx.getEditor().getTransformGroup();
-    const z = this.getDrawZ(lx, ly);
-    const worldPos = new Vector3(lx, ly, z).applyMatrix4(tg.matrixWorld);
+    const elev = this.getDrawZ(east, north);
+    // Convert shape space → Three.js local space before applying world matrix
+    const localPos = this.isLocalYUp()
+      ? new Vector3(east, elev, north)
+      : new Vector3(east, north, elev);
+    const worldPos = localPos.applyMatrix4(tg.matrixWorld);
     const camera = this.ctx.getActiveCamera();
     const ndc = worldPos.project(camera);
     const rect = this.ctx.domElement.getBoundingClientRect();
@@ -1177,22 +1263,23 @@ export class RoiSelectionPlugin implements ViewerPlugin {
     const { shapes, pendingShape, phase, selectedPoints } =
       useRoiStore.getState();
     const getZ = (x: number, y: number) => this.getDrawZ(x, y);
+    const yUp = this.isLocalYUp();
 
     for (const shape of shapes) {
-      const vis = buildShapeVisual(shape, getZ, false);
+      const vis = buildShapeVisual(shape, getZ, false, false, yUp);
       this.visualsGroup.add(vis);
     }
 
     if (pendingShape) {
       const isEditPhase = phase === 'editing';
-      const vis = buildShapeVisual(pendingShape, getZ, true, isEditPhase);
+      const vis = buildShapeVisual(pendingShape, getZ, true, isEditPhase, yUp);
       this.previewGroup = vis;
       this.visualsGroup.add(vis);
 
       // Show small edit handles at each control point during editing
       if (isEditPhase) {
         const points = getControlPoints(pendingShape);
-        const handles = buildEditHandles(points, getZ, selectedPoints);
+        const handles = buildEditHandles(points, getZ, selectedPoints, yUp);
         this.visualsGroup.add(handles);
 
         // Position mini gizmo at selection centroid (points mode)
@@ -1243,6 +1330,7 @@ export class RoiSelectionPlugin implements ViewerPlugin {
       shapes,
       this.localBBox,
       tg.matrixWorld,
+      this.isLocalYUp(),
     );
 
     for (const pco of this.ctx.getPointClouds()) {

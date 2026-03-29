@@ -9,3 +9,4 @@ export { AnnotatePlugin } from './annotate';
 export { WorldFramePlugin } from './world-frame';
 export { BaseMapPlugin } from './base-map';
 export { OsmFeaturesPlugin } from './osm-features';
+export { CustomMapPlugin } from './custom-map';

@@ -58,7 +58,7 @@ export class PoiPlugin implements ViewerPlugin {
     this.marker = new Mesh(this.geometry, this.material);
     this.marker.renderOrder = 999;
     this.marker.visible = false;
-    ctx.scene.add(this.marker);
+    ctx.worldRoot.add(this.marker);
 
     // Preview marker (semi-transparent, follows cursor)
     this.previewGeometry = sphereGeo;
@@ -71,7 +71,7 @@ export class PoiPlugin implements ViewerPlugin {
     this.previewMarker = new Mesh(this.previewGeometry, this.previewMaterial);
     this.previewMarker.renderOrder = 998;
     this.previewMarker.visible = false;
-    ctx.scene.add(this.previewMarker);
+    ctx.worldRoot.add(this.previewMarker);
 
     // Subscribe to POI store — position changes
     this.unsubPoi = usePoiStore.subscribe((state, prev) => {
@@ -142,8 +142,8 @@ export class PoiPlugin implements ViewerPlugin {
     this.unsubPhase = null;
 
     if (this.ctx) {
-      if (this.marker) this.ctx.scene.remove(this.marker);
-      if (this.previewMarker) this.ctx.scene.remove(this.previewMarker);
+      if (this.marker) this.ctx.worldRoot.remove(this.marker);
+      if (this.previewMarker) this.ctx.worldRoot.remove(this.previewMarker);
     }
     this.geometry?.dispose();
     this.material?.dispose();
@@ -206,7 +206,7 @@ export class PoiPlugin implements ViewerPlugin {
     this.gizmo.setMode('translate');
     this.gizmo.setSize(0.6);
     this.gizmo.attach(this.marker);
-    this.ctx.scene.add(this.gizmo);
+    this.ctx.worldRoot.add(this.gizmo);
 
     // Disable orbit while dragging gizmo
     this.gizmo.addEventListener('dragging-changed', this.onGizmoDragChanged);
@@ -218,7 +218,7 @@ export class PoiPlugin implements ViewerPlugin {
     this.gizmo.removeEventListener('dragging-changed', this.onGizmoDragChanged);
     this.gizmo.removeEventListener('objectChange', this.onGizmoObjectChange);
     this.gizmo.detach();
-    if (this.ctx) this.ctx.scene.remove(this.gizmo);
+    if (this.ctx) this.ctx.worldRoot.remove(this.gizmo);
     this.gizmo.dispose();
     this.gizmo = null;
     // Re-enable orbit

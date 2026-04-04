@@ -400,12 +400,12 @@ export class PointSelectPlugin implements ViewerPlugin {
 
     this.highlightPoints = new Points(geom, mat);
     this.highlightPoints.renderOrder = 900;
-    this.ctx.scene.add(this.highlightPoints);
+    this.ctx.worldRoot.add(this.highlightPoints);
   }
 
   private clearHighlight(): void {
     if (this.highlightPoints && this.ctx) {
-      this.ctx.scene.remove(this.highlightPoints);
+      this.ctx.worldRoot.remove(this.highlightPoints);
       this.highlightPoints.geometry.dispose();
       (this.highlightPoints.material as PointsMaterial).dispose();
       this.highlightPoints = null;

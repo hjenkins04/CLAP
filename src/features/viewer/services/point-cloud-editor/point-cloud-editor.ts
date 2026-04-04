@@ -94,6 +94,20 @@ export class PointCloudEditor {
     this.pushGlobalTransform(matrix);
   }
 
+  setAxisFlip(flipX: boolean, flipY: boolean, flipZ: boolean): void {
+    const op = {
+      id: this.nextOpId(),
+      timestamp: Date.now(),
+      type: 'AxisFlip' as const,
+      flipX,
+      flipY,
+      flipZ,
+    };
+    this.journal.push(op);
+    this.invalidateFlatCache();
+    this.emit('operationAdded');
+  }
+
   setClassification(pointIds: PointId[], classValue: number): void {
     if (pointIds.length === 0) return;
 

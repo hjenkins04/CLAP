@@ -5,7 +5,8 @@ export type EditOperationType =
   | 'SetClassification'
   | 'SetIntensity'
   | 'DeletePoints'
-  | 'RestorePoints';
+  | 'RestorePoints'
+  | 'AxisFlip';
 
 interface EditOperationBase {
   id: string;
@@ -43,12 +44,20 @@ export interface RestorePointsOp extends EditOperationBase {
   pointIds: PointId[];
 }
 
+export interface AxisFlipOp extends EditOperationBase {
+  type: 'AxisFlip';
+  flipX: boolean;
+  flipY: boolean;
+  flipZ: boolean;
+}
+
 export type EditOperation =
   | GlobalTransformOp
   | SetClassificationOp
   | SetIntensityOp
   | DeletePointsOp
-  | RestorePointsOp;
+  | RestorePointsOp
+  | AxisFlipOp;
 
 export interface PointDiff {
   classification?: number;
@@ -58,6 +67,7 @@ export interface PointDiff {
 
 export interface FlattenedEdits {
   globalTransform: Float64Array;
+  axisFlip: { flipX: boolean; flipY: boolean; flipZ: boolean };
   pointEdits: Map<PointId, PointDiff>;
 }
 

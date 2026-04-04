@@ -1,3 +1,4 @@
+export { AxisPlugin } from './axis';
 export { GridPlugin } from './grid';
 export { PoiPlugin } from './poi';
 export { TransformPlugin } from './transform';

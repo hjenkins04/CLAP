@@ -35,7 +35,7 @@ export class OsmFeaturesPlugin implements ViewerPlugin {
 
     this.rootGroup = new Group();
     this.rootGroup.name = 'osm-features';
-    ctx.scene.add(this.rootGroup);
+    ctx.worldRoot.add(this.rootGroup);
 
     // Create a sub-group per layer
     for (const key of OSM_LAYER_KEYS) {
@@ -110,7 +110,7 @@ export class OsmFeaturesPlugin implements ViewerPlugin {
     this.unsubWorldFrame?.();
     this.unsubStore?.();
     this.clearGeometry();
-    if (this.ctx && this.rootGroup) this.ctx.scene.remove(this.rootGroup);
+    if (this.ctx && this.rootGroup) this.ctx.worldRoot.remove(this.rootGroup);
     this.rootGroup = null;
     this.ctx = null;
   }

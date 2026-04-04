@@ -1,7 +1,22 @@
-import { MapPin, FlipHorizontal2, FlipVertical2, ArrowUpDown, Check, X } from 'lucide-react';
+import {
+  MapPin,
+  MapPinOff,
+  FlipHorizontal2,
+  FlipVertical2,
+  ArrowUpDown,
+  Check,
+  X,
+  Move,
+  RotateCw,
+  Pencil,
+  Undo2,
+  Redo2,
+  Save,
+} from 'lucide-react';
 import { Button } from '@clap/design-system';
 import { useViewerModeStore } from '@/app/stores';
 import { useWorldFrameStore } from './world-frame-store';
+import { useBaseMapStore } from '../base-map/base-map-store';
 
 export function WorldFramePanel() {
   const phase = useWorldFrameStore((s) => s.phase);
@@ -18,8 +33,37 @@ export function WorldFramePanel() {
   const confirmZOffset = useWorldFrameStore((s) => s.confirmZOffset);
   const enterWorldFrameMode = useViewerModeStore((s) => s.enterWorldFrameMode);
 
+  // Base-map editing state (alignment gizmo)
+  const editing = useBaseMapStore((s) => s.editing);
+  const gizmoMode = useBaseMapStore((s) => s.gizmoMode);
+  const canUndo = useBaseMapStore((s) => s.canUndoEdit);
+  const canRedo = useBaseMapStore((s) => s.canRedoEdit);
+  const saving = useBaseMapStore((s) => s.saving);
+  const setEditing = useBaseMapStore((s) => s.setEditing);
+  const setGizmoMode = useBaseMapStore((s) => s.setGizmoMode);
+  const onSave = useBaseMapStore((s) => s._onSave);
+  const onCancel = useBaseMapStore((s) => s._onCancel);
+  const onUndo = useBaseMapStore((s) => s._onUndo);
+  const onRedo = useBaseMapStore((s) => s._onRedo);
+
+  // Anchor point gizmo state
+  const editingAnchor = useWorldFrameStore((s) => s.editingAnchor);
+  const setEditingAnchor = useWorldFrameStore((s) => s.setEditingAnchor);
+  const onSaveAnchor = useWorldFrameStore((s) => s._onSaveAnchor);
+  const onCancelAnchor = useWorldFrameStore((s) => s._onCancelAnchor);
+
   const isConfirmed = phase === 'confirmed' && anchor1 !== null;
   const isActive = phase !== 'idle' && phase !== 'confirmed';
+
+  const handleSave = async () => {
+    if (onSave) await onSave();
+    setEditing(false);
+  };
+
+  const handleCancel = () => {
+    if (onCancel) onCancel();
+    setEditing(false);
+  };
 
   return (
     <div className="space-y-3">
@@ -48,6 +92,7 @@ export function WorldFramePanel() {
                 size="sm"
                 className="h-6 flex-1 gap-1 text-xs"
                 onClick={toggleFlipX}
+                disabled={editing}
               >
                 <FlipHorizontal2 className="h-3 w-3" />
                 Flip X
@@ -57,6 +102,7 @@ export function WorldFramePanel() {
                 size="sm"
                 className="h-6 flex-1 gap-1 text-xs"
                 onClick={toggleFlipZ}
+                disabled={editing}
               >
                 <FlipVertical2 className="h-3 w-3" />
                 Flip Y
@@ -74,6 +120,7 @@ export function WorldFramePanel() {
                   size="sm"
                   className="h-6 gap-1 px-1.5 text-xs"
                   onClick={() => setEditingZOffset(true)}
+                  disabled={editing}
                 >
                   <ArrowUpDown className="h-3 w-3" />
                   Edit
@@ -114,6 +161,142 @@ export function WorldFramePanel() {
                 </div>
               </>
             )}
+
+            {/* ── Edit Anchor (move reference point gizmo) ────────────── */}
+            {!editingAnchor ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-6 w-full gap-1.5 text-xs"
+                onClick={() => setEditingAnchor(true)}
+                disabled={editing || editingZOffset}
+              >
+                <MapPinOff className="h-3 w-3" />
+                Edit Anchor
+              </Button>
+            ) : (
+              <div className="space-y-2 rounded-md border border-border bg-muted/30 p-2">
+                <p className="text-[10px] text-muted-foreground">
+                  Drag the green anchor sphere to reposition the map reference point.
+                </p>
+                <div className="flex gap-1">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="h-6 flex-1 gap-1 text-xs"
+                    onClick={async () => {
+                      if (onSaveAnchor) await onSaveAnchor();
+                      setEditingAnchor(false);
+                    }}
+                    disabled={saving}
+                  >
+                    <Save className="h-3 w-3" />
+                    {saving ? 'Saving…' : 'Apply'}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 gap-1 px-1.5 text-xs"
+                    onClick={() => {
+                      if (onCancelAnchor) onCancelAnchor();
+                      setEditingAnchor(false);
+                    }}
+                    disabled={saving}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* ── Edit Alignment (gizmo) ─────────────────────────────── */}
+            {!editing ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-6 w-full gap-1.5 text-xs"
+                onClick={() => setEditing(true)}
+                disabled={editingZOffset || editingAnchor}
+              >
+                <Pencil className="h-3 w-3" />
+                Edit Alignment
+              </Button>
+            ) : (
+              <div className="space-y-2 rounded-md border border-border bg-muted/30 p-2">
+                <p className="text-[10px] text-muted-foreground">
+                  Drag the gizmo in the 3D view to reposition or rotate the map.
+                </p>
+
+                {/* Mode toggle */}
+                <div className="flex gap-1">
+                  <Button
+                    variant={gizmoMode === 'translate' ? 'default' : 'outline'}
+                    size="sm"
+                    className="h-6 flex-1 gap-1 text-xs"
+                    onClick={() => setGizmoMode('translate')}
+                  >
+                    <Move className="h-3 w-3" />
+                    Move
+                  </Button>
+                  <Button
+                    variant={gizmoMode === 'rotate' ? 'default' : 'outline'}
+                    size="sm"
+                    className="h-6 flex-1 gap-1 text-xs"
+                    onClick={() => setGizmoMode('rotate')}
+                  >
+                    <RotateCw className="h-3 w-3" />
+                    Rotate
+                  </Button>
+                </div>
+
+                {/* Undo / Redo */}
+                <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 flex-1 gap-1 text-xs"
+                    onClick={() => onUndo?.()}
+                    disabled={!canUndo}
+                  >
+                    <Undo2 className="h-3 w-3" />
+                    Undo
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 flex-1 gap-1 text-xs"
+                    onClick={() => onRedo?.()}
+                    disabled={!canRedo}
+                  >
+                    <Redo2 className="h-3 w-3" />
+                    Redo
+                  </Button>
+                </div>
+
+                {/* Save / Cancel */}
+                <div className="flex gap-1">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="h-6 flex-1 gap-1 text-xs"
+                    onClick={handleSave}
+                    disabled={saving}
+                  >
+                    <Save className="h-3 w-3" />
+                    {saving ? 'Saving…' : 'Save'}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 gap-1 px-1.5 text-xs"
+                    onClick={handleCancel}
+                    disabled={saving}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex gap-1">
@@ -122,6 +305,7 @@ export function WorldFramePanel() {
               size="sm"
               className="h-6 text-xs"
               onClick={() => enterWorldFrameMode()}
+              disabled={editing || editingAnchor}
             >
               Redefine
             </Button>
@@ -130,6 +314,7 @@ export function WorldFramePanel() {
               size="sm"
               className="h-6 text-xs"
               onClick={() => useWorldFrameStore.getState().resetWorldFrame()}
+              disabled={editing || editingAnchor}
             >
               Clear
             </Button>

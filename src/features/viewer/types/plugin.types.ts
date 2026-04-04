@@ -1,4 +1,4 @@
-import type { Scene, Camera, WebGLRenderer } from 'three';
+import type { Scene, Camera, WebGLRenderer, Group } from 'three';
 import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import type { PointCloudOctree } from 'potree-core';
 import type { ComponentType } from 'react';
@@ -12,6 +12,9 @@ export interface PluginHost {
 
 export interface ViewerPluginContext {
   scene: Scene;
+  /** The world-space root group. Add scene objects here instead of directly
+   *  to `scene` so that axis flips applied to this group affect everything. */
+  worldRoot: Group;
   getActiveCamera: () => Camera;
   renderer: WebGLRenderer;
   controls: OrbitControls;

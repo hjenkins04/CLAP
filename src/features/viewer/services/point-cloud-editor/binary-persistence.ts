@@ -24,9 +24,14 @@ export function serializeFlattened(edits: FlattenedEdits): ArrayBuffer {
   const bytes = new Uint8Array(buffer);
 
   // Header
+  // flags (uint16 at offset 6): bit0=flipX, bit1=flipY, bit2=flipZ
+  const axisFlags =
+    (edits.axisFlip.flipX ? 0x01 : 0) |
+    (edits.axisFlip.flipY ? 0x02 : 0) |
+    (edits.axisFlip.flipZ ? 0x04 : 0);
   view.setUint32(0, EDITS_MAGIC, true);
   view.setUint16(4, EDITS_VERSION, true);
-  view.setUint16(6, 0, true); // flags
+  view.setUint16(6, axisFlags, true);
   view.setUint32(8, pointCount, true);
   view.setUint32(12, MAX_POINT_ID_LEN, true);
 
@@ -82,6 +87,14 @@ export function deserializeFlattened(buffer: ArrayBuffer): FlattenedEdits {
     throw new Error(`Unsupported edits.bin version: ${version}`);
   }
 
+  // Axis flip bits encoded in flags field (bit0=flipX, bit1=flipY, bit2=flipZ)
+  const axisFlags = view.getUint16(6, true);
+  const axisFlip = {
+    flipX: (axisFlags & 0x01) !== 0,
+    flipY: (axisFlags & 0x02) !== 0,
+    flipZ: (axisFlags & 0x04) !== 0,
+  };
+
   const pointCount = view.getUint32(8, true);
   const idLen = view.getUint32(12, true);
   const recordSize = idLen + 4;
@@ -119,7 +132,7 @@ export function deserializeFlattened(buffer: ArrayBuffer): FlattenedEdits {
     offset += recordSize;
   }
 
-  return { globalTransform, pointEdits };
+  return { globalTransform, axisFlip, pointEdits };
 }
 
 // --- edits.journal.bin: Full journal ---
@@ -134,6 +147,7 @@ const OP_TYPE_MAP: Record<string, number> = {
   SetIntensity: 2,
   DeletePoints: 3,
   RestorePoints: 4,
+  AxisFlip: 5,
 };
 
 const OP_TYPE_REVERSE: Record<number, string> = {
@@ -142,6 +156,7 @@ const OP_TYPE_REVERSE: Record<number, string> = {
   2: 'SetIntensity',
   3: 'DeletePoints',
   4: 'RestorePoints',
+  5: 'AxisFlip',
 };
 
 export function serializeJournal(state: EditJournalState): ArrayBuffer {
@@ -227,6 +242,16 @@ export function serializeJournal(state: EditJournalState): ArrayBuffer {
           payloadOffset,
           op.pointIds
         );
+        break;
+      }
+
+      case 'AxisFlip': {
+        // 1 byte: bit0=flipX, bit1=flipY, bit2=flipZ
+        const bits =
+          (op.flipX ? 0x01 : 0) |
+          (op.flipY ? 0x02 : 0) |
+          (op.flipZ ? 0x04 : 0);
+        view.setUint8(payloadOffset, bits);
         break;
       }
     }
@@ -325,6 +350,19 @@ export function deserializeJournal(buffer: ArrayBuffer): EditJournalState {
         });
         break;
       }
+
+      case 'AxisFlip': {
+        const bits = view.getUint8(payloadOffset);
+        operations.push({
+          id,
+          timestamp,
+          type: 'AxisFlip',
+          flipX: (bits & 0x01) !== 0,
+          flipY: (bits & 0x02) !== 0,
+          flipZ: (bits & 0x04) !== 0,
+        });
+        break;
+      }
     }
 
     offset += opSize;
@@ -385,5 +423,7 @@ function calcOpSize(op: EditOperation): number {
     case 'DeletePoints':
     case 'RestorePoints':
       return headerSize + 4 + op.pointIds.length * MAX_POINT_ID_LEN;
+    case 'AxisFlip':
+      return headerSize + 1; // 1 byte for the flip bits
   }
 }

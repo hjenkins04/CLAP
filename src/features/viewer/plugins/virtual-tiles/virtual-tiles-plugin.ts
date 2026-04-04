@@ -62,7 +62,7 @@ export class VirtualTilesPlugin implements ViewerPlugin {
     // Add grid directly to the scene (not the transform group) so it
     // renders reliably in the EDL layer-0 pass. We sync the matrix
     // with the transform group each frame in onUpdate().
-    ctx.scene.add(this.gridGroup);
+    ctx.worldRoot.add(this.gridGroup);
 
     this.unsubMode = useViewerModeStore.subscribe((state, prev) => {
       const was = prev.mode === 'virtual-tiles';
@@ -116,7 +116,7 @@ export class VirtualTilesPlugin implements ViewerPlugin {
     this.unsubStore = null;
     this.clearGrid();
     if (this.gridGroup && this.ctx) {
-      this.ctx.scene.remove(this.gridGroup);
+      this.ctx.worldRoot.remove(this.gridGroup);
     }
     this.gridGroup = null;
     this.ctx = null;

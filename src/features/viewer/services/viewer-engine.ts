@@ -1,5 +1,6 @@
 import {
   Scene,
+  Group,
   PerspectiveCamera,
   OrthographicCamera,
   WebGLRenderer,
@@ -53,6 +54,7 @@ export const CLASSIFICATION_COLORS: Record<string, Vector4> = {
 
 export class ViewerEngine implements PluginHost {
   private scene: Scene;
+  private worldRoot: Group;
   private perspCamera: PerspectiveCamera;
   private orthoCamera: OrthographicCamera;
   private activeCamera: Camera;
@@ -87,6 +89,10 @@ export class ViewerEngine implements PluginHost {
 
     this.scene = new Scene();
     this.scene.add(new AmbientLight(0xffffff));
+
+    this.worldRoot = new Group();
+    this.worldRoot.name = 'worldRoot';
+    this.scene.add(this.worldRoot);
 
     const { width, height } = container.getBoundingClientRect();
     const aspect = width / height || 1;
@@ -167,6 +173,7 @@ export class ViewerEngine implements PluginHost {
     // Build plugin context
     this.pluginCtx = {
       scene: this.scene,
+      worldRoot: this.worldRoot,
       getActiveCamera: () => this.activeCamera,
       renderer: this.renderer,
       controls: this.controls,
@@ -240,11 +247,11 @@ export class ViewerEngine implements PluginHost {
     // Custom classification colors
     pco.material.classification = CLASSIFICATION_COLORS;
 
-    this.scene.add(pco);
+    this.worldRoot.add(pco);
     this.pointClouds.push(pco);
 
     // Attach the editor — reparents PCO into the editor's transform group
-    await this.editor.attach(pco, this.scene, baseUrl);
+    await this.editor.attach(pco, this.worldRoot, baseUrl);
 
     this.fitCameraToPointCloud(pco);
 
@@ -280,7 +287,7 @@ export class ViewerEngine implements PluginHost {
     }
     this.editor.detach();
     this.pointClouds.forEach((pco) => {
-      this.scene.remove(pco);
+      this.worldRoot.remove(pco);
       pco.dispose();
     });
     this.pointClouds = [];

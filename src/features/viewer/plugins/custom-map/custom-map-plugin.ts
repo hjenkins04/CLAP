@@ -25,7 +25,7 @@ export class CustomMapPlugin implements ViewerPlugin {
 
     this.rootGroup = new Group();
     this.rootGroup.name = 'custom-map';
-    ctx.scene.add(this.rootGroup);
+    ctx.worldRoot.add(this.rootGroup);
 
     this.unsubWorldFrame = useWorldFrameStore.subscribe((state, prev) => {
       if (state.transform !== prev.transform) {
@@ -61,7 +61,7 @@ export class CustomMapPlugin implements ViewerPlugin {
     this.unsubStore?.();
     this.clearGeometry();
     if (this.ctx && this.rootGroup) {
-      this.ctx.scene.remove(this.rootGroup);
+      this.ctx.worldRoot.remove(this.rootGroup);
     }
     this.rootGroup = null;
     this.ctx = null;

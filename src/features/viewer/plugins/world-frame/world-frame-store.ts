@@ -53,6 +53,8 @@ interface WorldFrameState {
   setMarkersVisible: (visible: boolean) => void;
   toggleFlipX: () => void;
   toggleFlipZ: () => void;
+  setFlipX: (flipX: boolean) => void;
+  setFlipZ: (flipZ: boolean) => void;
   setZOffset: (offset: number) => void;
   setEditingZOffset: (editing: boolean) => void;
   setPendingZOffset: (offset: number) => void;
@@ -67,8 +69,18 @@ interface WorldFrameState {
   confirmWorldFrame: () => void;
   resetWorldFrame: () => void;
   recomputeTransform: () => void;
+  /** Update anchor1.pc AND recompute transform in one atomic step (for live gizmo dragging). */
+  setAnchor1PcLive: (pt: PcPoint) => void;
   /** Auto-confirm the world frame from a known CRS geo-reference point (origin at PC {0,0,0}). */
   autoConfirmFromCrs: (refGeo: GeoPoint) => void;
+
+  /** Whether the user is currently dragging the anchor-point gizmo. */
+  editingAnchor: boolean;
+  setEditingAnchor: (v: boolean) => void;
+  _onSaveAnchor: (() => Promise<void>) | null;
+  _setOnSaveAnchor: (cb: (() => Promise<void>) | null) => void;
+  _onCancelAnchor: (() => void) | null;
+  _setOnCancelAnchor: (cb: (() => void) | null) => void;
 }
 
 /**
@@ -115,6 +127,8 @@ export const useWorldFrameStore = create<WorldFrameState>()(
       setMarkersVisible: (markersVisible) => set({ markersVisible }),
       toggleFlipX: () => set((s) => ({ flipX: !s.flipX })),
       toggleFlipZ: () => set((s) => ({ flipZ: !s.flipZ })),
+      setFlipX: (flipX) => set({ flipX }),
+      setFlipZ: (flipZ) => set({ flipZ }),
       setZOffset: (zOffset) => set({ zOffset }),
       setEditingZOffset: (editingZOffset) => set((s) => ({
         editingZOffset,
@@ -181,6 +195,29 @@ export const useWorldFrameStore = create<WorldFrameState>()(
         const state = get();
         set({ transform: buildTransform(state) });
       },
+
+      setAnchor1PcLive: (pt: PcPoint) => {
+        const { geoPoint1, anchor1, translationOffset } = get();
+        if (!geoPoint1 || !anchor1) return;
+        // Compensate translationOffset so transform.translation stays constant.
+        // transform.translation = anchor1.pc + translationOffset
+        // We want: pt + newOffset = anchor1.pc + translationOffset
+        // => newOffset = translationOffset + (anchor1.pc - pt)
+        const newOffset = {
+          x: translationOffset.x + (anchor1.pc.x - pt.x),
+          z: translationOffset.z + (anchor1.pc.z - pt.z),
+        };
+        const newAnchor1 = { geo: geoPoint1, pc: pt };
+        const state = { ...get(), anchor1: newAnchor1, translationOffset: newOffset };
+        set({ anchor1: newAnchor1, translationOffset: newOffset, transform: buildTransform(state) });
+      },
+
+      editingAnchor: false,
+      setEditingAnchor: (editingAnchor) => set({ editingAnchor }),
+      _onSaveAnchor: null,
+      _setOnSaveAnchor: (cb) => set({ _onSaveAnchor: cb }),
+      _onCancelAnchor: null,
+      _setOnCancelAnchor: (cb) => set({ _onCancelAnchor: cb }),
 
       autoConfirmFromCrs: (refGeo: GeoPoint) => {
         // The pre-transformed point cloud has its origin at (0,0,0) in Three.js

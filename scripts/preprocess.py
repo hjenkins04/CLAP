@@ -34,6 +34,7 @@ Examples:
 
 import argparse
 import glob
+import itertools
 import json
 import math
 import os
@@ -41,11 +42,13 @@ import re
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 
 import laspy
 import numpy as np
-from scipy.interpolate import griddata
+from scipy.ndimage import distance_transform_edt
+from tqdm import tqdm
 
 # ---------------------------------------------------------------------------
 # Config
@@ -63,6 +66,30 @@ _DEFAULT_POTREE_CONVERTER = os.path.join(
     APP_DIR, "..", "PotreeConverter", "build", "Release", "PotreeConverter.exe"
 )
 POTREE_CONVERTER = os.environ.get("CLAP_POTREE_CONVERTER", _DEFAULT_POTREE_CONVERTER)
+
+def _safe_extra_dims(point_format) -> list:
+    """Return extra dimensions as a finite list.
+
+    LasHeader.point_format.extra_dimensions from LasReader returns an infinite
+    cycling generator — it never raises StopIteration. Guard by stopping as
+    soon as we see a repeated name.
+    """
+    seen, dims = set(), []
+    for dim in point_format.extra_dimensions:
+        if dim.name in seen:
+            break
+        seen.add(dim.name)
+        dims.append(dim)
+    return dims
+
+
+_BAR_OPTS = dict(
+    unit=" pts",
+    unit_scale=True,       # auto SI prefix: k, M, G (divisor=1000 by default)
+    file=sys.stdout,       # stdout for consistent behaviour on Windows PowerShell
+    dynamic_ncols=True,
+    bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt}  [{elapsed}<{remaining}, {rate_fmt}]",
+)
 
 
 # ---------------------------------------------------------------------------
@@ -155,85 +182,105 @@ def pretransform_las(las_path: str, output_path: str,
 
     Returns crs_info dict (UTM only) or None (local / unknown CRS).
     """
-    las = laspy.read(las_path)
+    _CHUNK = 5_000_000  # points per streaming chunk (~180 MB at 36 bytes/pt)
 
-    # ── Detect CRS ──────────────────────────────────────────────────────
-    wkt = None
-    for vlr in las.vlrs:
-        if hasattr(vlr, 'string') and vlr.record_id == 2112:
-            wkt = vlr.string
-            break
+    with laspy.LasReader(open(las_path, 'rb')) as reader:
+        hdr = reader.header
 
-    utm_info = parse_utm_crs(wkt) if wkt else None
-    crs_info = None
+        # ── Detect CRS ──────────────────────────────────────────────────
+        wkt = None
+        for vlr in hdr.vlrs:
+            if hasattr(vlr, 'string') and vlr.record_id == 2112:
+                wkt = vlr.string
+                break
 
-    if utm_info:
-        zone, hemisphere, epsg = utm_info
-        if fixed_origin:
-            origin_x, origin_y = fixed_origin
-            print(f"  [crs] UTM Zone {zone}{hemisphere} (EPSG:{epsg})")
-            print(f"  [crs] Origin (fixed): easting={origin_x:.3f}, northing={origin_y:.3f}")
+        utm_info = parse_utm_crs(wkt) if wkt else None
+        crs_info = None
+
+        if utm_info:
+            zone, hemisphere, epsg = utm_info
+            if fixed_origin:
+                origin_x, origin_y = fixed_origin
+                tqdm.write(f"  [crs] UTM Zone {zone}{hemisphere} (EPSG:{epsg})")
+                tqdm.write(f"  [crs] Origin (fixed): easting={origin_x:.3f}, northing={origin_y:.3f}")
+            else:
+                origin_x = (hdr.mins[0] + hdr.maxs[0]) / 2.0
+                origin_y = (hdr.mins[1] + hdr.maxs[1]) / 2.0
+                tqdm.write(f"  [crs] UTM Zone {zone}{hemisphere} (EPSG:{epsg})")
+                tqdm.write(f"  [crs] Origin: easting={origin_x:.1f}, northing={origin_y:.1f}")
+            ref_lng, ref_lat = utm_to_lnglat(origin_x, origin_y, zone, hemisphere)
+            tqdm.write(f"  [crs] Ref lat/lng: ({ref_lat:.7f}, {ref_lng:.7f})")
+            crs_info = {
+                'type': 'utm',
+                'zone': zone,
+                'hemisphere': hemisphere,
+                'epsg': epsg,
+                'origin': {'easting': origin_x, 'northing': origin_y, 'elevation': 0.0},
+                'refLngLat': {'lng': ref_lng, 'lat': ref_lat},
+            }
         else:
-            origin_x = (las.header.mins[0] + las.header.maxs[0]) / 2.0
-            origin_y = (las.header.mins[1] + las.header.maxs[1]) / 2.0
-            print(f"  [crs] UTM Zone {zone}{hemisphere} (EPSG:{epsg})")
-            print(f"  [crs] Origin: easting={origin_x:.1f}, northing={origin_y:.1f}")
-        ref_lng, ref_lat = utm_to_lnglat(origin_x, origin_y, zone, hemisphere)
-        print(f"  [crs] Ref lat/lng: ({ref_lat:.7f}, {ref_lng:.7f})")
-        crs_info = {
-            'type': 'utm',
-            'zone': zone,
-            'hemisphere': hemisphere,
-            'epsg': epsg,
-            'origin': {'easting': origin_x, 'northing': origin_y, 'elevation': 0.0},
-            'refLngLat': {'lng': ref_lng, 'lat': ref_lat},
-        }
-    else:
-        # No UTM — still center the cloud in its native XY frame
-        if fixed_origin:
-            origin_x, origin_y = fixed_origin
-        else:
-            origin_x = (las.header.mins[0] + las.header.maxs[0]) / 2.0
-            origin_y = (las.header.mins[1] + las.header.maxs[1]) / 2.0
-        if wkt:
-            print(f"  [crs] CRS present but not UTM — using local coordinates")
-        else:
-            print(f"  [crs] No CRS found — using local coordinates")
-        print(f"  [crs] Centering at ({origin_x:.1f}, {origin_y:.1f})")
+            if fixed_origin:
+                origin_x, origin_y = fixed_origin
+            else:
+                origin_x = (hdr.mins[0] + hdr.maxs[0]) / 2.0
+                origin_y = (hdr.mins[1] + hdr.maxs[1]) / 2.0
+            if wkt:
+                tqdm.write(f"  [crs] CRS present but not UTM — using local coordinates")
+            else:
+                tqdm.write(f"  [crs] No CRS found — using local coordinates")
+            tqdm.write(f"  [crs] Centering at ({origin_x:.1f}, {origin_y:.1f})")
 
-    # ── Write pre-transformed LAS ────────────────────────────────────────
-    header = laspy.LasHeader(
-        point_format=las.header.point_format,
-        version=las.header.version,
-    )
-    for dim in las.point_format.extra_dimensions:
-        header.add_extra_dim(laspy.ExtraBytesParams(
-            name=dim.name, type=dim.dtype,
-            description=dim.description or "",
-        ))
-    header.offsets = np.array([0.0, 0.0, 0.0])
-    header.scales = las.header.scales
+        # ── Build output header ──────────────────────────────────────────
+        out_header = laspy.LasHeader(
+            point_format=hdr.point_format.id,
+            version=hdr.version,
+        )
+        for dim in _safe_extra_dims(hdr.point_format):
+            out_header.add_extra_dim(laspy.ExtraBytesParams(
+                name=dim.name, type=dim.dtype,
+                description=dim.description or "",
+            ))
+        out_header.offsets = np.array([0.0, 0.0, 0.0])
+        out_header.scales = hdr.scales
 
-    new_las = laspy.LasData(header)
+        total = hdr.point_count
 
-    raw_x = np.asarray(las.x, dtype=np.float64)
-    raw_y = np.asarray(las.y, dtype=np.float64)
-    raw_z = np.asarray(las.z, dtype=np.float64)
+        # ── Stream-transform in chunks (avoids loading full file into RAM) ──
+        # Bar is created before LasWriter so it appears immediately
+        with tqdm(total=total, desc="  Pre-transform", **_BAR_OPTS) as bar:
+            with laspy.LasWriter(open(output_path, 'wb'), header=out_header) as writer:
+                for chunk in reader.chunk_iterator(_CHUNK):
+                    # Use decoded float coordinates (laspy lowercase accessors respect the
+                    # input header's scale/offset). Using raw integer fields (chunk['X'] etc.)
+                    # produces incorrect output when the output header has a different offset.
+                    raw_x = np.asarray(chunk.x, dtype=np.float64)  # LAS X = Easting
+                    raw_y = np.asarray(chunk.y, dtype=np.float64)  # LAS Y = Northing
+                    raw_z = np.asarray(chunk.z, dtype=np.float64)  # LAS Z = Elevation
 
-    # X=east_offset, Y=elevation (up), Z=north_offset
-    new_las.x = raw_x - origin_x
-    new_las.y = raw_z
-    new_las.z = raw_y - origin_y
+                    # Create output points using the output header's encoding.
+                    # Axis swap + centering:
+                    #   new X = East offset  → Three.js X
+                    #   new Y = Elevation    → Three.js Y (up)
+                    #   new Z = North offset → Three.js Z
+                    out_pts = laspy.LasData(header=out_header)
+                    out_pts.x = raw_x - origin_x
+                    out_pts.y = raw_z
+                    out_pts.z = raw_y - origin_y
 
-    for dim_name in las.point_format.dimension_names:
-        if dim_name.lower() in ('x', 'y', 'z'):
-            continue
-        new_las[dim_name] = las[dim_name]
+                    # Copy every non-XYZ attribute from the input chunk
+                    for dim_name in chunk.point_format.dimension_names:
+                        if dim_name in ('X', 'Y', 'Z'):
+                            continue
+                        try:
+                            out_pts[dim_name] = chunk[dim_name]
+                        except Exception:
+                            pass
 
-    new_las.write(output_path)
-    print(f"  [crs] Pre-transformed LAS written: {output_path}")
+                    writer.write_points(out_pts.points)
+                    bar.update(len(chunk))
 
-    return crs_info
+        tqdm.write(f"  [crs] Pre-transformed LAS written: {output_path}")
+        return crs_info
 
 
 # ---------------------------------------------------------------------------
@@ -272,38 +319,138 @@ def merge_las_files(files: list[str], output_path: str) -> str:
     for f in files:
         print(f"      {os.path.basename(f)}")
 
-    first = laspy.read(files[0])
-    header = laspy.LasHeader(
-        point_format=first.header.point_format,
-        version=first.header.version,
+    _CHUNK = 5_000_000
+
+    # Read first file header to establish output format
+    with laspy.LasReader(open(files[0], 'rb')) as r0:
+        hdr0 = r0.header
+    out_header = laspy.LasHeader(
+        point_format=hdr0.point_format.id,
+        version=hdr0.version,
     )
-    for dim in first.point_format.extra_dimensions:
-        header.add_extra_dim(laspy.ExtraBytesParams(
+    for dim in _safe_extra_dims(hdr0.point_format):
+        out_header.add_extra_dim(laspy.ExtraBytesParams(
             name=dim.name, type=dim.dtype,
             description=dim.description or "",
         ))
-    header.offsets = first.header.offsets
-    header.scales = first.header.scales
+    out_header.offsets = hdr0.offsets
+    out_header.scales = hdr0.scales
 
-    all_las = [first]
-    for path in files[1:]:
-        all_las.append(laspy.read(path))
+    total = sum(laspy.LasReader(open(p, 'rb')).header.point_count for p in files)
+    tqdm.write(f"      Total points: {total:,}")
 
-    total = sum(len(f.points) for f in all_las)
-    print(f"      Total points: {total:,}")
+    with tqdm(total=total, desc="  Merging", **_BAR_OPTS) as bar:
+        with laspy.LasWriter(open(output_path, 'wb'), header=out_header) as writer:
+            for path in files:
+                bar.set_postfix(file=os.path.basename(path), refresh=False)
+                with laspy.LasReader(open(path, 'rb')) as reader:
+                    for chunk in reader.chunk_iterator(_CHUNK):
+                        writer.write_points(chunk)
+                        bar.update(len(chunk))
 
-    writer = laspy.LasData(header)
-    for dim_name in first.point_format.dimension_names:
-        writer[dim_name] = np.concatenate([f[dim_name] for f in all_las])
-
-    writer.write(output_path)
-    print(f"      Merged file: {output_path}")
+    tqdm.write(f"      Merged file: {output_path}")
     return output_path
 
 
 # ---------------------------------------------------------------------------
 # Step 2 — DEM via CSF ground classification
 # ---------------------------------------------------------------------------
+
+def _run_csf_with_progress(csf_obj, ground_indices, non_ground_indices, n_iterations: int) -> None:
+    """Run CSF do_filtering() with a live tqdm progress bar.
+
+    CSF is a C extension that:
+      - Blocks the Python thread for the entire simulation
+      - Prints directly to C's stdout (fd 1), bypassing sys.stdout / tqdm
+
+    Strategy:
+      1. Duplicate fd 1 → terminal_fd  (so we can keep writing to the terminal)
+      2. Redirect fd 1 to a pipe's write end  (CSF's printf → pipe)
+      3. Reader thread: consume the pipe, parse "[N] Simulating" lines → iter counter
+      4. CSF thread: run do_filtering()
+      5. Main thread: drive a tqdm bar from the iter counter, writing to terminal_fd
+      6. After CSF finishes: restore fd 1, join threads, print captured config lines
+    """
+    # 1. Duplicate fd 1 so we can keep a direct path to the terminal
+    terminal_fd = os.dup(1)
+    terminal_file = os.fdopen(os.dup(terminal_fd), 'w', buffering=1)
+
+    # 2. Pipe: CSF printf → fd 1 → pipe write end → reader thread
+    r_fd, w_fd = os.pipe()
+    os.dup2(w_fd, 1)   # redirect C stdout → pipe
+    os.close(w_fd)     # fd 1 is now the only writer; close our extra ref
+
+    # Redirect Python's sys.stdout too so print() / tqdm.write() reach the terminal
+    old_sys_stdout = sys.stdout
+    sys.stdout = terminal_file
+
+    # 3. Reader thread: parse progress and capture non-iteration lines
+    iter_progress = [0]
+    config_lines: list[str] = []
+
+    def _reader() -> None:
+        with os.fdopen(r_fd, 'r', buffering=1, errors='replace') as pipe:
+            for raw in pipe:
+                line = raw.rstrip()
+                m = re.match(r'^\[(\d+)\]\s+Simulating', line)
+                if m:
+                    iter_progress[0] = int(m.group(1)) + 1  # 1-based progress
+                else:
+                    config_lines.append(line)
+
+    reader_thread = threading.Thread(target=_reader, daemon=True)
+    reader_thread.start()
+
+    # 4. CSF thread
+    csf_exc: list[BaseException | None] = [None]
+
+    def _run_csf() -> None:
+        try:
+            csf_obj.do_filtering(ground_indices, non_ground_indices)
+        except BaseException as exc:
+            csf_exc[0] = exc
+        finally:
+            # Flush C's internal buffers, then restore fd 1 → terminal.
+            # Closing fd 1's pipe reference causes the reader to see EOF.
+            try:
+                import ctypes
+                ctypes.cdll.msvcrt.fflush(ctypes.c_void_p(0))  # fflush(NULL)
+            except Exception:
+                pass
+            os.dup2(terminal_fd, 1)
+            os.close(terminal_fd)
+
+    csf_thread = threading.Thread(target=_run_csf, daemon=True)
+    csf_thread.start()
+
+    # 5. Main thread drives tqdm, reading iter_progress updated by the reader
+    with tqdm(total=n_iterations, desc="  CSF ground filter", unit=" itr",
+              file=terminal_file, dynamic_ncols=True) as bar:
+        last = 0
+        while csf_thread.is_alive():
+            time.sleep(0.1)
+            cur = min(iter_progress[0], n_iterations)
+            if cur > last:
+                bar.update(cur - last)
+                last = cur
+        # Ensure bar reaches 100 % even if CSF stops early
+        if last < n_iterations:
+            bar.update(n_iterations - last)
+
+    csf_thread.join()
+    reader_thread.join()
+
+    # 6. Restore Python's stdout, print captured config lines cleanly
+    sys.stdout = old_sys_stdout
+    terminal_file.close()
+
+    for line in config_lines:
+        if line:
+            tqdm.write(f"      {line}")
+
+    if csf_exc[0] is not None:
+        raise csf_exc[0]
+
 
 def generate_dem(las_path: str, output_path: str, cell_size: float = 1.0) -> None:
     """Generate a DEM JSON from a pre-transformed (Y-up) point cloud.
@@ -316,34 +463,53 @@ def generate_dem(las_path: str, output_path: str, cell_size: float = 1.0) -> Non
     print(f"[2/3] Generating DEM (cell_size={cell_size}m)...")
     t0 = time.time()
 
-    las = laspy.read(las_path)
-    # Y-up: X=east, Y=elevation, Z=north → CSF needs (east, north, elev)
-    east  = np.asarray(las.x, dtype=np.float64)
-    north = np.asarray(las.z, dtype=np.float64)
-    elev  = np.asarray(las.y, dtype=np.float64)
+    # Stream-read with subsampling — DEM at 1m resolution doesn't need full density.
+    # Target ~5M points max; CSF is memory/time intensive at higher counts.
+    _CHUNK = 5_000_000
+    east_parts, north_parts, elev_parts = [], [], []
+
+    with laspy.LasReader(open(las_path, 'rb')) as reader:
+        total = reader.header.point_count
+        step = max(1, round(total / 5_000_000))
+
+        with tqdm(total=total, desc="  Loading pts", **_BAR_OPTS) as bar:
+            for chunk in reader.chunk_iterator(_CHUNK):
+                idx = np.arange(0, len(chunk), step)
+                east_parts.append(np.asarray(chunk.x, dtype=np.float64)[idx])
+                north_parts.append(np.asarray(chunk.z, dtype=np.float64)[idx])
+                elev_parts.append(np.asarray(chunk.y, dtype=np.float64)[idx])
+                bar.update(len(chunk))
+
+    east  = np.concatenate(east_parts)
+    north = np.concatenate(north_parts)
+    elev  = np.concatenate(elev_parts)
+
+    if step > 1:
+        tqdm.write(f"      Subsampled {step}x → {len(east):,} points for CSF")
+
+    tqdm.write(f"      East  range: [{east.min():.1f}, {east.max():.1f}]")
+    tqdm.write(f"      North range: [{north.min():.1f}, {north.max():.1f}]")
+    tqdm.write(f"      Elev  range: [{elev.min():.1f}, {elev.max():.1f}]")
 
     points = np.column_stack((east, north, elev))
-    print(f"      {len(points):,} points loaded")
-    print(f"      East  range: [{east.min():.1f}, {east.max():.1f}]")
-    print(f"      North range: [{north.min():.1f}, {north.max():.1f}]")
-    print(f"      Elev  range: [{elev.min():.1f}, {elev.max():.1f}]")
 
-    print(f"      Running CSF ground filter...")
+    _N_ITER = 500
     csf = csf_module.CSF()
     csf.params.bSloopSmooth = False
     csf.params.cloth_resolution = max(cell_size, 2.0)
     csf.params.rigidness = 1
     csf.params.time_step = 0.65
     csf.params.class_threshold = 0.5
-    csf.params.interations = 500
+    csf.params.interations = _N_ITER
 
     csf.setPointCloud(points)
     ground_indices = csf_module.VecInt()
     non_ground_indices = csf_module.VecInt()
-    csf.do_filtering(ground_indices, non_ground_indices)
+
+    _run_csf_with_progress(csf, ground_indices, non_ground_indices, _N_ITER)
 
     ground_idx = np.array(ground_indices)
-    print(f"      Ground points: {len(ground_idx):,} ({100*len(ground_idx)/len(points):.1f}%)")
+    tqdm.write(f"      Ground points: {len(ground_idx):,} ({100*len(ground_idx)/len(points):.1f}%)")
 
     ground = points[ground_idx]
     x_min, y_min = points[:, 0].min(), points[:, 1].min()
@@ -351,22 +517,38 @@ def generate_dem(las_path: str, output_path: str, cell_size: float = 1.0) -> Non
 
     cols = int(np.ceil((x_max - x_min) / cell_size))
     rows = int(np.ceil((y_max - y_min) / cell_size))
-    print(f"      DEM grid: {cols}x{rows} cells")
+    tqdm.write(f"      DEM grid: {cols}x{rows} cells")
 
-    xi = np.linspace(x_min + cell_size / 2, x_min + (cols - 0.5) * cell_size, cols)
-    yi = np.linspace(y_min + cell_size / 2, y_min + (rows - 0.5) * cell_size, rows)
-    grid_x, grid_y = np.meshgrid(xi, yi)
+    # Fast DEM: bin ground points into cells (O(n)), fill gaps with distance
+    # transform nearest-neighbour (O(rows*cols)).  Replaces scipy griddata which
+    # required Delaunay triangulation over millions of points (very slow).
+    with tqdm(total=2, desc="  Building DEM", unit=" step", file=sys.stdout,
+              dynamic_ncols=True,
+              bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} steps  [{elapsed}]") as bar:
 
-    print(f"      Interpolating elevations...")
-    dem = griddata(ground[:, :2], ground[:, 2], (grid_x, grid_y), method="linear", fill_value=np.nan)
+        # Step 1 — bin: mean elevation per cell
+        gx = np.clip(np.floor((ground[:, 0] - x_min) / cell_size).astype(np.int32), 0, cols - 1)
+        gy = np.clip(np.floor((ground[:, 1] - y_min) / cell_size).astype(np.int32), 0, rows - 1)
 
-    nan_mask = np.isnan(dem)
-    if nan_mask.any():
-        print(f"      Filling {nan_mask.sum()} NaN cells (nearest-neighbor)...")
-        dem_nn = griddata(ground[:, :2], ground[:, 2], (grid_x, grid_y), method="nearest")
-        dem[nan_mask] = dem_nn[nan_mask]
+        sums   = np.zeros((rows, cols), dtype=np.float64)
+        counts = np.zeros((rows, cols), dtype=np.int32)
+        np.add.at(sums,   (gy, gx), ground[:, 2])
+        np.add.at(counts, (gy, gx), 1)
 
-    print(f"      Elevation range: {np.nanmin(dem):.2f} to {np.nanmax(dem):.2f}")
+        dem = np.full((rows, cols), np.nan)
+        filled = counts > 0
+        dem[filled] = sums[filled] / counts[filled]
+        bar.update(1)
+
+        # Step 2 — fill empty cells via nearest-neighbour distance transform
+        n_empty = int((~filled).sum())
+        if n_empty:
+            tqdm.write(f"      Filling {n_empty:,} empty cells (nearest-neighbour)...")
+            _, idx = distance_transform_edt(~filled, return_indices=True)
+            dem[~filled] = dem[idx[0][~filled], idx[1][~filled]]
+        bar.update(1)
+
+    tqdm.write(f"      Elevation range: {np.nanmin(dem):.2f} to {np.nanmax(dem):.2f}")
 
     dem_data = {
         "xMin": float(x_min),
@@ -383,8 +565,8 @@ def generate_dem(las_path: str, output_path: str, cell_size: float = 1.0) -> Non
         json.dump(dem_data, f)
 
     size_mb = os.path.getsize(output_path) / 1024 / 1024
-    print(f"      DEM written: {output_path} ({size_mb:.1f} MB)")
-    print(f"      DEM generation took {time.time()-t0:.1f}s")
+    tqdm.write(f"      DEM written: {output_path} ({size_mb:.1f} MB)")
+    tqdm.write(f"      DEM generation took {time.time()-t0:.1f}s")
 
 
 # ---------------------------------------------------------------------------
@@ -402,32 +584,34 @@ def convert_to_potree(las_path: str, output_dir: str, encoding: str = "UNCOMPRES
         print("  3. Build it: cd ../PotreeConverter && mkdir build && cd build && cmake .. && cmake --build . --config Release")
         sys.exit(1)
 
-    las = laspy.read(las_path)
-    extra_dims = [dim.name for dim in las.point_format.extra_dimensions]
-    all_dims = list(las.point_format.dimension_names)
-    print(f"      Input attributes: {len(all_dims)} dimensions")
+    with laspy.LasReader(open(las_path, 'rb')) as reader:
+        extra_dims = [dim.name for dim in _safe_extra_dims(reader.header.point_format)]
+        all_dims = list(reader.header.point_format.dimension_names)
+    tqdm.write(f"      Input attributes: {len(all_dims)} dimensions")
     if extra_dims:
-        print(f"      Extra dimensions: {', '.join(extra_dims)}")
-    las = None  # free memory
+        tqdm.write(f"      Extra dimensions: {', '.join(extra_dims)}")
 
     cmd = [POTREE_CONVERTER, las_path, "-o", output_dir, "--encoding", encoding]
-    print(f"      Running: {' '.join(cmd)}")
+    tqdm.write(f"      Running: {' '.join(cmd)}")
     t0 = time.time()
 
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    if result.returncode != 0:
-        print(f"Error: PotreeConverter failed (exit code {result.returncode})")
-        if result.stdout:
-            print(result.stdout)
-        if result.stderr:
-            print(result.stderr)
+    # Stream PotreeConverter output line-by-line so progress is visible in real time
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                            text=True, bufsize=1)
+    with tqdm(desc="  PotreeConverter", unit=" lines", file=sys.stdout,
+              dynamic_ncols=True, bar_format="{l_bar}{bar}| {elapsed}") as bar:
+        for line in proc.stdout:
+            line = line.rstrip()
+            if line:
+                tqdm.write(f"      {line}")
+            bar.update(1)
+    proc.wait()
+
+    if proc.returncode != 0:
+        print(f"Error: PotreeConverter failed (exit code {proc.returncode})")
         sys.exit(1)
 
-    if result.stdout:
-        for line in result.stdout.strip().split("\n"):
-            print(f"      {line}")
-
-    print(f"      Potree conversion took {time.time()-t0:.1f}s")
+    tqdm.write(f"      Potree conversion took {time.time()-t0:.1f}s")
 
     metadata_path = os.path.join(output_dir, "metadata.json")
     if not os.path.isfile(metadata_path):
@@ -438,8 +622,18 @@ def convert_to_potree(las_path: str, output_dir: str, encoding: str = "UNCOMPRES
         meta = json.load(f)
 
     attrs = [a["name"] for a in meta.get("attributes", [])]
-    print(f"      Output attributes: {', '.join(attrs)}")
-    print(f"      Points: {meta.get('points', '?'):,}")
+    tqdm.write(f"      Output attributes: {', '.join(attrs)}")
+    tqdm.write(f"      Points: {meta.get('points', '?'):,}")
+
+    # Verify all extra dims made it through to the octree
+    if extra_dims:
+        missing = [d for d in extra_dims if d not in attrs]
+        if missing:
+            print(f"\nError: extra dimension(s) not preserved in Potree output: {', '.join(missing)}")
+            print(f"       Expected in metadata.json attributes: {', '.join(extra_dims)}")
+            print(f"       Found: {', '.join(attrs)}")
+            sys.exit(1)
+        tqdm.write(f"      Extra dimensions verified: {', '.join(extra_dims)}")
 
 
 # ---------------------------------------------------------------------------

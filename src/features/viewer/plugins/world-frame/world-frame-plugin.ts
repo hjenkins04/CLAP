@@ -9,6 +9,7 @@ import {
   Matrix4,
   Ray,
 } from 'three';
+import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import type { ViewerPlugin, ViewerPluginContext } from '../../types';
 import { useWorldFrameStore, type WorldFramePhase } from './world-frame-store';
 import { useViewerModeStore } from '@/app/stores';
@@ -31,9 +32,14 @@ export class WorldFramePlugin implements ViewerPlugin {
   private previewMarker: Mesh | null = null;
   private markerBaseRadius = 0.15;
 
+  // Anchor gizmo (edit anchor point in 3D)
+  private anchorGizmo: TransformControls | null = null;
+  private anchorOrigPc: { x: number; y: number; z: number } | null = null;
+
   // Subscriptions
   private unsubMode: (() => void) | null = null;
   private unsubPhase: (() => void) | null = null;
+  private unsubAnchorEdit: (() => void) | null = null;
 
   // PC pick state
   private listening = false;
@@ -54,7 +60,7 @@ export class WorldFramePlugin implements ViewerPlugin {
     );
     this.marker1.renderOrder = 999;
     this.marker1.visible = false;
-    ctx.scene.add(this.marker1);
+    ctx.worldRoot.add(this.marker1);
 
     // Anchor 2 marker (blue)
     this.marker2 = new Mesh(
@@ -63,7 +69,7 @@ export class WorldFramePlugin implements ViewerPlugin {
     );
     this.marker2.renderOrder = 999;
     this.marker2.visible = false;
-    ctx.scene.add(this.marker2);
+    ctx.worldRoot.add(this.marker2);
 
     // Preview marker (semi-transparent yellow)
     this.previewMarker = new Mesh(
@@ -72,7 +78,15 @@ export class WorldFramePlugin implements ViewerPlugin {
     );
     this.previewMarker.renderOrder = 998;
     this.previewMarker.visible = false;
-    ctx.scene.add(this.previewMarker);
+    ctx.worldRoot.add(this.previewMarker);
+
+    // Subscribe to anchor-editing flag
+    this.unsubAnchorEdit = useWorldFrameStore.subscribe((state, prev) => {
+      if (state.editingAnchor !== prev.editingAnchor) {
+        if (state.editingAnchor) this.startAnchorEditing();
+        else this.stopAnchorEditing();
+      }
+    });
 
     // Subscribe to viewer mode
     this.unsubMode = useViewerModeStore.subscribe((state, prev) => {
@@ -137,15 +151,18 @@ export class WorldFramePlugin implements ViewerPlugin {
 
   dispose(): void {
     this.stopListening();
+    this.stopAnchorEditing();
     this.unsubMode?.();
     this.unsubPhase?.();
+    this.unsubAnchorEdit?.();
     this.unsubMode = null;
     this.unsubPhase = null;
+    this.unsubAnchorEdit = null;
 
     if (this.ctx) {
-      if (this.marker1) this.ctx.scene.remove(this.marker1);
-      if (this.marker2) this.ctx.scene.remove(this.marker2);
-      if (this.previewMarker) this.ctx.scene.remove(this.previewMarker);
+      if (this.marker1) this.ctx.worldRoot.remove(this.marker1);
+      if (this.marker2) this.ctx.worldRoot.remove(this.marker2);
+      if (this.previewMarker) this.ctx.worldRoot.remove(this.previewMarker);
     }
     [this.marker1, this.marker2, this.previewMarker].forEach((m) => {
       if (m) (m.material as MeshBasicMaterial).dispose();
@@ -179,25 +196,29 @@ export class WorldFramePlugin implements ViewerPlugin {
   // ── Phase transitions ──────────────────────────────────────────────
 
   private onPhaseChanged(phase: WorldFramePhase, _prev: WorldFramePhase): void {
+    const viewCube = this.ctx?.host.getPlugin<ViewCubePlugin>('view-cube');
     switch (phase) {
       case 'pc-pick-first':
       case 'pc-pick-second': {
-        // Snap camera to top-down
-        const viewCube = this.ctx?.host.getPlugin<ViewCubePlugin>('view-cube');
+        // Snap camera to top-down for point picking
         viewCube?.snapToTopDown();
         this.startListening();
         break;
       }
       case 'preview':
         this.stopListening();
+        // Restore standard Y-up so the user can orbit while reviewing the alignment
+        viewCube?.restoreYUp();
         // Compute initial transform for preview
         useWorldFrameStore.getState().recomputeTransform();
         break;
       case 'confirmed':
         this.stopListening();
+        viewCube?.restoreYUp();
         break;
       case 'idle':
         this.stopListening();
+        viewCube?.restoreYUp();
         if (this.previewMarker) this.previewMarker.visible = false;
         this.marker1!.visible = false;
         this.marker2!.visible = false;
@@ -330,6 +351,64 @@ export class WorldFramePlugin implements ViewerPlugin {
       store.setPhase('preview');
     }
   }
+
+  // ── Anchor Point Gizmo ────────────────────────────────────────────
+
+  private startAnchorEditing(): void {
+    if (!this.ctx || !this.marker1 || this.anchorGizmo) return;
+    const wf = useWorldFrameStore.getState();
+    if (!wf.anchor1) return;
+
+    // Snapshot for cancel
+    this.anchorOrigPc = { ...wf.anchor1.pc };
+
+    this.anchorGizmo = new TransformControls(this.ctx.getActiveCamera(), this.ctx.domElement);
+    this.anchorGizmo.setSpace('world');
+    this.anchorGizmo.setMode('translate');
+    // Y-up convention: only allow XZ movement
+    this.anchorGizmo.showX = true;
+    this.anchorGizmo.showY = false;
+    this.anchorGizmo.showZ = true;
+    this.anchorGizmo.attach(this.marker1);
+    this.ctx.worldRoot.add(this.anchorGizmo);
+    this.anchorGizmo.addEventListener('dragging-changed', this.onAnchorDragChanged);
+    this.anchorGizmo.addEventListener('objectChange', this.onAnchorObjectChange);
+
+    // Register cancel callback now so the panel can call it
+    useWorldFrameStore.getState()._setOnCancelAnchor(() => {
+      if (!this.anchorOrigPc || !this.marker1) return;
+      this.marker1.position.set(this.anchorOrigPc.x, this.anchorOrigPc.y, this.anchorOrigPc.z);
+      useWorldFrameStore.getState().setAnchor1PcLive(this.anchorOrigPc);
+    });
+  }
+
+  private stopAnchorEditing(): void {
+    if (!this.anchorGizmo) return;
+    this.anchorGizmo.removeEventListener('dragging-changed', this.onAnchorDragChanged);
+    this.anchorGizmo.removeEventListener('objectChange', this.onAnchorObjectChange);
+    this.anchorGizmo.detach();
+    if (this.ctx) this.ctx.worldRoot.remove(this.anchorGizmo);
+    this.anchorGizmo.dispose();
+    this.anchorGizmo = null;
+    if (this.ctx) this.ctx.controls.enabled = true;
+    this.anchorOrigPc = null;
+    useWorldFrameStore.getState()._setOnCancelAnchor(null);
+  }
+
+  private readonly onAnchorDragChanged = (event: { value: boolean }): void => {
+    if (this.ctx) this.ctx.controls.enabled = !event.value;
+  };
+
+  private readonly onAnchorObjectChange = (): void => {
+    if (!this.marker1 || !this.anchorOrigPc) return;
+    // Lock Y to original anchor elevation (only XZ shown anyway, but just in case)
+    this.marker1.position.y = this.anchorOrigPc.y;
+    useWorldFrameStore.getState().setAnchor1PcLive({
+      x: this.marker1.position.x,
+      y: this.marker1.position.y,
+      z: this.marker1.position.z,
+    });
+  };
 
   private findClosestPoint(ray: Ray): Vector3 | null {
     if (!this.ctx) return null;

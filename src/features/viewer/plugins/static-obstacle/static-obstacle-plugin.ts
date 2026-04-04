@@ -64,7 +64,7 @@ export class StaticObstaclePlugin implements ViewerPlugin {
 
     this.rootGroup = new Group();
     this.rootGroup.name = 'static-obstacles';
-    ctx.scene.add(this.rootGroup);
+    ctx.worldRoot.add(this.rootGroup);
 
     this.rebuildAnnotations();
 
@@ -98,7 +98,7 @@ export class StaticObstaclePlugin implements ViewerPlugin {
     this.unsubStore = null;
     this.clearAllAnnotationGroups();
     if (this.ctx && this.rootGroup) {
-      this.ctx.scene.remove(this.rootGroup);
+      this.ctx.worldRoot.remove(this.rootGroup);
     }
     this.rootGroup = null;
     this.ctx = null;

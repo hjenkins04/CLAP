@@ -30,7 +30,7 @@ export class GridPlugin implements ViewerPlugin {
     this.unsubscribe = null;
 
     if (this.gridHelper && this.ctx) {
-      this.ctx.scene.remove(this.gridHelper);
+      this.ctx.worldRoot.remove(this.gridHelper);
       this.gridHelper.dispose();
       this.gridHelper = null;
     }
@@ -42,13 +42,13 @@ export class GridPlugin implements ViewerPlugin {
     if (!this.ctx) return;
 
     if (this.gridHelper) {
-      this.ctx.scene.remove(this.gridHelper);
+      this.ctx.worldRoot.remove(this.gridHelper);
       this.gridHelper.dispose();
     }
 
     const divisions = Math.max(1, Math.round(size / cellSize));
     this.gridHelper = new GridHelper(size, divisions, 0x444444, 0x222222);
     this.gridHelper.visible = visible;
-    this.ctx.scene.add(this.gridHelper);
+    this.ctx.worldRoot.add(this.gridHelper);
   }
 }

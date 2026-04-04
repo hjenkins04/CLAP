@@ -15,6 +15,7 @@ export function flattenOperations(
 ): FlattenedEdits {
   const composed = new Matrix4(); // identity
   const pointEdits = new Map<PointId, PointDiff>();
+  let axisFlip = { flipX: false, flipY: false, flipZ: false };
 
   for (const op of operations) {
     switch (op.type) {
@@ -22,6 +23,11 @@ export function flattenOperations(
         const m = new Matrix4();
         m.fromArray(op.matrix);
         composed.copy(m);
+        break;
+      }
+
+      case 'AxisFlip': {
+        axisFlip = { flipX: op.flipX, flipY: op.flipY, flipZ: op.flipZ };
         break;
       }
 
@@ -67,5 +73,5 @@ export function flattenOperations(
   const globalTransform = new Float64Array(16);
   composed.toArray(globalTransform);
 
-  return { globalTransform, pointEdits };
+  return { globalTransform, axisFlip, pointEdits };
 }

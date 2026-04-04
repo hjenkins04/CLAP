@@ -27,6 +27,7 @@ import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js
 import type { ViewerPlugin, ViewerPluginContext } from '../../types';
 import { usePoiStore } from '../poi/poi-store';
 import { useViewerModeStore } from '@/app/stores';
+import { useAxisStore } from '../axis/axis-store';
 
 // ── Constants ──────────────────────────────────────────────────────────
 
@@ -137,6 +138,12 @@ export class ViewCubePlugin implements ViewerPlugin {
   private viewBtn: HTMLButtonElement | null = null;
   private is2D = false;
   private unsubLock: (() => void) | null = null;
+  private unsubAxis: (() => void) | null = null;
+
+  // Current axis flip state (mirrors useAxisStore, kept locally for hot-path access)
+  private flipX = false;
+  private flipY = false;
+  private flipZ = false;
 
   // Mini 3D scene
   private miniRenderer: WebGLRenderer | null = null;
@@ -192,6 +199,22 @@ export class ViewCubePlugin implements ViewerPlugin {
     this.buildDOM(ctx.container);
     this.buildScene();
     this.buildCube();
+
+    // Apply axis flip to camera immediately (handles persisted localStorage state).
+    // view-cube has the highest order (200) so all other plugins are already init'd.
+    const { flipX, flipY, flipZ } = useAxisStore.getState();
+    this.flipX = flipX;
+    this.flipY = flipY;
+    this.flipZ = flipZ;
+    this.onAxisFlipChanged();
+
+    // React to future axis flip changes
+    this.unsubAxis = useAxisStore.subscribe((state) => {
+      this.flipX = state.flipX;
+      this.flipY = state.flipY;
+      this.flipZ = state.flipZ;
+      this.onAxisFlipChanged();
+    });
   }
 
   onPointCloudLoaded(): void {
@@ -199,6 +222,36 @@ export class ViewCubePlugin implements ViewerPlugin {
     // after fitCameraToPointCloud + controls.update
     if (!this.homePosition) {
       requestAnimationFrame(() => this.captureHome());
+    }
+  }
+
+  /** The camera's natural "up" vector given current axis flips. */
+  private naturalUp(): Vector3 {
+    return new Vector3(0, this.flipY ? -1 : 1, 0);
+  }
+
+  /**
+   * Apply the active axis flips to a direction vector.
+   * Negates each component whose axis is flipped so that snap targets and
+   * the view-cube eye vector stay consistent with the flipped world.
+   */
+  private flipDir(v: Vector3): Vector3 {
+    return new Vector3(
+      this.flipX ? -v.x : v.x,
+      this.flipY ? -v.y : v.y,
+      this.flipZ ? -v.z : v.z,
+    );
+  }
+
+  /** Update camera up and controls whenever axis flips change. */
+  private onAxisFlipChanged(): void {
+    if (!this.ctx) return;
+    const cam = this.ctx.getActiveCamera();
+    // Only update up when we're in a "Y-up-like" state — don't override the
+    // special (0,0,±1) up used in top-down/2D mode.
+    if (Math.abs(cam.up.y) > 0.5) {
+      cam.up.copy(this.naturalUp());
+      this.ctx.controls.update();
     }
   }
 
@@ -212,8 +265,10 @@ export class ViewCubePlugin implements ViewerPlugin {
       this.updateAnimation(controls);
     }
 
-    // Mirror the main camera's viewing direction around origin
-    const eye = mainCam.position.clone().sub(controls.target).normalize();
+    // Mirror the main camera's viewing direction, then apply axis flips so the
+    // cube widget shows which face of the DATA coordinate system is facing you.
+    const rawEye = mainCam.position.clone().sub(controls.target).normalize();
+    const eye = this.flipDir(rawEye);
     this.cubeCam.position.copy(eye.multiplyScalar(CAM_DISTANCE));
     this.cubeCam.lookAt(0, 0, 0);
     this.cubeCam.up.copy(mainCam.up);
@@ -257,6 +312,8 @@ export class ViewCubePlugin implements ViewerPlugin {
 
     this.unsubLock?.();
     this.unsubLock = null;
+    this.unsubAxis?.();
+    this.unsubAxis = null;
 
     this.viewBtn?.remove();
     this.wrapper?.remove();
@@ -848,7 +905,7 @@ export class ViewCubePlugin implements ViewerPlugin {
       const cam = this.ctx.getActiveCamera();
       const offset = new Vector3().setFromSpherical(this.dragSpherical);
       cam.position.copy(this.ctx.controls.target).add(offset);
-      cam.up.set(0, 1, 0);
+      cam.up.copy(this.naturalUp());
       this.ctx.controls.update();
     }
   };
@@ -931,10 +988,16 @@ export class ViewCubePlugin implements ViewerPlugin {
     if (!this.ctx) return;
     this.is2D = false;
 
+    // Restore natural Y-up (respecting flip) so OrbitControls orbits correctly in 3D.
+    // (Top-down view sets camera.up = (0,0,±1); that must be undone here.)
+    const cam = this.ctx.getActiveCamera();
+    cam.up.copy(this.naturalUp());
+
     // Restore rotation (unless camera is globally locked)
     const locked = useViewerModeStore.getState().cameraLocked;
     const controls = this.ctx.controls;
     controls.enableRotate = !locked;
+    controls.update();
 
     this.updateViewBtn();
   }
@@ -955,20 +1018,36 @@ export class ViewCubePlugin implements ViewerPlugin {
   }
 
   /**
+   * Restore standard Y-up orientation after leaving a top-down picking workflow.
+   * Call this when the workflow that triggered snapToTopDown() is complete, so
+   * that OrbitControls orbit axes are back to normal.
+   */
+  restoreYUp(): void {
+    if (!this.ctx) return;
+    const cam = this.ctx.getActiveCamera();
+    const nat = this.naturalUp();
+    // Only restore if we're not already in the natural Y state (e.g. coming from top-down).
+    if (Math.abs(cam.up.dot(nat)) < 0.99) {
+      cam.up.copy(nat);
+      this.ctx.controls.update();
+    }
+  }
+
+  /**
    * Snap the main camera to a top-down view looking down the Y axis.
    * Uses the same smooth animation as face clicks.
    */
   snapToTopDown(): void {
     if (!this.ctx) return;
-    // TOP face: dir = (0,1,0), up = (0,0,-1)
+    // TOP face: dir=(0,1,0), up=(0,0,-1).  When flipY, camera goes to -Y (visual top).
     const target = FACES[2]; // TOP
     const cam = this.ctx.getActiveCamera();
     const controls = this.ctx.controls;
 
     this.animFromPos.copy(cam.position);
     this.animFromUp.copy(cam.up);
-    this.animToDir.copy(target.dir);
-    this.animToUp.copy(target.up);
+    this.animToDir.copy(this.flipDir(target.dir));
+    this.animToUp.copy(this.flipDir(target.up));
     this.animDist = cam.position.distanceTo(controls.target);
     this.animStart = performance.now();
     this.animating = true;
@@ -1040,8 +1119,9 @@ export class ViewCubePlugin implements ViewerPlugin {
 
     this.animFromPos.copy(cam.position);
     this.animFromUp.copy(cam.up);
-    this.animToDir.copy(target.dir);
-    this.animToUp.copy(target.up);
+    // Apply axis flips so snapping to "TOP" when flipY is true goes to -Y (visual top).
+    this.animToDir.copy(this.flipDir(target.dir));
+    this.animToUp.copy(this.flipDir(target.up));
     this.animDist = cam.position.distanceTo(controls.target);
     this.animStart = performance.now();
     this.animating = true;
@@ -1085,19 +1165,24 @@ export class ViewCubePlugin implements ViewerPlugin {
     if (t >= 1) {
       this.animating = false;
 
-      // After snap completes, restore camera.up to the standard Y-up.
-      // OrbitControls derives its internal coordinate frame from camera.up;
-      // a non-standard up (e.g. (0,0,-1) for top-down) breaks pan/orbit axes.
-      // We offset the polar angle slightly from the poles to avoid gimbal lock.
       const finalDir = this.animToDir.clone();
       const absY = Math.abs(finalDir.y);
       if (absY > 0.99) {
-        // Looking straight down or up — nudge camera slightly off-axis
-        // so OrbitControls can resolve the up direction from (0,1,0)
+        // Looking straight down or up (top/bottom view).
+        // Nudge the camera slightly south so it looks slightly northward.
+        // Combined with camera.up = (0,0,-1) (South), this gives:
+        //   screen-right = East (+X)  ✓
+        //   screen-up    = North (+Z) ✓  (standard map orientation)
         const nudge = 0.001 * currentDist;
         cam.position.z += finalDir.y > 0 ? -nudge : nudge;
+        // Preserve the animation's map-oriented up vector (e.g. (0,0,-1) for TOP).
+        // screenSpacePanning=true means OrbitControls pans along camera-matrix axes,
+        // so pan direction is correct. Orbit is disabled in 2D mode anyway.
+        cam.up.copy(this.animToUp);
+      } else {
+        // Non-polar views: restore natural Y-up (flip-aware) for normal 3D orbiting.
+        cam.up.copy(this.naturalUp());
       }
-      cam.up.set(0, 1, 0);
       controls.update();
     }
   }

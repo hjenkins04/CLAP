@@ -35,7 +35,7 @@ export class TransformPlugin implements ViewerPlugin {
     );
     this.gizmo.visible = false;
     this.gizmo.enabled = false;
-    ctx.scene.add(this.gizmo);
+    ctx.worldRoot.add(this.gizmo);
 
     // Disable orbit controls while dragging gizmo.
     // On drag END: commit the final matrix and update store readouts.
@@ -106,7 +106,7 @@ export class TransformPlugin implements ViewerPlugin {
     this.detachGizmo();
 
     if (this.gizmo && this.ctx) {
-      this.ctx.scene.remove(this.gizmo);
+      this.ctx.worldRoot.remove(this.gizmo);
       this.gizmo.dispose();
       this.gizmo = null;
     }

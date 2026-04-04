@@ -82,6 +82,8 @@ export class BaseMapPlugin implements ViewerPlugin {
   private tileElevation = 0;
   private pcBounds: Box3 | null = null;
   private gizmo: TransformControls | null = null;
+  /** Scene-space proxy the gizmo attaches to; avoids flip-axis handedness issues. */
+  private gizmoProxy: Group | null = null;
 
   private unsubWorldFrame: (() => void) | null = null;
   private unsubBaseMap: (() => void) | null = null;
@@ -93,7 +95,7 @@ export class BaseMapPlugin implements ViewerPlugin {
 
     this.tileGroup = new Group();
     this.tileGroup.name = 'base-map-tiles';
-    ctx.scene.add(this.tileGroup);
+    ctx.worldRoot.add(this.tileGroup);
 
     this.unsubWorldFrame = useWorldFrameStore.subscribe((state, prev) => {
       if (state.transform !== prev.transform || state.phase !== prev.phase) {
@@ -120,10 +122,25 @@ export class BaseMapPlugin implements ViewerPlugin {
       if (state.gizmoMode !== prev.gizmoMode && state.editing) this.applyGizmoMode(state.gizmoMode);
     });
 
-    useBaseMapStore.getState()._setOnSave(async () => {
+    useWorldFrameStore.getState()._setOnSaveAnchor(async () => {
       useBaseMapStore.getState().setSaving(true);
       try { await this.saveGeoRef(); }
       finally { useBaseMapStore.getState().setSaving(false); }
+    });
+
+    useBaseMapStore.getState()._setOnSave(async () => {
+      // Sync gizmo position to world-frame store before reading offsets for save
+      this.syncGizmoToStore();
+      useBaseMapStore.getState().setSaving(true);
+      try { await this.saveGeoRef(); }
+      finally { useBaseMapStore.getState().setSaving(false); }
+    });
+
+    useBaseMapStore.getState()._setOnCancel(() => {
+      // Restore tileGroup to the original (pre-edit) position so that
+      // stopEditing() → syncGizmoToStore() writes back the original offsets.
+      const { editHistory } = useBaseMapStore.getState();
+      if (editHistory.length > 0) this.applySnapshot(editHistory[0]);
     });
 
     useBaseMapStore.getState()._setUndoRedo(
@@ -176,7 +193,7 @@ export class BaseMapPlugin implements ViewerPlugin {
     // Always try both: georef.json for full manual calibration,
     // crs.json for auto world-frame + base-map visibility.
     this.loadGeoRef()
-      .then(() => this.loadCrs())
+      .then((georefLoaded) => this.loadCrs(georefLoaded))
       .then(() => this.updateTiles());
   }
 
@@ -188,7 +205,8 @@ export class BaseMapPlugin implements ViewerPlugin {
     this.unsubBaseMap?.();
     this.unsubWorldFrame = null;
     this.unsubBaseMap = null;
-    if (this.ctx && this.tileGroup) this.ctx.scene.remove(this.tileGroup);
+    useWorldFrameStore.getState()._setOnSaveAnchor(null);
+    if (this.ctx && this.tileGroup) this.ctx.worldRoot.remove(this.tileGroup);
     this.tileGroup = null;
     this.ctx = null;
   }
@@ -430,12 +448,12 @@ export class BaseMapPlugin implements ViewerPlugin {
     // Set initial Y from current pending offset — use DEM min as reference
     this.updateZOffsetProxy(useWorldFrameStore.getState().pendingZOffset);
 
-    this.ctx.scene.add(this.zOffsetProxy);
+    this.ctx.worldRoot.add(this.zOffsetProxy);
   }
 
   private hideZOffsetProxy(): void {
     if (this.zOffsetProxy && this.ctx) {
-      this.ctx.scene.remove(this.zOffsetProxy);
+      this.ctx.worldRoot.remove(this.zOffsetProxy);
       this.zOffsetProxy.geometry.dispose();
       (this.zOffsetProxy.material as MeshBasicMaterial).dispose();
       this.zOffsetProxy = null;
@@ -502,6 +520,22 @@ export class BaseMapPlugin implements ViewerPlugin {
 
   // ── Editing ────────────────────────────────────────────────────────
 
+  /**
+   * Returns the sign factor needed to convert a worldRoot-local Y rotation to
+   * the equivalent world-space Y rotation angle (and vice-versa).
+   *
+   * When flipX XOR flipZ is active the parent matrix has a negative determinant,
+   * which inverts the handedness of the XZ plane and therefore reverses the
+   * direction of a Y-axis rotation as seen by the user. Multiplying by this
+   * factor compensates for that inversion.
+   */
+  private rotSign(): number {
+    if (!this.ctx) return 1;
+    const sx = this.ctx.worldRoot.scale.x < 0 ? -1 : 1;
+    const sz = this.ctx.worldRoot.scale.z < 0 ? -1 : 1;
+    return sx * sz;
+  }
+
   private startEditing(): void {
     if (!this.ctx || !this.tileGroup || this.gizmo) return;
 
@@ -509,9 +543,32 @@ export class BaseMapPlugin implements ViewerPlugin {
     useBaseMapStore.getState().clearEditHistory();
     this.pushCurrentSnapshot();
 
+    // ── Proxy in scene space ──────────────────────────────────────────
+    // TransformControls attached directly to tileGroup (a child of worldRoot)
+    // misbehaves when worldRoot has a negative scale: the gizmo arrows point in
+    // mirrored directions and rotation handedness inverts.  Fix: attach the
+    // gizmo to a proxy Group that lives in scene space (NOT under worldRoot), so
+    // its transform is always in unflipped world coordinates.  onGizmoObjectChange
+    // converts proxy world transform → tileGroup worldRoot-local transform.
+    this.gizmoProxy = new Group();
+    this.tileGroup.updateMatrixWorld(true);
+
+    // Proxy position = tileGroup world position
+    const worldPos = new Vector3();
+    this.tileGroup.getWorldPosition(worldPos);
+    this.gizmoProxy.position.copy(worldPos);
+    this.gizmoProxy.position.y = worldPos.y; // keep at actual elevation
+
+    // Proxy rotation: tileGroup.rotation.y is in worldRoot-local space.
+    // Convert to world-space Y angle by applying the rotation sign factor.
+    this.gizmoProxy.rotation.y = this.tileGroup.rotation.y * this.rotSign();
+
+    this.ctx.scene.add(this.gizmoProxy);
+
     this.gizmo = new TransformControls(this.ctx.getActiveCamera(), this.ctx.domElement);
-    this.gizmo.setSpace('local');
-    this.gizmo.attach(this.tileGroup);
+    // World space: arrows always point in true world directions regardless of flip.
+    this.gizmo.setSpace('world');
+    this.gizmo.attach(this.gizmoProxy);
     this.applyGizmoMode(useBaseMapStore.getState().gizmoMode);
     this.ctx.scene.add(this.gizmo);
     this.gizmo.addEventListener('dragging-changed', this.onGizmoDragChanged);
@@ -528,13 +585,17 @@ export class BaseMapPlugin implements ViewerPlugin {
     if (this.ctx) this.ctx.scene.remove(this.gizmo);
     this.gizmo.dispose();
     this.gizmo = null;
+    if (this.gizmoProxy && this.ctx) {
+      this.ctx.scene.remove(this.gizmoProxy);
+      this.gizmoProxy = null;
+    }
     if (this.ctx) this.ctx.controls.enabled = true;
   }
 
   private applyGizmoMode(mode: 'translate' | 'rotate'): void {
     if (!this.gizmo) return;
     this.gizmo.setMode(mode);
-    // Y-up: translate on XZ, rotate around Y
+    // Y-up: translate on XZ plane only, rotate around Y axis only
     this.gizmo.showX = mode === 'translate';
     this.gizmo.showY = mode === 'rotate';
     this.gizmo.showZ = mode === 'translate';
@@ -545,7 +606,6 @@ export class BaseMapPlugin implements ViewerPlugin {
   private readonly onGizmoDragChanged = (event: { value: boolean }): void => {
     if (this.ctx) this.ctx.controls.enabled = !event.value;
     if (event.value) {
-      // Drag started
       this.isDragging = true;
     } else if (this.isDragging) {
       // Drag ended — push the new position as a snapshot
@@ -555,8 +615,19 @@ export class BaseMapPlugin implements ViewerPlugin {
   };
 
   private readonly onGizmoObjectChange = (): void => {
-    // Lock Y to tile elevation
-    if (this.tileGroup) this.tileGroup.position.y = this.tileElevation;
+    if (!this.tileGroup || !this.gizmoProxy || !this.ctx) return;
+
+    // Convert proxy world position → tileGroup worldRoot-local position.
+    // worldRoot.worldToLocal correctly inverts the scale/flip so the
+    // tileGroup ends up at the same visual world position as the proxy.
+    const localPos = this.ctx.worldRoot.worldToLocal(this.gizmoProxy.position.clone());
+    this.tileGroup.position.x = localPos.x;
+    this.tileGroup.position.z = localPos.z;
+    this.tileGroup.position.y = this.tileElevation; // lock elevation
+
+    // Convert proxy world-space Y rotation → tileGroup local Y rotation.
+    // The rotSign() factor corrects for axis-flip handedness inversion.
+    this.tileGroup.rotation.set(0, this.gizmoProxy.rotation.y * this.rotSign(), 0);
   };
 
   private pushCurrentSnapshot(): void {
@@ -573,6 +644,15 @@ export class BaseMapPlugin implements ViewerPlugin {
     this.tileGroup.position.x = snap.posX;
     this.tileGroup.position.z = snap.posZ;
     this.tileGroup.rotation.y = snap.rotY;
+
+    // Keep proxy in sync so the gizmo renders at the correct position.
+    if (this.gizmoProxy && this.ctx) {
+      this.tileGroup.updateMatrixWorld(true);
+      const worldPos = new Vector3();
+      this.tileGroup.getWorldPosition(worldPos);
+      this.gizmoProxy.position.copy(worldPos);
+      this.gizmoProxy.rotation.y = snap.rotY * this.rotSign();
+    }
   }
 
   undoEdit(): void {
@@ -590,6 +670,12 @@ export class BaseMapPlugin implements ViewerPlugin {
     const wf = useWorldFrameStore.getState();
     if (!wf.anchor1) return;
 
+    // Capture all three values BEFORE any store writes, because setTranslationOffset
+    // triggers updateTiles() which (when editing=false) resets tileGroup position/rotation.
+    const posX = this.tileGroup.position.x;
+    const posZ = this.tileGroup.position.z;
+    const rotY = this.tileGroup.rotation.y;
+
     const baseX = wf.anchor1.pc.x;
     const baseZ = wf.anchor1.pc.z;
 
@@ -603,11 +689,8 @@ export class BaseMapPlugin implements ViewerPlugin {
       baseRot = t.rotation;
     }
 
-    wf.setTranslationOffset(
-      this.tileGroup.position.x - baseX,
-      this.tileGroup.position.z - baseZ,
-    );
-    wf.setRotationOffset(this.tileGroup.rotation.y - baseRot);
+    wf.setTranslationOffset(posX - baseX, posZ - baseZ);
+    wf.setRotationOffset(rotY - baseRot);
   }
 
   // ── Geo-reference persistence ──────────────────────────────────────
@@ -637,9 +720,9 @@ export class BaseMapPlugin implements ViewerPlugin {
     console.info('[CLAP] Saved georef to', `${basePath}${GEOREF_FILENAME}`);
   }
 
-  async loadGeoRef(): Promise<void> {
+  async loadGeoRef(): Promise<boolean> {
     const basePath = this.ctx?.getEditor().getBasePath();
-    if (!basePath) return;
+    if (!basePath) return false;
 
     let buffer: ArrayBuffer | null = null;
     if (window.electron) {
@@ -652,7 +735,7 @@ export class BaseMapPlugin implements ViewerPlugin {
         if (resp.ok) buffer = await resp.arrayBuffer();
       } catch { /* not found */ }
     }
-    if (!buffer) return;
+    if (!buffer) return false;
 
     try {
       const data: GeoRefData = JSON.parse(new TextDecoder().decode(buffer));
@@ -670,9 +753,11 @@ export class BaseMapPlugin implements ViewerPlugin {
       const bm = useBaseMapStore.getState();
       bm.setOpacity(data.baseMap.opacity);
       bm.setZoomLevel(data.baseMap.zoomLevel);
-      // Restore flip/zOffset to world-frame store (shared by all overlays)
-      if (data.baseMap.flipX) wf.toggleFlipX();
-      if (data.baseMap.flipZ) wf.toggleFlipZ();
+      // Restore flip/zOffset to world-frame store (shared by all overlays).
+      // Use setFlipX/setFlipZ (not toggle) so the result is always correct
+      // regardless of whatever stale state was persisted from a prior session.
+      wf.setFlipX(data.baseMap.flipX);
+      wf.setFlipZ(data.baseMap.flipZ);
       if (data.baseMap.zOffset !== undefined) wf.setZOffset(data.baseMap.zOffset);
 
       // Restore grid settings
@@ -684,16 +769,19 @@ export class BaseMapPlugin implements ViewerPlugin {
       }
 
       console.info('[CLAP] Loaded georef from', `${basePath}${GEOREF_FILENAME}`);
+      return true;
     } catch (err) {
       console.warn('[CLAP] Failed to parse georef.json:', err);
+      return false;
     }
   }
 
   /**
    * Read crs.json (written by preprocess.py) and auto-configure the world frame.
-   * Only called when no georef.json was found for this point cloud.
+   * georefLoaded: true if georef.json was already loaded for this cloud — in that
+   * case the user's manual calibration takes precedence and CRS is not applied.
    */
-  async loadCrs(): Promise<void> {
+  async loadCrs(georefLoaded: boolean): Promise<void> {
     const basePath = this.ctx?.getEditor().getBasePath();
     if (!basePath) return;
 
@@ -714,8 +802,10 @@ export class BaseMapPlugin implements ViewerPlugin {
       const crs: CrsInfo = JSON.parse(new TextDecoder().decode(buffer));
       if (crs.type === 'utm' && crs.refLngLat) {
         const refGeo: GeoPoint = { lng: crs.refLngLat.lng, lat: crs.refLngLat.lat };
-        // Only set world frame anchors if not already confirmed (e.g. from georef.json or localStorage)
-        if (useWorldFrameStore.getState().phase !== 'confirmed') {
+        // Apply CRS world frame unless a georef.json was loaded for this cloud.
+        // Intentionally ignore any persisted phase from a previous session — the
+        // crs.json is authoritative for this specific point cloud.
+        if (!georefLoaded) {
           useWorldFrameStore.getState().autoConfirmFromCrs(refGeo);
         }
         // Always enable the base map when a known CRS is present

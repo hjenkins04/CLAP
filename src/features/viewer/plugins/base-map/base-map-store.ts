@@ -35,6 +35,8 @@ interface BaseMapState {
 
   _onSave: (() => Promise<void>) | null;
   _setOnSave: (cb: (() => Promise<void>) | null) => void;
+  _onCancel: (() => void) | null;
+  _setOnCancel: (cb: (() => void) | null) => void;
   _onUndo: (() => void) | null;
   _onRedo: (() => void) | null;
   _setUndoRedo: (undo: (() => void) | null, redo: (() => void) | null) => void;
@@ -89,10 +91,21 @@ export const useBaseMapStore = create<BaseMapState>()(
 
       _onSave: null,
       _setOnSave: (cb) => set({ _onSave: cb }),
+      _onCancel: null,
+      _setOnCancel: (cb) => set({ _onCancel: cb }),
       _onUndo: null,
       _onRedo: null,
       _setUndoRedo: (undo, redo) => set({ _onUndo: undo, _onRedo: redo }),
     }),
-    { name: 'clap-plugin-base-map' },
+    {
+      name: 'clap-plugin-base-map',
+      partialize: (state) => ({
+        visible: state.visible,
+        opacity: state.opacity,
+        zoomLevel: state.zoomLevel,
+        gizmoMode: state.gizmoMode,
+        // editing, editHistory, editCursor, saving are transient — not persisted
+      }),
+    },
   ),
 );

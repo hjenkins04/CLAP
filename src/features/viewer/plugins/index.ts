@@ -13,3 +13,4 @@ export { OsmFeaturesPlugin } from './osm-features';
 export { CustomMapPlugin } from './custom-map';
 export { StaticObstaclePlugin } from './static-obstacle';
 export { ReclassifyPlugin } from './reclassify';
+export { RoadExtractionPlugin } from './road-extraction';

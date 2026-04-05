@@ -307,16 +307,20 @@ export class RoiSelectionPlugin implements ViewerPlugin {
     if (!this.ctx || !this.engine) return;
     const shapes = this.engine.getShapes();
     const { boxes, cylinders, polygons } = editorShapesToClipRegions(shapes);
+    const hasRegions = boxes.length + cylinders.length + polygons.length > 0;
 
     for (const pco of this.ctx.getPointClouds()) {
-      if (boxes.length + cylinders.length + polygons.length === 0) {
+      if (!hasRegions) {
         pco.material.clipMode = ClipMode.DISABLED;
         pco.material.useClipBox = false;
         pco.material.setClipBoxes([]);
+        pco.material.setClipPolygons([]);
       } else {
         pco.material.clipMode = ClipMode.CLIP_OUTSIDE;
         pco.material.useClipBox = boxes.length > 0;
-        if (boxes.length > 0) pco.material.setClipBoxes(boxes);
+        pco.material.setClipBoxes(boxes.length > 0 ? boxes : []);
+        // Potree supports one polygon at a time; pass first (if any).
+        pco.material.setClipPolygons(polygons.length > 0 ? [polygons[0]] : []);
       }
     }
   }
@@ -327,6 +331,7 @@ export class RoiSelectionPlugin implements ViewerPlugin {
       pco.material.clipMode = ClipMode.DISABLED;
       pco.material.useClipBox = false;
       pco.material.setClipBoxes([]);
+      pco.material.setClipPolygons([]);
     }
     useRoiStore.getState().setClipEnabled(false);
   }

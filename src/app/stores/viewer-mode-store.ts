@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 
 // --- Mode definitions ---
 
-export type ViewerMode = 'idle' | 'transform' | 'poi' | 'virtual-tiles' | 'roi-selection' | 'point-select' | 'annotate' | 'reclassify' | 'world-frame' | 'static-obstacle';
+export type ViewerMode = 'idle' | 'transform' | 'poi' | 'virtual-tiles' | 'roi-selection' | 'point-select' | 'annotate' | 'reclassify' | 'world-frame' | 'static-obstacle' | 'road-extraction';
 export type TransformSubMode = 'translate' | 'rotate';
 
 // --- State ---
@@ -32,6 +32,7 @@ interface ViewerModeState {
   enterReclassifyMode: () => void;
   enterWorldFrameMode: () => void;
   enterStaticObstacleMode: () => void;
+  enterRoadExtractionMode: () => void;
   exitMode: () => void;
   setCameraLocked: (locked: boolean) => void;
   toggleCameraLocked: () => void;
@@ -71,6 +72,8 @@ export const useViewerModeStore = create<ViewerModeState>()(
       enterWorldFrameMode: () => set({ mode: 'world-frame' }),
 
       enterStaticObstacleMode: () => set({ mode: 'static-obstacle' }),
+
+      enterRoadExtractionMode: () => set({ mode: 'road-extraction' }),
 
       exitMode: () => set({ mode: 'idle', cameraLocked: false }),
 

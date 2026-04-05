@@ -19,6 +19,7 @@ import { WorldFrameOverlay } from './world-frame-overlay';
 import { WorldFrameMapModal } from './world-frame-map-modal';
 import { StaticObstacleOverlay } from '../plugins/static-obstacle';
 import { ReclassifyGizmo, ReclassifyOverlay } from '../plugins/reclassify';
+import { RoadExtractionOverlay } from '../plugins/road-extraction';
 
 export function ViewerPage() {
   const { theme, cycleTheme } = useUIStore();
@@ -67,6 +68,7 @@ export function ViewerPage() {
         <WorldFrameMapModal engine={engine} />
         <StaticObstacleOverlay engine={engine} />
         <ReclassifyOverlay engine={engine} />
+        <RoadExtractionOverlay engine={engine} />
         <ReclassifyGizmo />
       </main>
     </div>

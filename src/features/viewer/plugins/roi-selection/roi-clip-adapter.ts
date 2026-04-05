@@ -144,16 +144,32 @@ export function shapesToClipRegions(
  * potree clip regions. All matrices are in world/scene space — no additional
  * transform group is needed.
  *
- * OBB shapes map to clip boxes (full rotation support).
- * Polygon shapes map to clip boxes (conservative AABB approximation).
- * Polyline shapes produce no clip region (they have no volume).
+ * OBB shapes  → clip boxes (full rotation support).
+ * Polygon shapes → IClipPolygon (exact footprint; potree supports one at a time).
+ * Polyline shapes → no clip region (they have no volume).
+ *
+ * worldToLocal for polygon clipping:
+ *   Potree's shader tests `localPos.xy` for the 2D polygon and `localPos.z` for
+ *   elevation. Three.js world space is Y-up (elevation = Y, north = Z), so we
+ *   apply a YZ-swap: localX = worldX, localY = worldZ, localZ = worldY.
  */
+
+// YZ-swap matrix: maps Three.js Y-up world space → potree polygon-local space
+// where XY = horizontal footprint and Z = elevation.
+const YZ_SWAP = new Matrix4().set(
+  1, 0, 0, 0,
+  0, 0, 1, 0,
+  0, 1, 0, 0,
+  0, 0, 0, 1,
+);
+
 export function editorShapesToClipRegions(shapes: EditorShape[]): {
   boxes: IClipBox[];
   cylinders: IClipCylinder[];
   polygons: IClipPolygon[];
 } {
   const boxes: IClipBox[] = [];
+  const polygons: IClipPolygon[] = [];
 
   for (const shape of shapes) {
     switch (shape.type) {
@@ -188,39 +204,23 @@ export function editorShapesToClipRegions(shapes: EditorShape[]): {
       }
 
       case 'polygon': {
-        // Conservative AABB clip box from the polygon footprint + height.
         if (shape.basePoints.length < 3) break;
 
-        let minX = Infinity, maxX = -Infinity;
-        let minZ = Infinity, maxZ = -Infinity;
-        let minY = Infinity;
-
+        // Exact polygon clip using potree's IClipPolygon.
+        // basePoints are in Three.js world space: X=east, Y=elevation, Z=north.
+        // Shader tests localPos.xy for the footprint and localPos.z for elevation,
+        // so vertices use world {x, z} and zMin/zMax are world Y values.
+        let minY = Infinity, maxY = -Infinity;
         for (const p of shape.basePoints) {
-          minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
-          minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z);
           minY = Math.min(minY, p.y);
+          maxY = Math.max(maxY, p.y);
         }
 
-        const cx = (minX + maxX) / 2;
-        const cy = minY + shape.height / 2;
-        const cz = (minZ + maxZ) / 2;
-        const hx = Math.max(0.01, (maxX - minX) / 2);
-        const hy = Math.max(0.01, shape.height / 2);
-        const hz = Math.max(0.01, (maxZ - minZ) / 2);
-
-        const worldMatrix = new Matrix4()
-          .makeTranslation(cx, cy, cz)
-          .multiply(new Matrix4().makeScale(hx * 2, hy * 2, hz * 2));
-        const inverse = worldMatrix.clone().invert();
-
-        boxes.push({
-          box: new Box3(
-            new Vector3(cx - hx, cy - hy, cz - hz),
-            new Vector3(cx + hx, cy + hy, cz + hz),
-          ),
-          matrix: worldMatrix,
-          inverse,
-          position: new Vector3(cx, cy, cz),
+        polygons.push({
+          vertices: shape.basePoints.map((p) => ({ x: p.x, y: p.z })),
+          zMin: minY,
+          zMax: maxY + shape.height,
+          worldToLocal: YZ_SWAP,
         });
         break;
       }
@@ -229,5 +229,5 @@ export function editorShapesToClipRegions(shapes: EditorShape[]): {
     }
   }
 
-  return { boxes, cylinders: [], polygons: [] };
+  return { boxes, cylinders: [], polygons };
 }

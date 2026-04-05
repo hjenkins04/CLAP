@@ -65,7 +65,7 @@ export function ViewerPage() {
         <AnnotatePanel />
         <WorldFrameOverlay engine={engine} />
         <WorldFrameMapModal engine={engine} />
-        <StaticObstacleOverlay />
+        <StaticObstacleOverlay engine={engine} />
         <ReclassifyOverlay engine={engine} />
         <ReclassifyGizmo />
       </main>

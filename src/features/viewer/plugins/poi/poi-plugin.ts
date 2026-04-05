@@ -231,18 +231,18 @@ export class PoiPlugin implements ViewerPlugin {
   };
 
   private readonly onGizmoObjectChange = (): void => {
-    // Sync marker position back to store preview (live feedback)
-    if (!this.marker) return;
-    const p = this.marker.position;
-    usePoiStore.getState().setPreviewPosition({ x: p.x, y: p.y, z: p.z });
+    // marker.position is in worldRoot-local space; convert to world space for the store
+    if (!this.marker || !this.ctx) return;
+    const worldPos = this.ctx.worldRoot.localToWorld(this.marker.position.clone());
+    usePoiStore.getState().setPreviewPosition({ x: worldPos.x, y: worldPos.y, z: worldPos.z });
   };
 
   /** Called externally (from UI) to confirm gizmo position */
   confirmAdjustment(): void {
-    if (!this.marker) return;
-    const p = this.marker.position;
+    if (!this.marker || !this.ctx) return;
+    const worldPos = this.ctx.worldRoot.localToWorld(this.marker.position.clone());
     const store = usePoiStore.getState();
-    store.setPosition(p.x, p.y, p.z);
+    store.setPosition(worldPos.x, worldPos.y, worldPos.z);
     store.setPhase('idle');
     store.setPreviewPosition(null);
     useViewerModeStore.getState().exitMode();
@@ -250,10 +250,12 @@ export class PoiPlugin implements ViewerPlugin {
 
   /** Called externally (from UI) to cancel gizmo adjustment */
   cancelAdjustment(): void {
-    // Restore marker to committed position
+    // Restore marker to committed position (store holds world-space; convert to local)
     const store = usePoiStore.getState();
-    if (store.position && this.marker) {
-      this.marker.position.set(store.position.x, store.position.y, store.position.z);
+    if (store.position && this.marker && this.ctx) {
+      const worldPos = new Vector3(store.position.x, store.position.y, store.position.z);
+      this.ctx.worldRoot.updateWorldMatrix(true, false);
+      this.marker.position.copy(this.ctx.worldRoot.worldToLocal(worldPos));
     }
     store.setPhase('idle');
     store.setPreviewPosition(null);
@@ -266,14 +268,19 @@ export class PoiPlugin implements ViewerPlugin {
     if (!this.ctx || !this.marker) return;
 
     if (position) {
-      this.marker.position.set(position.x, position.y, position.z);
+      // Store holds world-space coords; marker lives inside worldRoot, so convert to local.
+      this.ctx.worldRoot.updateWorldMatrix(true, false);
+      const localPos = this.ctx.worldRoot.worldToLocal(
+        new Vector3(position.x, position.y, position.z),
+      );
+      this.marker.position.copy(localPos);
       this.marker.visible = usePoiStore.getState().markerVisible;
 
       if (this.marker.scale.x < 0.01) {
         this.marker.scale.setScalar(1);
       }
 
-      // Set as orbit target
+      // controls.target is in world space — use the original world-space values.
       this.ctx.controls.target.set(position.x, position.y, position.z);
       this.ctx.controls.update();
     } else {
@@ -282,9 +289,12 @@ export class PoiPlugin implements ViewerPlugin {
   }
 
   private onPreviewChanged(pos: { x: number; y: number; z: number } | null): void {
-    if (!this.previewMarker) return;
+    if (!this.previewMarker || !this.ctx) return;
     if (pos) {
-      this.previewMarker.position.set(pos.x, pos.y, pos.z);
+      // Same conversion: world-space store value → worldRoot-local for the mesh.
+      this.ctx.worldRoot.updateWorldMatrix(true, false);
+      const localPos = this.ctx.worldRoot.worldToLocal(new Vector3(pos.x, pos.y, pos.z));
+      this.previewMarker.position.copy(localPos);
       this.previewMarker.visible = true;
       if (this.previewMarker.scale.x < 0.01) {
         this.previewMarker.scale.setScalar(this.markerBaseRadius || 1);
@@ -376,6 +386,14 @@ export class PoiPlugin implements ViewerPlugin {
   /**
    * Iterate visible nodes, transform positions to world space,
    * and find the point closest to the ray (by perpendicular distance).
+   *
+   * IMPORTANT: potree manages each sceneNode's matrixWorld as
+   *   sceneNode.matrixWorld = pco.matrixWorld × sceneNode.matrix
+   * rather than accumulating through the parent chain (all node bounding
+   * boxes are absolute in PCO-local space, not relative to the parent node).
+   * We must follow the same convention — using node.sceneNode.matrixWorld
+   * after a standard updateMatrixWorld(true) call would give wrong results
+   * for nodes at depth > 1.
    */
   private findClosestPoint(ray: Ray): Vector3 | null {
     if (!this.ctx) return null;
@@ -384,10 +402,14 @@ export class PoiPlugin implements ViewerPlugin {
     let bestDist = Infinity;
     let bestPoint: Vector3 | null = null;
     const tmp = new Vector3();
+    const worldMatrix = new Matrix4();
     const invMatrix = new Matrix4();
 
     for (const pco of pcos) {
-      pco.updateMatrixWorld(true);
+      // Update only the PCO's own matrix — do NOT recurse into children.
+      // Recursing would overwrite potree's correctly-set sceneNode matrixWorld
+      // values with wrong hierarchically-accumulated ones for depth > 1 nodes.
+      pco.updateMatrix();
 
       for (const node of pco.visibleNodes) {
         const geom = node.sceneNode?.geometry;
@@ -395,7 +417,9 @@ export class PoiPlugin implements ViewerPlugin {
         const posAttr = geom.getAttribute('position');
         if (!posAttr) continue;
 
-        const worldMatrix = node.sceneNode.matrixWorld;
+        // Mirror potree's own convention (see updateTreeNodeVisibility):
+        //   worldMatrix = pco.matrixWorld × sceneNode.matrix
+        worldMatrix.multiplyMatrices(pco.matrixWorld, node.sceneNode.matrix);
         invMatrix.copy(worldMatrix).invert();
         const localRay = ray.clone().applyMatrix4(invMatrix);
 

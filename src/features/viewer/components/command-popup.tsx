@@ -7,6 +7,8 @@ interface CommandPopupProps {
   onToggleExpand: () => void;
   onClose: () => void;
   children: React.ReactNode;
+  /** Override the outer positioning classes. Defaults to "absolute bottom-3 right-3". */
+  className?: string;
 }
 
 export function CommandPopup({
@@ -15,9 +17,10 @@ export function CommandPopup({
   onToggleExpand,
   onClose,
   children,
+  className,
 }: CommandPopupProps) {
   return (
-    <div className="absolute bottom-3 right-3 z-10 w-64">
+    <div className={className ?? 'absolute bottom-3 right-3 z-10 w-64'}>
       <div className="rounded-lg border border-border bg-card/95 shadow-lg backdrop-blur-sm">
         {/* Header — always visible */}
         <div className="flex items-center justify-between px-3 py-1.5">

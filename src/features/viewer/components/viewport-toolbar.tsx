@@ -44,7 +44,7 @@ export function ViewportToolbar({ engine }: ViewportToolbarProps) {
   // ROI applied state
   const roiClipEnabled = useRoiStore((s) => s.clipEnabled);
   const roiClipVisible = useRoiStore((s) => s.clipVisible);
-  const roiShapeCount = useRoiStore((s) => s.shapes.length);
+  const roiShapeCount = useRoiStore((s) => s.shapeCount);
   const roiPhase = useRoiStore((s) => s.phase);
   const hasAppliedRoi = roiShapeCount > 0 && (roiPhase === 'applied' || roiClipEnabled);
 

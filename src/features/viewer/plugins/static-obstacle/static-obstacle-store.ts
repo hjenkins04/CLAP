@@ -7,6 +7,7 @@ import type {
   ObstacleClass,
   NormalFace,
 } from './static-obstacle-types';
+import type { SelectSubMode, TransformMode } from '../../modules/shape-editor';
 import { useWorldFrameStore } from '../world-frame';
 import { localToGeo } from '../world-frame/geo-utils';
 
@@ -18,15 +19,18 @@ const LAYER_PALETTE = [
   '#fb923c', '#e879f9',
 ];
 
-// ── Pending box (managed by plugin, shared here so overlay can read it) ──────
+// ── Pending box ───────────────────────────────────────────────────────────────
 
 export interface PendingBox {
   center: { x: number; y: number; z: number };
   halfExtents: { x: number; y: number; z: number };
+  rotationY: number;
   frontFace: NormalFace | null;
 }
 
 // ── Store ────────────────────────────────────────────────────────────────────
+
+export type ObstacleEditSubMode = SelectSubMode | TransformMode;
 
 interface StaticObstacleState {
   // Layers
@@ -48,16 +52,24 @@ interface StaticObstacleState {
   phase: Annotate3DPhase;
   setPhase: (p: Annotate3DPhase) => void;
 
-  // Pending box (set/updated by plugin)
+  // Pending shape (engine shape ID during draw/edit)
+  pendingShapeId: string | null;
+  setPendingShapeId: (id: string | null) => void;
+
+  // Pending box (set by plugin when entering picking-face / classifying)
   pendingBox: PendingBox | null;
   setPendingBox: (box: PendingBox | null) => void;
   setPendingFace: (face: NormalFace) => void;
 
-  // Classification draft (used during 'classifying' phase)
+  // Classification draft
   classifyDraft: ObstacleClass | null;
   attributeDraft: Record<string, string | number | boolean>;
   setClassifyDraft: (cls: ObstacleClass | null) => void;
   setAttributeDraft: (attrs: Record<string, string | number | boolean>) => void;
+
+  // Edit sub-mode (during 'editing' phase)
+  editSubMode: ObstacleEditSubMode;
+  setEditSubMode: (mode: ObstacleEditSubMode) => void;
 
   // Label counters (persisted)
   labelCounters: Record<string, number>;
@@ -108,14 +120,20 @@ export const useStaticObstacleStore = create<StaticObstacleState>()(
 
       commitAnnotation: () => {
         const state = get();
-        const { pendingBox, activeLayerId, classifyDraft, attributeDraft, labelCounters, annotations } = state;
+        const {
+          pendingBox,
+          activeLayerId,
+          classifyDraft,
+          attributeDraft,
+          labelCounters,
+          annotations,
+        } = state;
         if (!pendingBox?.frontFace || !activeLayerId || !classifyDraft) return;
 
         const prefix = classifyDraft.kind === 'TrafficLight' ? 'TL' : 'SG';
         const count = (labelCounters[prefix] ?? 0) + 1;
         const label = `${prefix}-${String(count).padStart(3, '0')}`;
 
-        // Geo centre (if world frame is confirmed)
         let geoCenter: Annotation3D['geoCenter'];
         const { transform } = useWorldFrameStore.getState();
         if (transform) {
@@ -130,6 +148,7 @@ export const useStaticObstacleStore = create<StaticObstacleState>()(
           visible: true,
           center: { ...pendingBox.center },
           halfExtents: { ...pendingBox.halfExtents },
+          rotationY: pendingBox.rotationY,
           frontFace: pendingBox.frontFace,
           classification: { ...classifyDraft },
           attributes: { ...attributeDraft },
@@ -140,9 +159,10 @@ export const useStaticObstacleStore = create<StaticObstacleState>()(
           annotations: [...annotations, annotation],
           labelCounters: { ...labelCounters, [prefix]: count },
           pendingBox: null,
+          pendingShapeId: null,
           classifyDraft: null,
           attributeDraft: {},
-          phase: 'drawing-base',
+          phase: 'drawing',
         });
       },
 
@@ -158,6 +178,10 @@ export const useStaticObstacleStore = create<StaticObstacleState>()(
       phase: 'idle',
       setPhase: (phase) => set({ phase }),
 
+      // ── Pending shape ────────────────────────────────────────────────────
+      pendingShapeId: null,
+      setPendingShapeId: (pendingShapeId) => set({ pendingShapeId }),
+
       // ── Pending box ──────────────────────────────────────────────────────
       pendingBox: null,
       setPendingBox: (pendingBox) => set({ pendingBox }),
@@ -172,11 +196,21 @@ export const useStaticObstacleStore = create<StaticObstacleState>()(
       setClassifyDraft: (classifyDraft) => set({ classifyDraft }),
       setAttributeDraft: (attributeDraft) => set({ attributeDraft }),
 
+      // ── Edit sub-mode ────────────────────────────────────────────────────
+      editSubMode: 'shape' as ObstacleEditSubMode,
+      setEditSubMode: (editSubMode) => set({ editSubMode }),
+
       // ── Label counters ────────────────────────────────────────────────────
       labelCounters: {},
 
       discardPending: () =>
-        set({ pendingBox: null, classifyDraft: null, attributeDraft: {}, phase: 'drawing-base' }),
+        set({
+          pendingBox: null,
+          pendingShapeId: null,
+          classifyDraft: null,
+          attributeDraft: {},
+          phase: 'drawing',
+        }),
     }),
     {
       name: 'clap-plugin-static-obstacle',

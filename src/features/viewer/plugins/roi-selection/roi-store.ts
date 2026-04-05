@@ -1,135 +1,123 @@
 import { create } from 'zustand';
-import type { RoiShape, RoiDrawTool } from './roi-types';
+import type { SelectSubMode, TransformMode } from '../../modules/shape-editor';
 
 /**
  * ROI Selection state machine:
- *   idle           – plugin not active
- *   choosing-tool  – user picks which shape to draw
- *   drawing        – user actively drawing a 2D footprint in the viewport
- *   extruding      – user dragging to set height (box/cylinder only)
- *   editing        – shape drawn, user can confirm or discard
- *   applied        – clip regions active, points filtered
+ *
+ *   idle     – plugin not active, no shapes defined
+ *   editing  – in roi-selection viewer mode; user can draw new shapes and
+ *              select / edit existing ones (was "choosing-tool")
+ *   drawing  – a draw tool is active; the engine is handling pointer events
+ *   applied  – clip regions active, viewer mode exited; shapes are preserved
+ *
+ * Transitions:
+ *   idle    → editing   (enterRoiSelectionMode)
+ *   editing → drawing   (startDrawingTool)
+ *   drawing → editing   (shape-created or cancelDraw)
+ *   editing → applied   (applySelection)
+ *   applied → editing   (redefine  → re-enters roi-selection viewer mode)
+ *   applied → idle      (clearRoi)
+ *   editing → idle      (cancelSelection / exitMode without applying)
  */
-export type RoiPhase =
-  | 'idle'
-  | 'choosing-tool'
-  | 'drawing'
-  | 'extruding'
-  | 'editing'
-  | 'applied';
+export type RoiPhase = 'idle' | 'editing' | 'drawing' | 'applied';
 
-export type RoiEditSubMode = 'translate' | 'rotate' | 'points';
+export type RoiDrawTool = 'box' | 'polygon' | 'polyline';
 
-let nextId = 1;
-function genId(): string {
-  return `roi-${nextId++}`;
-}
+/** Which sub-mode is active while in the editing phase. */
+export type RoiEditSubMode = SelectSubMode | TransformMode;
 
 interface RoiState {
   phase: RoiPhase;
   activeTool: RoiDrawTool;
-  shapes: RoiShape[];
-  /** Shape currently being drawn (not yet committed) */
-  pendingShape: RoiShape | null;
-  /** Polygon vertices being placed (for polygon-2d drawing) */
-  polyVertices: Array<{ x: number; y: number }>;
-  /** Whether clip regions are currently applied to the point cloud */
+  /** Number of committed shapes in the engine — kept in sync by the plugin. */
+  shapeCount: number;
+  /** IDs in insertion order — used for undo-last. */
+  shapeIds: string[];
   clipEnabled: boolean;
-  /** Whether ROI shape visuals are visible in the viewport */
   clipVisible: boolean;
-  /** Sub-mode when in 'editing' phase */
+  /** Sub-mode when in editing phase. */
   editSubMode: RoiEditSubMode;
-  /** Indices of selected control points (editing → points sub-mode) */
-  selectedPoints: number[];
+  /** Counts of selected items for the UI. */
+  selectionInfo: { shapes: number; elements: number };
+
+  // ── Actions ───────────────────────────────────────────────────────────────
 
   setPhase: (phase: RoiPhase) => void;
   setActiveTool: (tool: RoiDrawTool) => void;
-  setPendingShape: (shape: RoiShape | null) => void;
-  commitPending: () => void;
-  removeShape: (id: string) => void;
-  removeLastShape: () => void;
+  addShapeId: (id: string) => void;
+  removeShapeId: (id: string) => void;
   clearShapes: () => void;
-  addPolyVertex: (v: { x: number; y: number }) => void;
-  undoPolyVertex: () => void;
-  clearPolyVertices: () => void;
-  genId: () => string;
   setClipEnabled: (enabled: boolean) => void;
   setClipVisible: (visible: boolean) => void;
   setEditSubMode: (mode: RoiEditSubMode) => void;
-  setSelectedPoints: (indices: number[]) => void;
-  toggleSelectedPoint: (index: number) => void;
-  clearSelectedPoints: () => void;
-  /** True when an ROI has been defined (shapes exist, even if idle) */
+  setSelectionInfo: (info: { shapes: number; elements: number }) => void;
+
+  /**
+   * Atomically enter the editing phase and reset all transient editing state
+   * (editSubMode → 'shape', selectionInfo → zeros).
+   * Called by the plugin on mode entry and after draw completion.
+   */
+  enterEditing: () => void;
+
+  /**
+   * Full reset to idle — clears shapes, clip state, and editing state.
+   * Called by the plugin when ROI is cleared or cancelled.
+   */
+  resetToIdle: () => void;
+
+  /** True when an ROI has been applied. */
   hasRoi: () => boolean;
 }
 
 export const useRoiStore = create<RoiState>()((set, get) => ({
   phase: 'idle',
-  activeTool: 'rect-2d',
-  shapes: [],
-  pendingShape: null,
-  polyVertices: [],
+  activeTool: 'box',
+  shapeCount: 0,
+  shapeIds: [],
   clipEnabled: false,
   clipVisible: true,
-  editSubMode: 'translate',
-  selectedPoints: [],
+  editSubMode: 'shape',
+  selectionInfo: { shapes: 0, elements: 0 },
 
   setPhase: (phase) => set({ phase }),
+  setActiveTool: (activeTool) => set({ activeTool }),
 
-  setActiveTool: (tool) => set({ activeTool: tool }),
+  addShapeId: (id) =>
+    set((s) => ({
+      shapeIds: [...s.shapeIds, id],
+      shapeCount: s.shapeIds.length + 1,
+    })),
 
-  setPendingShape: (shape) => set({ pendingShape: shape }),
+  removeShapeId: (id) =>
+    set((s) => {
+      const shapeIds = s.shapeIds.filter((x) => x !== id);
+      return { shapeIds, shapeCount: shapeIds.length };
+    }),
 
-  commitPending: () => {
-    const { pendingShape, shapes } = get();
-    if (!pendingShape) return;
-    set({
-      shapes: [...shapes, pendingShape],
-      pendingShape: null,
-      polyVertices: [],
-    });
-  },
-
-  removeShape: (id) => {
-    set({ shapes: get().shapes.filter((s) => s.id !== id) });
-  },
-
-  removeLastShape: () => {
-    const { shapes } = get();
-    if (shapes.length === 0) return;
-    set({ shapes: shapes.slice(0, -1) });
-  },
-
-  clearShapes: () => set({ shapes: [], pendingShape: null, polyVertices: [] }),
-
-  addPolyVertex: (v) => {
-    set({ polyVertices: [...get().polyVertices, v] });
-  },
-
-  undoPolyVertex: () => {
-    const verts = get().polyVertices;
-    if (verts.length === 0) return;
-    set({ polyVertices: verts.slice(0, -1) });
-  },
-
-  clearPolyVertices: () => set({ polyVertices: [] }),
-
-  genId,
+  clearShapes: () => set({ shapeIds: [], shapeCount: 0 }),
 
   setClipEnabled: (clipEnabled) => set({ clipEnabled }),
   setClipVisible: (clipVisible) => set({ clipVisible }),
 
-  setEditSubMode: (editSubMode) => set({ editSubMode, selectedPoints: [] }),
-  setSelectedPoints: (selectedPoints) => set({ selectedPoints }),
-  toggleSelectedPoint: (index) => {
-    const { selectedPoints } = get();
-    if (selectedPoints.includes(index)) {
-      set({ selectedPoints: selectedPoints.filter((i) => i !== index) });
-    } else {
-      set({ selectedPoints: [...selectedPoints, index] });
-    }
-  },
-  clearSelectedPoints: () => set({ selectedPoints: [] }),
+  setEditSubMode: (editSubMode) => set({ editSubMode }),
+  setSelectionInfo: (selectionInfo) => set({ selectionInfo }),
 
-  hasRoi: () => get().shapes.length > 0 && get().phase === 'applied',
+  enterEditing: () =>
+    set({
+      phase: 'editing',
+      editSubMode: 'shape',
+      selectionInfo: { shapes: 0, elements: 0 },
+    }),
+
+  resetToIdle: () =>
+    set({
+      phase: 'idle',
+      shapeIds: [],
+      shapeCount: 0,
+      clipEnabled: false,
+      editSubMode: 'shape',
+      selectionInfo: { shapes: 0, elements: 0 },
+    }),
+
+  hasRoi: () => get().phase === 'applied' && get().shapeCount > 0,
 }));

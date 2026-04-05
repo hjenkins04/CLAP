@@ -1,6 +1,8 @@
 import { Box3, Matrix4, Vector3 } from 'three';
 import type { IClipBox, IClipCylinder, IClipPolygon } from 'potree-core';
 import type { RoiShape } from './roi-types';
+import type { EditorShape } from '../../modules/shape-editor';
+import { obbCorners } from '../../modules/shape-editor';
 
 interface ClipResult {
   boxes: IClipBox[];
@@ -135,4 +137,97 @@ export function shapesToClipRegions(
   }
 
   return { boxes, cylinders, polygons };
+}
+
+/**
+ * Convert world-space EditorShapes (from ShapeEditorEngine) directly to
+ * potree clip regions. All matrices are in world/scene space — no additional
+ * transform group is needed.
+ *
+ * OBB shapes map to clip boxes (full rotation support).
+ * Polygon shapes map to clip boxes (conservative AABB approximation).
+ * Polyline shapes produce no clip region (they have no volume).
+ */
+export function editorShapesToClipRegions(shapes: EditorShape[]): {
+  boxes: IClipBox[];
+  cylinders: IClipCylinder[];
+  polygons: IClipPolygon[];
+} {
+  const boxes: IClipBox[] = [];
+
+  for (const shape of shapes) {
+    switch (shape.type) {
+      case 'obb': {
+        const { center, halfExtents, rotationY } = shape;
+
+        // World matrix: translate → rotate → scale to unit cube
+        // Potree checks: inverse * worldPoint → unit cube test
+        const worldMatrix = new Matrix4()
+          .makeTranslation(center.x, center.y, center.z)
+          .multiply(new Matrix4().makeRotationY(rotationY))
+          .multiply(
+            new Matrix4().makeScale(
+              halfExtents.x * 2,
+              halfExtents.y * 2,
+              halfExtents.z * 2,
+            ),
+          );
+        const inverse = worldMatrix.clone().invert();
+
+        // World-space AABB for BVH culling
+        const worldBox = new Box3();
+        for (const c of obbCorners(shape)) worldBox.expandByPoint(c);
+
+        boxes.push({
+          box: worldBox,
+          matrix: worldMatrix,
+          inverse,
+          position: new Vector3(center.x, center.y, center.z),
+        });
+        break;
+      }
+
+      case 'polygon': {
+        // Conservative AABB clip box from the polygon footprint + height.
+        if (shape.basePoints.length < 3) break;
+
+        let minX = Infinity, maxX = -Infinity;
+        let minZ = Infinity, maxZ = -Infinity;
+        let minY = Infinity;
+
+        for (const p of shape.basePoints) {
+          minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+          minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z);
+          minY = Math.min(minY, p.y);
+        }
+
+        const cx = (minX + maxX) / 2;
+        const cy = minY + shape.height / 2;
+        const cz = (minZ + maxZ) / 2;
+        const hx = Math.max(0.01, (maxX - minX) / 2);
+        const hy = Math.max(0.01, shape.height / 2);
+        const hz = Math.max(0.01, (maxZ - minZ) / 2);
+
+        const worldMatrix = new Matrix4()
+          .makeTranslation(cx, cy, cz)
+          .multiply(new Matrix4().makeScale(hx * 2, hy * 2, hz * 2));
+        const inverse = worldMatrix.clone().invert();
+
+        boxes.push({
+          box: new Box3(
+            new Vector3(cx - hx, cy - hy, cz - hz),
+            new Vector3(cx + hx, cy + hy, cz + hz),
+          ),
+          matrix: worldMatrix,
+          inverse,
+          position: new Vector3(cx, cy, cz),
+        });
+        break;
+      }
+
+      // Polylines have no volume — no clip region generated
+    }
+  }
+
+  return { boxes, cylinders: [], polygons: [] };
 }

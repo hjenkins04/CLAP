@@ -40,7 +40,9 @@ export interface Annotation3D {
   center: { x: number; y: number; z: number };
   /** Half-extents in metres */
   halfExtents: { x: number; y: number; z: number };
-  /** Front-facing direction */
+  /** Rotation about the world Y axis, radians (from shape-editor OBB) */
+  rotationY: number;
+  /** Front-facing direction (in the box's local space) */
   frontFace: NormalFace;
   classification: ObstacleClass;
   /** Free-form user attributes */
@@ -59,15 +61,15 @@ export interface AnnotationLayer3D {
 // ── Phase state machine ─────────────────────────────────────────────────────
 
 /**
- * idle           – plugin not active
- * drawing-base   – user drags out XZ footprint on ground plane
- * extruding      – user drags vertically to set height
- * picking-face   – user clicks a face to designate front normal
- * classifying    – overlay collects type + attributes
+ * idle         – plugin not active
+ * drawing      – ShapeEditorEngine drawing a box (BoxDrawController active)
+ * editing      – box drawn; user edits with shape-editor handles / gizmo
+ * picking-face – user clicks a face to designate front normal
+ * classifying  – overlay collects type + attributes
  */
 export type Annotate3DPhase =
   | 'idle'
-  | 'drawing-base'
-  | 'extruding'
+  | 'drawing'
+  | 'editing'
   | 'picking-face'
   | 'classifying';

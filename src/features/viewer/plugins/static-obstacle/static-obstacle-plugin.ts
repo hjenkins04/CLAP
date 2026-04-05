@@ -1,26 +1,22 @@
-import {
-  Group,
-  Mesh,
-  Vector2,
-  Vector3,
-  Raycaster,
-  Matrix4,
-  PerspectiveCamera,
-  LineSegments,
-} from 'three';
+import { Group, Mesh, Vector2, Vector3, Raycaster, Matrix4 } from 'three';
 import type { PointCloudOctree } from 'potree-core';
 import type { ViewerPlugin, ViewerPluginContext } from '../../types';
 import { useStaticObstacleStore } from './static-obstacle-store';
+import type { ObstacleEditSubMode } from './static-obstacle-store';
 import { useViewerModeStore } from '@/app/stores';
 import type { Annotate3DPhase, NormalFace } from './static-obstacle-types';
 import {
-  buildBoxGroup,
-  buildFacePickMeshes,
   buildAnnotationGroup,
+  buildFacePickMeshes,
   disposeGroup,
-  attachArrow,
 } from './static-obstacle-visuals';
 import { StaticObstaclePanel } from './static-obstacle-panel';
+import {
+  ShapeEditorEngine,
+  type ObbShape,
+  type SelectSubMode,
+  type TransformMode,
+} from '../../modules/shape-editor';
 
 export class StaticObstaclePlugin implements ViewerPlugin {
   readonly id = 'static-obstacle';
@@ -32,26 +28,15 @@ export class StaticObstaclePlugin implements ViewerPlugin {
 
   private ctx: ViewerPluginContext | null = null;
   private rootGroup: Group | null = null;
+  private engine: ShapeEditorEngine | null = null;
 
   // Committed annotation visuals
   private annotationGroups = new Map<string, Group>();
 
-  // Pending draw state
-  private drawStart: Vector3 | null = null; // scene world space
-  private drawGroundY = 0;
-  private extrudeStartScreenY = 0;
-  private pendingCenterX = 0;
-  private pendingCenterY = 0;
-  private pendingCenterZ = 0;
-  private pendingHalfX = 0;
-  private pendingHalfY = 0.1;
-  private pendingHalfZ = 0;
-
-  // Three.js groups for pending interaction
-  private pendingGroup: Group | null = null;
+  // Face picking state
   private facePickGroup: Group | null = null;
+  private faceListening = false;
 
-  private listening = false;
   private fallbackElevY = 0;
 
   private unsubMode: (() => void) | null = null;
@@ -64,10 +49,29 @@ export class StaticObstaclePlugin implements ViewerPlugin {
 
     this.rootGroup = new Group();
     this.rootGroup.name = 'static-obstacles';
-    // Scene-level: box positions come from raycastGround which returns
-    // world/scene-space coords. Placing inside worldRoot would double-apply
-    // the axis-flip scales (worldRoot.scale = ±1 per axis).
     ctx.scene.add(this.rootGroup);
+
+    // Shape-editor engine for drawing + editing the pending OBB
+    this.engine = new ShapeEditorEngine(ctx, {
+      snapToGrid: false,
+      showEdgeMidHandles: true,
+      showFaceExtrudeHandles: true,
+      escapeHandled: false, // plugin handles escape itself
+      deleteHandled: false,
+    });
+
+    this.engine.setElevationFn((worldX: number, worldZ: number) =>
+      this.getGroundElevScene(worldX, worldZ),
+    );
+
+    this.engine.on('shape-created', (shape) => {
+      if (shape.type !== 'obb') return;
+      const store = useStaticObstacleStore.getState();
+      store.setPendingShapeId(shape.id);
+      store.setPhase('editing');
+      this.engine!.startSelect('shape');
+      this.engine!.selectShape(shape.id);
+    });
 
     this.rebuildAnnotations();
 
@@ -80,7 +84,10 @@ export class StaticObstaclePlugin implements ViewerPlugin {
 
     this.unsubStore = useStaticObstacleStore.subscribe((state, prev) => {
       if (state.phase !== prev.phase) {
-        this.onPhaseChanged(state.phase);
+        this.onPhaseChanged(state.phase, prev.phase);
+      }
+      if (state.editSubMode !== prev.editSubMode) {
+        this.applyEditSubMode(state.editSubMode);
       }
       if (state.annotations !== prev.annotations || state.layers !== prev.layers) {
         this.rebuildAnnotations();
@@ -88,17 +95,24 @@ export class StaticObstaclePlugin implements ViewerPlugin {
     });
   }
 
+  onUpdate(delta: number): void {
+    this.engine?.onUpdate(delta);
+  }
+
   onPointCloudLoaded(_pco: PointCloudOctree): void {
     this.computeFallbackElevY();
+    this.updateElevationFn();
   }
 
   dispose(): void {
-    this.stopListening();
-    this.clearPendingVisuals();
+    this.stopFaceListening();
+    this.clearFacePickGroup();
     this.unsubMode?.();
     this.unsubMode = null;
     this.unsubStore?.();
     this.unsubStore = null;
+    this.engine?.dispose();
+    this.engine = null;
     this.clearAllAnnotationGroups();
     if (this.ctx && this.rootGroup) {
       this.ctx.scene.remove(this.rootGroup);
@@ -111,191 +125,111 @@ export class StaticObstaclePlugin implements ViewerPlugin {
 
   private enterMode(): void {
     this.computeFallbackElevY();
+    this.updateElevationFn();
     const store = useStaticObstacleStore.getState();
+    this.engine?.clearShapes();
+    store.setPendingShapeId(null);
+    store.setPendingBox(null);
     if (store.layers.length === 0 || !store.activeLayerId) {
       store.setPhase('idle');
-      // Trigger overlay to show "create a layer first" message by staying in mode
       return;
     }
-    store.setPhase('drawing-base');
+    store.setPhase('drawing');
+    this.engine?.startDrawBox();
   }
 
   private exitMode(): void {
-    this.stopListening();
-    this.clearPendingVisuals();
-    useStaticObstacleStore.getState().setPendingBox(null);
-    useStaticObstacleStore.getState().setPhase('idle');
+    this.stopFaceListening();
+    this.clearFacePickGroup();
+    this.engine?.setModeIdle();
+    this.engine?.clearShapes();
+    const store = useStaticObstacleStore.getState();
+    store.setPendingShapeId(null);
+    store.setPendingBox(null);
+    store.setPhase('idle');
   }
 
-  private onPhaseChanged(phase: Annotate3DPhase): void {
+  // ── Phase transitions ──────────────────────────────────────────────────────
+
+  private onPhaseChanged(phase: Annotate3DPhase, _prev: Annotate3DPhase): void {
     switch (phase) {
-      case 'drawing-base':
-        this.clearPendingVisuals();
-        this.drawStart = null;
-        this.startListening();
+      case 'drawing':
+        this.stopFaceListening();
+        this.clearFacePickGroup();
+        this.engine?.clearShapes();
+        this.engine?.startDrawBox();
         break;
-      case 'extruding':
-        // Listening continues; pointermove handles height
+
+      case 'editing':
+        // engine already switched to select mode in shape-created handler
         break;
-      case 'picking-face':
-        this.stopListening();
+
+      case 'picking-face': {
+        this.engine?.setModeIdle();
         this.setupFacePicking();
-        this.startListening();
+        this.startFaceListening();
         break;
+      }
+
       case 'classifying':
-        this.stopListening();
+        this.stopFaceListening();
         this.clearFacePickGroup();
         break;
+
       case 'idle':
-        this.stopListening();
-        this.clearPendingVisuals();
-        this.drawStart = null;
+        this.stopFaceListening();
+        this.clearFacePickGroup();
         break;
     }
   }
 
-  // ── Input listeners ────────────────────────────────────────────────────────
+  // ── Public API (called by overlay) ────────────────────────────────────────
 
-  private startListening(): void {
-    if (this.listening || !this.ctx) return;
-    this.listening = true;
-    this.ctx.domElement.addEventListener('pointerdown', this.onPointerDown);
-    this.ctx.domElement.addEventListener('pointermove', this.onPointerMove);
-    this.ctx.domElement.addEventListener('pointerup', this.onPointerUp);
-    this.ctx.domElement.addEventListener('keydown', this.onKeyDown);
+  /** Confirm the edited OBB shape and enter face-picking phase. */
+  confirmShape(): void {
+    const store = useStaticObstacleStore.getState();
+    const shapeId = store.pendingShapeId;
+    if (!shapeId || !this.engine) return;
+    const shape = this.engine.getShape(shapeId);
+    if (!shape || shape.type !== 'obb') return;
+    const obb = shape as ObbShape;
+    store.setPendingBox({
+      center: { ...obb.center },
+      halfExtents: { ...obb.halfExtents },
+      rotationY: obb.rotationY,
+      frontFace: null,
+    });
+    store.setPhase('picking-face');
   }
 
-  private stopListening(): void {
-    if (!this.listening || !this.ctx) return;
-    this.listening = false;
-    this.ctx.domElement.removeEventListener('pointerdown', this.onPointerDown);
-    this.ctx.domElement.removeEventListener('pointermove', this.onPointerMove);
-    this.ctx.domElement.removeEventListener('pointerup', this.onPointerUp);
-    this.ctx.domElement.removeEventListener('keydown', this.onKeyDown);
-    this.ctx.domElement.style.cursor = '';
+  /** Discard the current pending shape and restart drawing. */
+  discardPendingShape(): void {
+    const store = useStaticObstacleStore.getState();
+    this.engine?.clearShapes();
+    store.setPendingShapeId(null);
+    store.setPendingBox(null);
+    store.setPhase('drawing');
+    this.engine?.startDrawBox();
   }
 
-  private readonly onPointerDown = (e: PointerEvent): void => {
-    if (e.button !== 0) return;
-    const phase = useStaticObstacleStore.getState().phase;
-
-    if (phase === 'drawing-base') {
-      const hit = this.raycastGround(e.clientX, e.clientY);
-      if (!hit) return;
-      this.drawStart = hit.clone();
-      this.drawGroundY = hit.y;
-      if (this.ctx) {
-        this.ctx.controls.enabled = false;
-        this.ctx.domElement.style.cursor = 'crosshair';
-      }
-    } else if (phase === 'picking-face') {
-      this.tryPickFace(e);
-    }
-  };
-
-  private readonly onPointerMove = (e: PointerEvent): void => {
-    const phase = useStaticObstacleStore.getState().phase;
-
-    if (phase === 'drawing-base' && this.drawStart) {
-      const hit = this.raycastGround(e.clientX, e.clientY);
-      if (!hit) return;
-      const dx = Math.abs(hit.x - this.drawStart.x);
-      const dz = Math.abs(hit.z - this.drawStart.z);
-      if (dx < 0.05 && dz < 0.05) return;
-      this.pendingCenterX = (this.drawStart.x + hit.x) / 2;
-      this.pendingCenterY = this.drawGroundY;
-      this.pendingCenterZ = (this.drawStart.z + hit.z) / 2;
-      this.pendingHalfX = dx / 2;
-      this.pendingHalfY = 0.1;
-      this.pendingHalfZ = dz / 2;
-      this.updatePendingVisual(null);
-    } else if (phase === 'extruding') {
-      this.updateExtrusion(e.clientY);
-    }
-  };
-
-  private readonly onPointerUp = (e: PointerEvent): void => {
-    if (e.button !== 0) return;
-    const phase = useStaticObstacleStore.getState().phase;
-    if (this.ctx) this.ctx.controls.enabled = true;
-
-    if (phase === 'drawing-base') {
-      if (!this.drawStart) return;
-      const hit = this.raycastGround(e.clientX, e.clientY);
-      const dx = hit ? Math.abs(hit.x - this.drawStart.x) : 0;
-      const dz = hit ? Math.abs(hit.z - this.drawStart.z) : 0;
-      if (!hit || (dx < 0.05 && dz < 0.05)) {
-        this.drawStart = null;
-        this.clearPendingVisuals();
-        if (this.ctx) this.ctx.domElement.style.cursor = 'crosshair';
-        return;
-      }
-
-      this.pendingCenterX = (this.drawStart.x + hit.x) / 2;
-      this.pendingCenterY = this.drawGroundY;
-      this.pendingCenterZ = (this.drawStart.z + hit.z) / 2;
-      this.pendingHalfX = dx / 2;
-      this.pendingHalfY = 0.1;
-      this.pendingHalfZ = dz / 2;
-      this.drawStart = null;
-      this.extrudeStartScreenY = e.clientY;
-
-      this.updatePendingVisual(null);
-      useStaticObstacleStore.getState().setPendingBox({
-        center: { x: this.pendingCenterX, y: this.pendingCenterY, z: this.pendingCenterZ },
-        halfExtents: { x: this.pendingHalfX, y: this.pendingHalfY, z: this.pendingHalfZ },
-        frontFace: null,
-      });
-      useStaticObstacleStore.getState().setPhase('extruding');
-      if (this.ctx) this.ctx.domElement.style.cursor = 'ns-resize';
-    } else if (phase === 'extruding') {
-      // Finalise height
-      useStaticObstacleStore.getState().setPendingBox({
-        center: { x: this.pendingCenterX, y: this.pendingCenterY, z: this.pendingCenterZ },
-        halfExtents: { x: this.pendingHalfX, y: this.pendingHalfY, z: this.pendingHalfZ },
-        frontFace: null,
-      });
-      useStaticObstacleStore.getState().setPhase('picking-face');
-      if (this.ctx) this.ctx.domElement.style.cursor = 'pointer';
-    }
-  };
-
-  private readonly onKeyDown = (e: KeyboardEvent): void => {
-    if (e.key === 'Escape') {
-      const phase = useStaticObstacleStore.getState().phase;
-      if (phase !== 'idle') {
-        useStaticObstacleStore.getState().discardPending();
-        this.clearPendingVisuals();
-        this.drawStart = null;
-      }
-    }
-  };
-
-  // ── Extrusion ──────────────────────────────────────────────────────────────
-
-  private updateExtrusion(currentScreenY: number): void {
-    if (!this.ctx) return;
-    const dPixels = this.extrudeStartScreenY - currentScreenY; // up = positive
-    const metersPerPixel = this.computeMetersPerPixel();
-    const newHalfY = Math.max(0.05, Math.abs(dPixels) * metersPerPixel);
-    const direction = dPixels >= 0 ? 1 : -1;
-
-    this.pendingHalfY = newHalfY;
-    // Center shifts up from ground
-    this.pendingCenterY = this.drawGroundY + newHalfY * direction;
-    this.updatePendingVisual(null);
+  /** Update the edit sub-mode on the engine. */
+  setEditSubMode(mode: ObstacleEditSubMode): void {
+    useStaticObstacleStore.getState().setEditSubMode(mode);
   }
 
-  private computeMetersPerPixel(): number {
-    if (!this.ctx) return 0.01;
-    const camera = this.ctx.getActiveCamera();
-    const center = new Vector3(this.pendingCenterX, this.pendingCenterY, this.pendingCenterZ);
-    const dist = camera.position.distanceTo(center);
-    if (camera instanceof PerspectiveCamera) {
-      const fovRad = (camera.fov * Math.PI) / 180;
-      return (2 * dist * Math.tan(fovRad / 2)) / this.ctx.domElement.clientHeight;
+  private applyEditSubMode(mode: ObstacleEditSubMode): void {
+    if (!this.engine) return;
+    const shapeId = useStaticObstacleStore.getState().pendingShapeId;
+    if (!shapeId) return;
+    if (mode === 'translate' || mode === 'rotate' || mode === 'scale') {
+      this.engine.startTransform(mode as TransformMode);
+      // Re-select the pending shape in case it was deselected during vertex/edge/face editing
+      if (this.engine.getSelection().shapes.size === 0) {
+        this.engine.selectShape(shapeId);
+      }
+    } else {
+      this.engine.setSubMode(mode as SelectSubMode);
     }
-    return 0.01;
   }
 
   // ── Face picking ───────────────────────────────────────────────────────────
@@ -303,25 +237,34 @@ export class StaticObstaclePlugin implements ViewerPlugin {
   private setupFacePicking(): void {
     this.clearFacePickGroup();
     if (!this.rootGroup) return;
+    const store = useStaticObstacleStore.getState();
+    const box = store.pendingBox;
+    if (!box) return;
 
-    const meshes = buildFacePickMeshes({
-      x: this.pendingHalfX,
-      y: this.pendingHalfY,
-      z: this.pendingHalfZ,
-    });
-
+    const meshes = buildFacePickMeshes(box.halfExtents);
     this.facePickGroup = new Group();
-    this.facePickGroup.position.set(
-      this.pendingCenterX,
-      this.pendingCenterY,
-      this.pendingCenterZ,
-    );
+    this.facePickGroup.position.set(box.center.x, box.center.y, box.center.z);
+    this.facePickGroup.rotation.y = box.rotationY;
     for (const m of meshes) this.facePickGroup.add(m);
     this.rootGroup.add(this.facePickGroup);
   }
 
-  private tryPickFace(e: PointerEvent): void {
-    if (!this.ctx || !this.facePickGroup) return;
+  private startFaceListening(): void {
+    if (this.faceListening || !this.ctx) return;
+    this.faceListening = true;
+    this.ctx.domElement.addEventListener('pointerdown', this.onFacePointerDown);
+    this.ctx.domElement.style.cursor = 'pointer';
+  }
+
+  private stopFaceListening(): void {
+    if (!this.faceListening || !this.ctx) return;
+    this.faceListening = false;
+    this.ctx.domElement.removeEventListener('pointerdown', this.onFacePointerDown);
+    this.ctx.domElement.style.cursor = '';
+  }
+
+  private readonly onFacePointerDown = (e: PointerEvent): void => {
+    if (e.button !== 0 || !this.ctx || !this.facePickGroup) return;
     const camera = this.ctx.getActiveCamera();
     const rect = this.ctx.domElement.getBoundingClientRect();
     const ndc = new Vector2(
@@ -330,59 +273,34 @@ export class StaticObstaclePlugin implements ViewerPlugin {
     );
     const raycaster = new Raycaster();
     raycaster.setFromCamera(ndc, camera);
-
     const hits = raycaster.intersectObjects(this.facePickGroup.children, false);
     if (hits.length === 0) return;
 
     const face = hits[0].object.userData.face as NormalFace;
-    useStaticObstacleStore.getState().setPendingFace(face);
-    this.updatePendingVisual(face);
-    useStaticObstacleStore.getState().setPhase('classifying');
-    if (this.ctx) this.ctx.domElement.style.cursor = '';
-  }
+    const store = useStaticObstacleStore.getState();
+    store.setPendingFace(face);
+    store.setPhase('classifying');
+  };
 
-  // ── Ground raycasting ──────────────────────────────────────────────────────
-
-  /** Cast ray and return intersection with ground plane in scene world space. */
-  private raycastGround(clientX: number, clientY: number): Vector3 | null {
-    if (!this.ctx) return null;
-    const camera = this.ctx.getActiveCamera();
-    const rect = this.ctx.domElement.getBoundingClientRect();
-    const ndc = new Vector2(
-      ((clientX - rect.left) / rect.width) * 2 - 1,
-      -((clientY - rect.top) / rect.height) * 2 + 1,
-    );
-    const raycaster = new Raycaster();
-    raycaster.setFromCamera(ndc, camera);
-
-    const dir = raycaster.ray.direction;
-    const origin = raycaster.ray.origin;
-
-    // Estimate ground Y from DEM or fallback
-    const elevGuess = this.getGroundElevScene(0, 0);
-    if (Math.abs(dir.y) < 1e-8) return null;
-    const t = (elevGuess - origin.y) / dir.y;
-    if (t < 0) return null;
-    const hit = origin.clone().addScaledVector(dir, t);
-
-    // Refine with DEM at hit point
-    const demElev = this.getGroundElevScene(hit.x, hit.z);
-    if (Math.abs(demElev - elevGuess) > 0.01) {
-      const t2 = (demElev - origin.y) / dir.y;
-      if (t2 > 0) {
-        hit.copy(origin).addScaledVector(dir, t2);
-        hit.y = demElev;
-      }
-    } else {
-      hit.y = demElev;
+  private clearFacePickGroup(): void {
+    if (this.facePickGroup && this.rootGroup) {
+      this.facePickGroup.children.forEach((child) => {
+        if (child instanceof Mesh) {
+          child.geometry.dispose();
+          if (Array.isArray(child.material)) {
+            child.material.forEach((m) => m.dispose());
+          } else {
+            child.material.dispose();
+          }
+        }
+      });
+      this.rootGroup.remove(this.facePickGroup);
+      this.facePickGroup = null;
     }
-    return hit;
   }
 
-  /**
-   * Get ground elevation at a scene-space (x, z) position.
-   * Converts to PCO local space for DEM query, falls back to cached value.
-   */
+  // ── Ground elevation ───────────────────────────────────────────────────────
+
   private getGroundElevScene(sceneX: number, sceneZ: number): number {
     if (!this.ctx) return this.fallbackElevY;
     const dem = this.ctx.getDem();
@@ -416,61 +334,13 @@ export class StaticObstaclePlugin implements ViewerPlugin {
     if (count > 0) this.fallbackElevY = totalY / count;
   }
 
-  // ── Visuals ────────────────────────────────────────────────────────────────
-
-  private updatePendingVisual(selectedFace: NormalFace | null): void {
-    if (!this.rootGroup) return;
-    if (this.pendingGroup) {
-      disposeGroup(this.pendingGroup);
-      this.rootGroup.remove(this.pendingGroup);
-      this.pendingGroup = null;
-    }
-
-    const store = useStaticObstacleStore.getState();
-    const layer = store.layers.find((l) => l.id === store.activeLayerId);
-    const color = layer?.color ?? '#ffffff';
-
-    this.pendingGroup = buildBoxGroup(
-      { x: this.pendingCenterX, y: this.pendingCenterY, z: this.pendingCenterZ },
-      { x: this.pendingHalfX, y: this.pendingHalfY, z: this.pendingHalfZ },
-      color,
-      selectedFace,
-      0xffff00,
+  private updateElevationFn(): void {
+    this.engine?.setElevationFn((worldX: number, worldZ: number) =>
+      this.getGroundElevScene(worldX, worldZ),
     );
-    this.rootGroup.add(this.pendingGroup);
   }
 
-  private setupFacePickHighlight(face: NormalFace): void {
-    // Re-render pending with arrow preview
-    this.updatePendingVisual(face);
-  }
-
-  private clearFacePickGroup(): void {
-    if (this.facePickGroup && this.rootGroup) {
-      // dispose invisible meshes
-      this.facePickGroup.children.forEach((child) => {
-        if (child instanceof Mesh) {
-          child.geometry.dispose();
-          if (Array.isArray(child.material)) {
-            child.material.forEach((m) => m.dispose());
-          } else {
-            child.material.dispose();
-          }
-        }
-      });
-      this.rootGroup.remove(this.facePickGroup);
-      this.facePickGroup = null;
-    }
-  }
-
-  private clearPendingVisuals(): void {
-    if (this.pendingGroup && this.rootGroup) {
-      disposeGroup(this.pendingGroup);
-      this.rootGroup.remove(this.pendingGroup);
-      this.pendingGroup = null;
-    }
-    this.clearFacePickGroup();
-  }
+  // ── Annotation visuals ─────────────────────────────────────────────────────
 
   private rebuildAnnotations(): void {
     this.clearAllAnnotationGroups();
@@ -481,6 +351,7 @@ export class StaticObstaclePlugin implements ViewerPlugin {
       const layer = layerMap.get(ann.layerId);
       if (!layer) continue;
       const group = buildAnnotationGroup(ann, layer.color);
+      group.rotation.y = ann.rotationY;
       group.visible = ann.visible && layer.visible;
       group.userData.annotationId = ann.id;
       this.rootGroup.add(group);

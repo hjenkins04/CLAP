@@ -1,13 +1,27 @@
 import { useState } from 'react';
 import { Button } from '@clap/design-system';
-import { X, ChevronRight } from 'lucide-react';
+import {
+  Check,
+  GitCommitHorizontal,
+  Move,
+  MousePointer2,
+  RotateCw,
+  Scale3D,
+  Spline,
+  Square,
+  X,
+  ChevronRight,
+} from 'lucide-react';
 import { useStaticObstacleStore } from './static-obstacle-store';
+import type { ObstacleEditSubMode } from './static-obstacle-store';
 import { useViewerModeStore } from '@/app/stores';
 import type {
   TrafficLightSubtype,
   SignSubtype,
   ObstacleClass,
 } from './static-obstacle-types';
+import { StaticObstaclePlugin } from './static-obstacle-plugin';
+import type { ViewerEngine } from '../../services/viewer-engine';
 
 // ── Classification options ─────────────────────────────────────────────────
 
@@ -32,7 +46,23 @@ const SIGN_SUBTYPES: Array<{ value: SignSubtype; label: string }> = [
   { value: 'SpeedLimit', label: 'Speed Limit' },
 ];
 
-// ── Phase hint overlay ─────────────────────────────────────────────────────
+// ── Edit sub-mode toolbar ──────────────────────────────────────────────────
+
+const EDIT_MODES: Array<{
+  id: ObstacleEditSubMode;
+  label: string;
+  Icon: typeof Move;
+}> = [
+  { id: 'shape',     label: 'Select',    Icon: MousePointer2 },
+  { id: 'vertex',    label: 'Vertex',    Icon: GitCommitHorizontal },
+  { id: 'edge',      label: 'Edge',      Icon: Spline },
+  { id: 'face',      label: 'Face',      Icon: Square },
+  { id: 'translate', label: 'Move',      Icon: Move },
+  { id: 'rotate',    label: 'Rotate',    Icon: RotateCw },
+  { id: 'scale',     label: 'Scale',     Icon: Scale3D },
+];
+
+// ── Phase hint ─────────────────────────────────────────────────────────────
 
 function PhaseHint({ message }: { message: string }) {
   return (
@@ -124,7 +154,6 @@ function ClassificationForm() {
   const setAttributeDraft = useStaticObstacleStore((s) => s.setAttributeDraft);
   const commitAnnotation = useStaticObstacleStore((s) => s.commitAnnotation);
   const discardPending = useStaticObstacleStore((s) => s.discardPending);
-  const exitMode = useViewerModeStore((s) => s.exitMode);
 
   const kind = classifyDraft?.kind ?? null;
 
@@ -136,28 +165,18 @@ function ClassificationForm() {
     }
   };
 
-  const handleCommit = () => {
-    commitAnnotation();
-  };
-
-  const handleDiscard = () => {
-    discardPending();
-  };
-
   const canCommit = !!classifyDraft;
 
   return (
     <div className="absolute right-4 top-1/2 -translate-y-1/2 w-72 rounded-xl border border-border bg-card shadow-2xl">
-      {/* Header */}
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <span className="text-sm font-semibold">Classify Object</span>
-        <button onClick={handleDiscard} className="text-muted-foreground hover:text-foreground">
+        <button onClick={discardPending} className="text-muted-foreground hover:text-foreground">
           <X className="h-4 w-4" />
         </button>
       </div>
 
       <div className="space-y-4 p-4">
-        {/* Kind selector */}
         <div className="grid grid-cols-2 gap-2">
           <button
             onClick={() => setKind('TrafficLight')}
@@ -181,18 +200,14 @@ function ClassificationForm() {
           </button>
         </div>
 
-        {/* Subtype grid */}
         {kind === 'TrafficLight' && (
           <div className="grid grid-cols-3 gap-1.5">
             {TL_SUBTYPES.map(({ value, label }) => (
               <button
                 key={value}
-                onClick={() =>
-                  setClassifyDraft({ kind: 'TrafficLight', subtype: value })
-                }
+                onClick={() => setClassifyDraft({ kind: 'TrafficLight', subtype: value })}
                 className={`rounded-md border px-1.5 py-1.5 text-[11px] transition-colors ${
-                  classifyDraft?.kind === 'TrafficLight' &&
-                  classifyDraft.subtype === value
+                  classifyDraft?.kind === 'TrafficLight' && classifyDraft.subtype === value
                     ? 'border-primary bg-primary/10 text-primary'
                     : 'border-border hover:bg-muted'
                 }`}
@@ -215,14 +230,12 @@ function ClassificationForm() {
                       subtype: value,
                       ...(value === 'SpeedLimit' && {
                         speed: (classifyDraft as { speed?: number })?.speed ?? 0,
-                        unit:
-                          (classifyDraft as { unit?: 'mph' | 'kph' })?.unit ?? 'kph',
+                        unit: (classifyDraft as { unit?: 'mph' | 'kph' })?.unit ?? 'kph',
                       }),
                     })
                   }
                   className={`rounded-md border px-1.5 py-1.5 text-[11px] transition-colors ${
-                    classifyDraft?.kind === 'Sign' &&
-                    classifyDraft.subtype === value
+                    classifyDraft?.kind === 'Sign' && classifyDraft.subtype === value
                       ? 'border-primary bg-primary/10 text-primary'
                       : 'border-border hover:bg-muted'
                   }`}
@@ -232,73 +245,61 @@ function ClassificationForm() {
               ))}
             </div>
 
-            {/* Speed limit fields */}
-            {classifyDraft?.kind === 'Sign' &&
-              classifyDraft.subtype === 'SpeedLimit' && (
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">Speed</span>
-                  <input
-                    type="number"
-                    min={0}
-                    max={200}
-                    value={classifyDraft.speed ?? 0}
-                    onChange={(e) =>
-                      setClassifyDraft({
-                        ...classifyDraft,
-                        speed: Number(e.target.value),
-                      })
-                    }
-                    className="h-7 w-16 rounded border border-border bg-background px-2 text-xs"
-                  />
-                  <div className="flex rounded border border-border text-xs overflow-hidden">
-                    {(['kph', 'mph'] as const).map((u) => (
-                      <button
-                        key={u}
-                        onClick={() =>
-                          setClassifyDraft({ ...classifyDraft, unit: u })
-                        }
-                        className={`px-2 py-1 transition-colors ${
-                          classifyDraft.unit === u
-                            ? 'bg-primary text-primary-foreground'
-                            : 'hover:bg-muted'
-                        }`}
-                      >
-                        {u}
-                      </button>
-                    ))}
-                  </div>
+            {classifyDraft?.kind === 'Sign' && classifyDraft.subtype === 'SpeedLimit' && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Speed</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={200}
+                  value={classifyDraft.speed ?? 0}
+                  onChange={(e) =>
+                    setClassifyDraft({ ...classifyDraft, speed: Number(e.target.value) })
+                  }
+                  className="h-7 w-16 rounded border border-border bg-background px-2 text-xs"
+                />
+                <div className="flex rounded border border-border text-xs overflow-hidden">
+                  {(['kph', 'mph'] as const).map((u) => (
+                    <button
+                      key={u}
+                      onClick={() => setClassifyDraft({ ...classifyDraft, unit: u })}
+                      className={`px-2 py-1 transition-colors ${
+                        classifyDraft.unit === u
+                          ? 'bg-primary text-primary-foreground'
+                          : 'hover:bg-muted'
+                      }`}
+                    >
+                      {u}
+                    </button>
+                  ))}
                 </div>
-              )}
+              </div>
+            )}
           </div>
         )}
 
-        {/* Custom attributes */}
         {kind && (
           <div>
             <p className="mb-1.5 text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
               Attributes
             </p>
-            <AttributeEditor
-              attrs={attributeDraft}
-              onChange={setAttributeDraft}
-            />
+            <AttributeEditor attrs={attributeDraft} onChange={setAttributeDraft} />
           </div>
         )}
 
-        {/* Actions */}
         <div className="flex gap-2 pt-1">
           <Button
             variant="outline"
             size="sm"
             className="flex-1 text-xs"
-            onClick={handleDiscard}
+            onClick={discardPending}
           >
             Discard
           </Button>
           <Button
             size="sm"
             className="flex-1 gap-1 text-xs"
-            onClick={handleCommit}
+            onClick={commitAnnotation}
             disabled={!canCommit}
           >
             Save <ChevronRight className="h-3.5 w-3.5" />
@@ -309,12 +310,72 @@ function ClassificationForm() {
   );
 }
 
+// ── Editing toolbar ────────────────────────────────────────────────────────
+
+interface EditingToolbarProps {
+  plugin: StaticObstaclePlugin | undefined;
+}
+
+function EditingToolbar({ plugin }: EditingToolbarProps) {
+  const editSubMode = useStaticObstacleStore((s) => s.editSubMode);
+
+  return (
+    <div className="absolute bottom-3 left-1/2 z-20 -translate-x-1/2">
+      <div className="flex items-center gap-1 rounded-lg border border-border bg-card/95 px-1 py-0.5 shadow-md backdrop-blur-sm">
+        {EDIT_MODES.map(({ id, label, Icon }) => (
+          <Button
+            key={id}
+            variant={editSubMode === id ? 'default' : 'ghost'}
+            size="sm"
+            className="h-7 gap-1 text-xs"
+            onClick={() => plugin?.setEditSubMode(id)}
+            title={label}
+          >
+            <Icon className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">{label}</span>
+          </Button>
+        ))}
+
+        <div className="mx-1 h-4 w-px bg-border" />
+
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 gap-1.5 text-xs text-green-500 hover:text-green-400"
+          onClick={() => plugin?.confirmShape()}
+        >
+          <Check className="h-3.5 w-3.5" />
+          Confirm
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 gap-1.5 text-xs text-muted-foreground"
+          onClick={() => plugin?.discardPendingShape()}
+        >
+          <X className="h-3.5 w-3.5" />
+          Discard
+          <kbd className="ml-0.5 rounded bg-muted px-1 py-0.5 text-[10px] text-muted-foreground">
+            Esc
+          </kbd>
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 // ── Main overlay ───────────────────────────────────────────────────────────
 
-export function StaticObstacleOverlay() {
+interface StaticObstacleOverlayProps {
+  engine: ViewerEngine | null;
+}
+
+export function StaticObstacleOverlay({ engine }: StaticObstacleOverlayProps) {
   const mode = useViewerModeStore((s) => s.mode);
   const phase = useStaticObstacleStore((s) => s.phase);
   const layers = useStaticObstacleStore((s) => s.layers);
+
+  const plugin = engine?.getPlugin<StaticObstaclePlugin>('static-obstacle');
 
   if (mode !== 'static-obstacle') return null;
 
@@ -323,11 +384,18 @@ export function StaticObstacleOverlay() {
       {phase === 'idle' && layers.length === 0 && (
         <PhaseHint message="Create a layer in the sidebar to begin annotating" />
       )}
-      {phase === 'drawing-base' && (
-        <PhaseHint message="Click and drag to draw bounding box footprint · Esc to cancel" />
+      {phase === 'drawing' && (
+        <PhaseHint message="Click and drag to draw box footprint · drag up to set height · Esc to cancel" />
       )}
-      {phase === 'extruding' && (
-        <PhaseHint message="Move mouse up/down to set height · Click to confirm" />
+      {phase === 'editing' && (
+        <>
+          <div className="pointer-events-none absolute bottom-20 left-1/2 -translate-x-1/2">
+            <div className="rounded-lg bg-black/70 px-4 py-2 text-xs text-white backdrop-blur-sm">
+              Use handles or gizmo to adjust the box · Confirm when done
+            </div>
+          </div>
+          <EditingToolbar plugin={plugin} />
+        </>
       )}
       {phase === 'picking-face' && (
         <PhaseHint message="Click a face to set the front direction · Esc to cancel" />

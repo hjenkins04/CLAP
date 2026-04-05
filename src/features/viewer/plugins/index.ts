@@ -12,3 +12,4 @@ export { BaseMapPlugin } from './base-map';
 export { OsmFeaturesPlugin } from './osm-features';
 export { CustomMapPlugin } from './custom-map';
 export { StaticObstaclePlugin } from './static-obstacle';
+export { ReclassifyPlugin } from './reclassify';

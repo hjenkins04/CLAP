@@ -35,7 +35,7 @@ export function GridPanel() {
         <input
           type="range"
           min="10"
-          max="1000"
+          max="5000"
           step="10"
           value={size}
           onChange={(e) => setSize(Number(e.target.value))}

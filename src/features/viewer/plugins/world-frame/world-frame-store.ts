@@ -197,7 +197,7 @@ export const useWorldFrameStore = create<WorldFrameState>()(
       },
 
       setAnchor1PcLive: (pt: PcPoint) => {
-        const { geoPoint1, anchor1, translationOffset } = get();
+        const { geoPoint1, anchor1, anchor2, translationOffset, rotationOffset } = get();
         if (!geoPoint1 || !anchor1) return;
         // Compensate translationOffset so transform.translation stays constant.
         // transform.translation = anchor1.pc + translationOffset
@@ -207,9 +207,18 @@ export const useWorldFrameStore = create<WorldFrameState>()(
           x: translationOffset.x + (anchor1.pc.x - pt.x),
           z: translationOffset.z + (anchor1.pc.z - pt.z),
         };
+        // When anchor2 exists, pcAngle = atan2(anchor2.pc.z - anchor1.pc.z, anchor2.pc.x - anchor1.pc.x)
+        // changes when anchor1 moves, which would change transform.rotation.
+        // Compensate rotationOffset to keep rotation constant.
+        let newRotationOffset = rotationOffset;
+        if (anchor2) {
+          const oldPcAngle = Math.atan2(anchor2.pc.z - anchor1.pc.z, anchor2.pc.x - anchor1.pc.x);
+          const newPcAngle = Math.atan2(anchor2.pc.z - pt.z, anchor2.pc.x - pt.x);
+          newRotationOffset = rotationOffset + (oldPcAngle - newPcAngle);
+        }
         const newAnchor1 = { geo: geoPoint1, pc: pt };
-        const state = { ...get(), anchor1: newAnchor1, translationOffset: newOffset };
-        set({ anchor1: newAnchor1, translationOffset: newOffset, transform: buildTransform(state) });
+        const state = { ...get(), anchor1: newAnchor1, translationOffset: newOffset, rotationOffset: newRotationOffset };
+        set({ anchor1: newAnchor1, translationOffset: newOffset, rotationOffset: newRotationOffset, transform: buildTransform(state) });
       },
 
       editingAnchor: false,

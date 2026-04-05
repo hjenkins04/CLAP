@@ -1,6 +1,13 @@
 import { useState } from 'react';
-import { Eye, EyeOff, X, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Button, ScrollArea } from '@clap/design-system';
+import { Eye, EyeOff, X, ChevronLeft, ChevronRight, Target } from 'lucide-react';
+import {
+  Button,
+  ScrollArea,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@clap/design-system';
 import { useViewerModeStore } from '@/app/stores';
 import { useAnnotateStore } from './annotate-store';
 import { CLASSIFICATION_CLASSES } from './classification-classes';
@@ -9,14 +16,17 @@ export function AnnotatePanel() {
   const mode = useViewerModeStore((s) => s.mode);
   const exitMode = useViewerModeStore((s) => s.exitMode);
   const classVisibility = useAnnotateStore((s) => s.classVisibility);
-  const toggleClassVisibility = useAnnotateStore(
-    (s) => s.toggleClassVisibility,
-  );
+  const classActive = useAnnotateStore((s) => s.classActive);
+  const toggleClassVisibility = useAnnotateStore((s) => s.toggleClassVisibility);
+  const toggleClassActive = useAnnotateStore((s) => s.toggleClassActive);
+  const activateAll = useAnnotateStore((s) => s.activateAll);
   const showAll = useAnnotateStore((s) => s.showAll);
   const hideAll = useAnnotateStore((s) => s.hideAll);
   const [collapsed, setCollapsed] = useState(false);
 
-  if (mode !== 'annotate') return null;
+  const isReclassify = mode === 'reclassify';
+
+  if (mode !== 'annotate' && mode !== 'reclassify') return null;
 
   if (collapsed) {
     return (
@@ -34,89 +44,153 @@ export function AnnotatePanel() {
   }
 
   return (
-    <div className="absolute right-3 top-56 z-10 w-56">
-      <div className="rounded-lg border border-border bg-card/95 shadow-lg backdrop-blur-sm">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-3 py-1.5">
-          <span className="text-xs font-medium">Classification</span>
-          <div className="flex gap-0.5">
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-5 w-5"
-              onClick={showAll}
-              title="Show all"
-            >
-              <Eye className="h-3 w-3" />
-            </Button>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-5 w-5"
-              onClick={hideAll}
-              title="Hide all"
-            >
-              <EyeOff className="h-3 w-3" />
-            </Button>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-5 w-5"
-              onClick={() => setCollapsed(true)}
-              title="Minimize"
-            >
-              <ChevronRight className="h-3 w-3" />
-            </Button>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-5 w-5"
-              onClick={exitMode}
-              title="Close"
-            >
-              <X className="h-3 w-3" />
-            </Button>
+    <TooltipProvider delayDuration={400}>
+      <div className="absolute right-3 top-56 z-10 w-56">
+        <div className="overflow-hidden rounded-lg border border-border bg-card/95 shadow-lg backdrop-blur-sm">
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-border px-3 py-1.5">
+            <div className="flex min-w-0 items-center gap-1.5">
+              {isReclassify && (
+                <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-400" />
+              )}
+              <span className="truncate text-xs font-medium">
+                {isReclassify ? 'Active Classes' : 'Classification'}
+              </span>
+            </div>
+            <div className="flex shrink-0 gap-0.5">
+              {isReclassify && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button size="icon" variant="ghost" className="h-5 w-5" onClick={activateAll}>
+                      <Target className="h-3 w-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">Activate all</TooltipContent>
+                </Tooltip>
+              )}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button size="icon" variant="ghost" className="h-5 w-5" onClick={showAll}>
+                    <Eye className="h-3 w-3" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Show all</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button size="icon" variant="ghost" className="h-5 w-5" onClick={hideAll}>
+                    <EyeOff className="h-3 w-3" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Hide all</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => setCollapsed(true)}>
+                    <ChevronRight className="h-3 w-3" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Minimize</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button size="icon" variant="ghost" className="h-5 w-5" onClick={exitMode}>
+                    <X className="h-3 w-3" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Close</TooltipContent>
+              </Tooltip>
+            </div>
           </div>
-        </div>
 
-        {/* Class list */}
-        <ScrollArea className="max-h-[60vh]">
-          <div className="space-y-0.5 p-1.5">
-            {CLASSIFICATION_CLASSES.map((cls) => {
-              const visible = classVisibility[String(cls.id)] ?? true;
-              const [r, g, b] = cls.color;
-              return (
-                <button
-                  key={cls.id}
-                  type="button"
-                  onClick={() => toggleClassVisibility(String(cls.id))}
-                  className={`flex w-full items-center gap-2 rounded px-2 py-1 text-xs transition-colors hover:bg-muted ${
-                    !visible ? 'opacity-40' : ''
-                  }`}
-                >
-                  <span
-                    className="h-2.5 w-2.5 shrink-0 rounded-full"
-                    style={{
-                      backgroundColor: `rgb(${Math.round(r * 255)},${Math.round(g * 255)},${Math.round(b * 255)})`,
-                    }}
-                  />
-                  <span className="flex-1 truncate text-left">
-                    {cls.name}
-                  </span>
-                  <span className="shrink-0 text-muted-foreground">
-                    [{cls.id}]
-                  </span>
-                  {visible ? (
-                    <Eye className="h-3 w-3 shrink-0" />
-                  ) : (
-                    <EyeOff className="h-3 w-3 shrink-0 text-muted-foreground" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </ScrollArea>
+          {/* Class list */}
+          <ScrollArea className="max-h-[60vh]">
+            <div className="space-y-px p-1.5">
+              {CLASSIFICATION_CLASSES.map((cls) => {
+                const visible = classVisibility[String(cls.id)] ?? true;
+                const active = classActive[String(cls.id)] ?? true;
+                const [r, g, b] = cls.color;
+                const dimmed = !visible || (isReclassify && !active);
+
+                return (
+                  <div
+                    key={cls.id}
+                    className={`flex w-full min-w-0 items-center gap-1.5 rounded px-1.5 py-0.5 text-xs transition-colors hover:bg-muted ${
+                      dimmed ? 'opacity-40' : ''
+                    }`}
+                  >
+                    {/* Color swatch */}
+                    <span
+                      className="h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-black/10"
+                      style={{
+                        backgroundColor: `rgb(${Math.round(r * 255)},${Math.round(g * 255)},${Math.round(b * 255)})`,
+                      }}
+                    />
+
+                    {/* Class name — min-w-0 lets it actually shrink */}
+                    <span className="min-w-0 flex-1 truncate">{cls.name}</span>
+
+                    {/* ID badge */}
+                    <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">
+                      {cls.id}
+                    </span>
+
+                    {/* Active toggle */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className={`h-5 w-5 shrink-0 ${!isReclassify ? 'opacity-25' : ''}`}
+                          onClick={() => toggleClassActive(String(cls.id))}
+                        >
+                          <Target
+                            className={`h-3 w-3 ${active ? 'text-cyan-400' : 'text-muted-foreground'}`}
+                          />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="left">
+                        {active ? 'Deactivate (exclude from selection)' : 'Activate (include in selection)'}
+                      </TooltipContent>
+                    </Tooltip>
+
+                    {/* Visibility toggle */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-5 w-5 shrink-0"
+                          onClick={() => toggleClassVisibility(String(cls.id))}
+                        >
+                          {visible ? (
+                            <Eye className="h-3 w-3" />
+                          ) : (
+                            <EyeOff className="h-3 w-3 text-muted-foreground" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="left">
+                        {visible ? 'Hide class' : 'Show class'}
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                );
+              })}
+            </div>
+          </ScrollArea>
+
+          {/* Reclassify hint */}
+          {isReclassify && (
+            <div className="border-t border-border/50 px-2.5 py-1.5">
+              <p className="text-[10px] leading-relaxed text-muted-foreground">
+                <Target className="mr-1 inline h-2.5 w-2.5 text-cyan-400" />
+                Active classes only are drag-selectable
+              </p>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }

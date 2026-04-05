@@ -204,6 +204,7 @@ export class PoiPlugin implements ViewerPlugin {
       this.ctx.domElement
     );
     this.gizmo.setMode('translate');
+    this.gizmo.setSpace('local');
     this.gizmo.setSize(0.6);
     this.gizmo.attach(this.marker);
     this.ctx.worldRoot.add(this.gizmo);

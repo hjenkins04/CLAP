@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 
 // --- Mode definitions ---
 
-export type ViewerMode = 'idle' | 'transform' | 'poi' | 'virtual-tiles' | 'roi-selection' | 'point-select' | 'annotate' | 'world-frame' | 'static-obstacle';
+export type ViewerMode = 'idle' | 'transform' | 'poi' | 'virtual-tiles' | 'roi-selection' | 'point-select' | 'annotate' | 'reclassify' | 'world-frame' | 'static-obstacle';
 export type TransformSubMode = 'translate' | 'rotate';
 
 // --- State ---
@@ -29,6 +29,7 @@ interface ViewerModeState {
   enterRoiSelectionMode: () => void;
   enterPointSelectMode: () => void;
   enterAnnotateMode: () => void;
+  enterReclassifyMode: () => void;
   enterWorldFrameMode: () => void;
   enterStaticObstacleMode: () => void;
   exitMode: () => void;
@@ -64,6 +65,8 @@ export const useViewerModeStore = create<ViewerModeState>()(
       enterPointSelectMode: () => set({ mode: 'point-select' }),
 
       enterAnnotateMode: () => set({ mode: 'annotate' }),
+
+      enterReclassifyMode: () => set({ mode: 'reclassify' }),
 
       enterWorldFrameMode: () => set({ mode: 'world-frame' }),
 

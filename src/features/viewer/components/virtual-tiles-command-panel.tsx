@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useViewerModeStore } from '@/app/stores';
 import { useVirtualTilesStore, VirtualTilesPlugin } from '../plugins/virtual-tiles';
 import { CommandPopup } from './command-popup';
@@ -22,6 +23,25 @@ export function VirtualTilesCommandPanel({ engine }: VirtualTilesCommandPanelPro
   const isSelecting = mode === 'virtual-tiles' && phase === 'selecting';
   const isApplied = phase === 'applied';
   const totalCells = rows * cols;
+  const minCellSize = plugin?.minCellSize ?? 1;
+
+  // Local draft so the user can type freely without triggering grid rebuild
+  const [draft, setDraft] = useState(String(cellSize));
+
+  // Keep draft in sync when store value changes externally
+  useEffect(() => {
+    setDraft(String(cellSize));
+  }, [cellSize]);
+
+  const applyDraft = () => {
+    const v = Number(draft);
+    if (!isNaN(v) && v >= minCellSize) {
+      useVirtualTilesStore.getState().setCellSize(v);
+    } else {
+      // Revert draft to last committed value
+      setDraft(String(cellSize));
+    }
+  };
 
   if (!isSelecting && !isApplied) return null;
 
@@ -42,20 +62,33 @@ export function VirtualTilesCommandPanel({ engine }: VirtualTilesCommandPanelPro
         {/* Cell size control */}
         <div className="space-y-1.5">
           <Label className="text-xs">Cell Size (m)</Label>
-          <input
-            type="number"
-            min={1}
-            step={1}
-            className="h-6 w-full rounded border border-border bg-background px-2 text-xs"
-            value={cellSize}
-            disabled={isApplied}
-            onChange={(e) => {
-              const v = Number(e.target.value);
-              if (v >= 1) useVirtualTilesStore.getState().setCellSize(v);
-            }}
-          />
+          <div className="flex gap-1">
+            <input
+              type="number"
+              min={minCellSize}
+              step={minCellSize}
+              className="h-6 w-full rounded border border-border bg-background px-2 text-xs disabled:opacity-40"
+              value={draft}
+              disabled={isApplied}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') applyDraft();
+                if (e.key === 'Escape') setDraft(String(cellSize));
+              }}
+              onBlur={applyDraft}
+            />
+            {!isApplied && (
+              <button
+                className="h-6 rounded bg-primary px-2 text-xs text-primary-foreground hover:bg-primary/80 disabled:opacity-40"
+                disabled={isApplied}
+                onClick={applyDraft}
+              >
+                Apply
+              </button>
+            )}
+          </div>
           <div className="text-[10px] text-muted-foreground">
-            Grid: {cols} x {rows} cells
+            Grid: {cols} × {rows} — min cell {minCellSize}m
           </div>
         </div>
 

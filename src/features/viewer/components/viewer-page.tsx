@@ -18,6 +18,7 @@ import { AnnotatePanel } from '../plugins/annotate';
 import { WorldFrameOverlay } from './world-frame-overlay';
 import { WorldFrameMapModal } from './world-frame-map-modal';
 import { StaticObstacleOverlay } from '../plugins/static-obstacle';
+import { ReclassifyGizmo, ReclassifyOverlay } from '../plugins/reclassify';
 
 export function ViewerPage() {
   const { theme, cycleTheme } = useUIStore();
@@ -65,6 +66,8 @@ export function ViewerPage() {
         <WorldFrameOverlay engine={engine} />
         <WorldFrameMapModal engine={engine} />
         <StaticObstacleOverlay />
+        <ReclassifyOverlay engine={engine} />
+        <ReclassifyGizmo />
       </main>
     </div>
   );

@@ -33,6 +33,7 @@ export class TransformPlugin implements ViewerPlugin {
       ctx.getActiveCamera(),
       ctx.domElement
     );
+    this.gizmo.setSpace('local');
     this.gizmo.visible = false;
     this.gizmo.enabled = false;
     ctx.worldRoot.add(this.gizmo);

@@ -177,7 +177,7 @@ export function WorldFramePanel() {
             ) : (
               <div className="space-y-2 rounded-md border border-border bg-muted/30 p-2">
                 <p className="text-[10px] text-muted-foreground">
-                  Drag the green anchor sphere to reposition the map reference point.
+                  Click and drag anywhere in the 3D view to reposition the anchor point.
                 </p>
                 <div className="flex gap-1">
                   <Button
@@ -224,7 +224,7 @@ export function WorldFramePanel() {
             ) : (
               <div className="space-y-2 rounded-md border border-border bg-muted/30 p-2">
                 <p className="text-[10px] text-muted-foreground">
-                  Drag the gizmo in the 3D view to reposition or rotate the map.
+                  Click and drag anywhere in the 3D view to move or rotate the map.
                 </p>
 
                 {/* Mode toggle */}

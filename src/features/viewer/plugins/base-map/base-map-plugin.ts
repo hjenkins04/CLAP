@@ -10,6 +10,7 @@ import {
   Vector3,
   Matrix4,
   PlaneGeometry,
+  Euler,
 } from 'three';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import type { Texture } from 'three';
@@ -81,9 +82,18 @@ export class BaseMapPlugin implements ViewerPlugin {
   private tileGeneration = 0;
   private tileElevation = 0;
   private pcBounds: Box3 | null = null;
-  private gizmo: TransformControls | null = null;
-  /** Scene-space proxy the gizmo attaches to; avoids flip-axis handedness issues. */
+  // ── Alignment gizmo ───────────────────────────────────────────────────
+  // A scene-level proxy Group is used so TransformControls operates in pure
+  // world space, unaffected by worldRoot's negative scale.  On each change we
+  // convert the proxy's world transform back to worldRoot-local space:
+  //   position : tileGroup.pos = proxy.pos / worldRoot.scale  (component-wise)
+  //   rotation : tileGroup.rotY = proxy.rotY * rotSign  (rotSign = sx * sz)
   private gizmoProxy: Group | null = null;
+  private transformControls: TransformControls | null = null;
+  private tcDragging = false;
+  // Proxy and tile start positions (local/data space) for delta-based tracking
+  private gizmoProxyStartLocal: { x: number; z: number } | null = null;
+  private gizmoTileStart: { x: number; z: number; rotY: number } | null = null;
 
   private unsubWorldFrame: (() => void) | null = null;
   private unsubBaseMap: (() => void) | null = null;
@@ -519,115 +529,135 @@ export class BaseMapPlugin implements ViewerPlugin {
   }
 
   // ── Editing ────────────────────────────────────────────────────────
-
-  /**
-   * Returns the sign factor needed to convert a worldRoot-local Y rotation to
-   * the equivalent world-space Y rotation angle (and vice-versa).
-   *
-   * When flipX XOR flipZ is active the parent matrix has a negative determinant,
-   * which inverts the handedness of the XZ plane and therefore reverses the
-   * direction of a Y-axis rotation as seen by the user. Multiplying by this
-   * factor compensates for that inversion.
-   */
-  private rotSign(): number {
-    if (!this.ctx) return 1;
-    const sx = this.ctx.worldRoot.scale.x < 0 ? -1 : 1;
-    const sz = this.ctx.worldRoot.scale.z < 0 ? -1 : 1;
-    return sx * sz;
-  }
+  //
+  // TransformControls is placed on a scene-level proxy Group (NOT inside
+  // worldRoot) so it operates in pure world space, unaffected by worldRoot's
+  // negative scale (flipX / flipZ / flipY).
+  //
+  // On every objectChange the proxy's world-space transform is converted back
+  // to tileGroup's worldRoot-local space:
+  //
+  //   Translate:  tileGroup.pos.x = proxy.pos.x / sx
+  //               tileGroup.pos.z = proxy.pos.z / sz
+  //
+  //   Rotate:     rotSign = sx * sz  (−1 when exactly one XZ axis is flipped,
+  //               +1 otherwise — reverses the apparent rotation direction)
+  //               tileGroup.rotation.y = proxy.rotation.y * rotSign
 
   private startEditing(): void {
-    if (!this.ctx || !this.tileGroup || this.gizmo) return;
+    if (!this.ctx || !this.tileGroup) return;
 
-    // Push initial snapshot so the first move can be undone
+    const wfState = useWorldFrameStore.getState();
+
+    // Force-sync tileGroup from the authoritative transform
+    if (wfState.transform) {
+      this.tileGroup.position.x = wfState.transform.translation.x;
+      this.tileGroup.position.z = wfState.transform.translation.z;
+      this.tileGroup.rotation.y = wfState.transform.rotation;
+    }
+
     useBaseMapStore.getState().clearEditHistory();
     this.pushCurrentSnapshot();
 
-    // ── Proxy in scene space ──────────────────────────────────────────
-    // TransformControls attached directly to tileGroup (a child of worldRoot)
-    // misbehaves when worldRoot has a negative scale: the gizmo arrows point in
-    // mirrored directions and rotation handedness inverts.  Fix: attach the
-    // gizmo to a proxy Group that lives in scene space (NOT under worldRoot), so
-    // its transform is always in unflipped world coordinates.  onGizmoObjectChange
-    // converts proxy world transform → tileGroup worldRoot-local transform.
+    const sx = this.ctx.worldRoot.scale.x || 1;
+    const sy = this.ctx.worldRoot.scale.y || 1;
+    const sz = this.ctx.worldRoot.scale.z || 1;
+    const rotSign = sx * sz;
+
+    // Proxy starts at the anchor marker position (anchor1.pc) so the gizmo
+    // appears on top of the green sphere where the user expects it.
+    // We track the delta between proxy movement and tile movement separately
+    // so that any existing translationOffset is preserved.
+    const anchor1 = wfState.anchor1;
+    const proxyLocalX = anchor1 ? anchor1.pc.x : this.tileGroup.position.x;
+    const proxyLocalZ = anchor1 ? anchor1.pc.z : this.tileGroup.position.z;
+
+    this.gizmoProxyStartLocal = { x: proxyLocalX, z: proxyLocalZ };
+    this.gizmoTileStart = {
+      x: this.tileGroup.position.x,
+      z: this.tileGroup.position.z,
+      rotY: this.tileGroup.rotation.y,
+    };
+
     this.gizmoProxy = new Group();
-    this.tileGroup.updateMatrixWorld(true);
-
-    // Proxy position = tileGroup world position
-    const worldPos = new Vector3();
-    this.tileGroup.getWorldPosition(worldPos);
-    this.gizmoProxy.position.copy(worldPos);
-    this.gizmoProxy.position.y = worldPos.y; // keep at actual elevation
-
-    // Proxy rotation: tileGroup.rotation.y is in worldRoot-local space.
-    // Convert to world-space Y angle by applying the rotation sign factor.
-    this.gizmoProxy.rotation.y = this.tileGroup.rotation.y * this.rotSign();
-
+    this.gizmoProxy.position.set(
+      proxyLocalX * sx,
+      this.tileGroup.position.y * sy,
+      proxyLocalZ * sz,
+    );
+    this.gizmoProxy.rotation.y = this.tileGroup.rotation.y * rotSign;
     this.ctx.scene.add(this.gizmoProxy);
 
-    this.gizmo = new TransformControls(this.ctx.getActiveCamera(), this.ctx.domElement);
-    // World space: arrows always point in true world directions regardless of flip.
-    this.gizmo.setSpace('world');
-    this.gizmo.attach(this.gizmoProxy);
+    this.transformControls = new TransformControls(
+      this.ctx.getActiveCamera(),
+      this.ctx.domElement,
+    );
+    this.transformControls.setSpace('world');
+    this.transformControls.attach(this.gizmoProxy);
+    this.ctx.scene.add(this.transformControls);
+
+    this.transformControls.addEventListener('dragging-changed', (e: { value: boolean }) => {
+      if (this.ctx) this.ctx.controls.enabled = !e.value;
+      if (!e.value && this.tcDragging) this.pushCurrentSnapshot();
+      this.tcDragging = e.value;
+    });
+    this.transformControls.addEventListener('objectChange', this.onGizmoObjectChange);
+
     this.applyGizmoMode(useBaseMapStore.getState().gizmoMode);
-    this.ctx.scene.add(this.gizmo);
-    this.gizmo.addEventListener('dragging-changed', this.onGizmoDragChanged);
-    this.gizmo.addEventListener('objectChange', this.onGizmoObjectChange);
   }
 
   private stopEditing(): void {
-    if (!this.gizmo) return;
-    this.syncGizmoToStore();
-    useBaseMapStore.getState().clearEditHistory();
-    this.gizmo.removeEventListener('dragging-changed', this.onGizmoDragChanged);
-    this.gizmo.removeEventListener('objectChange', this.onGizmoObjectChange);
-    this.gizmo.detach();
-    if (this.ctx) this.ctx.scene.remove(this.gizmo);
-    this.gizmo.dispose();
-    this.gizmo = null;
-    if (this.gizmoProxy && this.ctx) {
-      this.ctx.scene.remove(this.gizmoProxy);
+    if (this.transformControls) {
+      this.transformControls.removeEventListener('objectChange', this.onGizmoObjectChange);
+      this.transformControls.detach();
+      this.ctx?.scene.remove(this.transformControls);
+      this.transformControls.dispose();
+      this.transformControls = null;
+    }
+    if (this.gizmoProxy) {
+      this.ctx?.scene.remove(this.gizmoProxy);
       this.gizmoProxy = null;
     }
     if (this.ctx) this.ctx.controls.enabled = true;
+    this.tcDragging = false;
+    this.gizmoProxyStartLocal = null;
+    this.gizmoTileStart = null;
+    this.syncGizmoToStore();
+    useBaseMapStore.getState().clearEditHistory();
   }
 
   private applyGizmoMode(mode: 'translate' | 'rotate'): void {
-    if (!this.gizmo) return;
-    this.gizmo.setMode(mode);
-    // Y-up: translate on XZ plane only, rotate around Y axis only
-    this.gizmo.showX = mode === 'translate';
-    this.gizmo.showY = mode === 'rotate';
-    this.gizmo.showZ = mode === 'translate';
+    if (!this.transformControls) return;
+    if (mode === 'translate') {
+      this.transformControls.setMode('translate');
+      this.transformControls.showX = true;
+      this.transformControls.showY = false;
+      this.transformControls.showZ = true;
+    } else {
+      this.transformControls.setMode('rotate');
+      this.transformControls.showX = false;
+      this.transformControls.showY = true;
+      this.transformControls.showZ = false;
+    }
   }
 
-  private isDragging = false;
-
-  private readonly onGizmoDragChanged = (event: { value: boolean }): void => {
-    if (this.ctx) this.ctx.controls.enabled = !event.value;
-    if (event.value) {
-      this.isDragging = true;
-    } else if (this.isDragging) {
-      // Drag ended — push the new position as a snapshot
-      this.isDragging = false;
-      this.pushCurrentSnapshot();
-    }
-  };
-
   private readonly onGizmoObjectChange = (): void => {
-    if (!this.tileGroup || !this.gizmoProxy || !this.ctx) return;
-
-    // Convert proxy world position → tileGroup worldRoot-local position.
-    // worldRoot.worldToLocal correctly inverts the scale/flip so the
-    // tileGroup ends up at the same visual world position as the proxy.
-    const localPos = this.ctx.worldRoot.worldToLocal(this.gizmoProxy.position.clone());
-    this.tileGroup.position.x = localPos.x;
-    this.tileGroup.position.z = localPos.z;
-    this.tileGroup.position.y = this.tileElevation; // lock elevation
-
-    // Convert proxy world-space Y rotation → tileGroup local Y rotation.
-    // The rotSign() factor corrects for axis-flip handedness inversion.
-    this.tileGroup.rotation.set(0, this.gizmoProxy.rotation.y * this.rotSign(), 0);
+    if (!this.gizmoProxy || !this.tileGroup || !this.ctx) return;
+    if (!this.gizmoProxyStartLocal || !this.gizmoTileStart) return;
+    const sx = this.ctx.worldRoot.scale.x || 1;
+    const sz = this.ctx.worldRoot.scale.z || 1;
+    const rotSign = sx * sz;
+    // Proxy started at anchor1.pc; tile started at anchor1.pc + translationOffset.
+    // Apply the same delta to the tile so translationOffset is preserved.
+    const proxyLocalX = this.gizmoProxy.position.x / sx;
+    const proxyLocalZ = this.gizmoProxy.position.z / sz;
+    const deltaX = proxyLocalX - this.gizmoProxyStartLocal.x;
+    const deltaZ = proxyLocalZ - this.gizmoProxyStartLocal.z;
+    this.tileGroup.position.x = this.gizmoTileStart.x + deltaX;
+    this.tileGroup.position.z = this.gizmoTileStart.z + deltaZ;
+    // Rotation: proxy rotation * rotSign
+    const euler = new Euler().setFromQuaternion(this.gizmoProxy.quaternion, 'YXZ');
+    this.tileGroup.rotation.y = euler.y * rotSign;
   };
 
   private pushCurrentSnapshot(): void {
@@ -644,14 +674,19 @@ export class BaseMapPlugin implements ViewerPlugin {
     this.tileGroup.position.x = snap.posX;
     this.tileGroup.position.z = snap.posZ;
     this.tileGroup.rotation.y = snap.rotY;
-
-    // Keep proxy in sync so the gizmo renders at the correct position.
-    if (this.gizmoProxy && this.ctx) {
-      this.tileGroup.updateMatrixWorld(true);
-      const worldPos = new Vector3();
-      this.tileGroup.getWorldPosition(worldPos);
-      this.gizmoProxy.position.copy(worldPos);
-      this.gizmoProxy.rotation.y = snap.rotY * this.rotSign();
+    // Keep proxy in sync with undo/redo: proxy = tile - (tileStart - proxyStart)
+    if (this.gizmoProxy && this.ctx && this.gizmoProxyStartLocal && this.gizmoTileStart) {
+      const sx = this.ctx.worldRoot.scale.x || 1;
+      const sy = this.ctx.worldRoot.scale.y || 1;
+      const sz = this.ctx.worldRoot.scale.z || 1;
+      const offsetX = this.gizmoTileStart.x - this.gizmoProxyStartLocal.x;
+      const offsetZ = this.gizmoTileStart.z - this.gizmoProxyStartLocal.z;
+      this.gizmoProxy.position.set(
+        (snap.posX - offsetX) * sx,
+        this.tileGroup.position.y * sy,
+        (snap.posZ - offsetZ) * sz,
+      );
+      this.gizmoProxy.rotation.y = snap.rotY * (sx * sz);
     }
   }
 

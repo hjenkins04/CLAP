@@ -59,10 +59,10 @@ export class VirtualTilesPlugin implements ViewerPlugin {
     this.gridGroup.matrixAutoUpdate = false;
     this.gridGroup.renderOrder = 900;
 
-    // Add grid directly to the scene (not the transform group) so it
-    // renders reliably in the EDL layer-0 pass. We sync the matrix
-    // with the transform group each frame in onUpdate().
-    ctx.worldRoot.add(this.gridGroup);
+    // Add grid at scene level (not worldRoot) so that copying tg.matrixWorld
+    // into gridGroup.matrix in onUpdate() doesn't double-apply the worldRoot
+    // axis-flip transform.
+    ctx.scene.add(this.gridGroup);
 
     this.unsubMode = useViewerModeStore.subscribe((state, prev) => {
       const was = prev.mode === 'virtual-tiles';
@@ -116,7 +116,7 @@ export class VirtualTilesPlugin implements ViewerPlugin {
     this.unsubStore = null;
     this.clearGrid();
     if (this.gridGroup && this.ctx) {
-      this.ctx.worldRoot.remove(this.gridGroup);
+      this.ctx.scene.remove(this.gridGroup);
     }
     this.gridGroup = null;
     this.ctx = null;
@@ -192,22 +192,42 @@ export class VirtualTilesPlugin implements ViewerPlugin {
     this.localBBox = box;
   }
 
+  /** Maximum cells per axis — keeps mesh count manageable */
+  private static readonly MAX_CELLS_PER_AXIS = 50;
+
+  /** Minimum cell size (metres) to stay within MAX_CELLS_PER_AXIS on both axes */
+  get minCellSize(): number {
+    if (!this.localBBox) return 1;
+    const extX = this.localBBox.max.x - this.localBBox.min.x;
+    const extZ = this.localBBox.max.z - this.localBBox.min.z;
+    const minFromExtents = Math.ceil(Math.max(extX, extZ) / VirtualTilesPlugin.MAX_CELLS_PER_AXIS);
+    return Math.max(1, minFromExtents);
+  }
+
   private deriveGridSize(): void {
     if (!this.localBBox) return;
     const { cellSize } = useVirtualTilesStore.getState();
     const extX = this.localBBox.max.x - this.localBBox.min.x;
-    const extY = this.localBBox.max.y - this.localBBox.min.y;
-    const cols = Math.max(1, Math.ceil(extX / cellSize));
-    const rows = Math.max(1, Math.ceil(extY / cellSize));
+    const extZ = this.localBBox.max.z - this.localBBox.min.z;
+    const cols = Math.min(
+      VirtualTilesPlugin.MAX_CELLS_PER_AXIS,
+      Math.max(1, Math.ceil(extX / cellSize))
+    );
+    const rows = Math.min(
+      VirtualTilesPlugin.MAX_CELLS_PER_AXIS,
+      Math.max(1, Math.ceil(extZ / cellSize))
+    );
     useVirtualTilesStore.getState().setGridSize(rows, cols);
   }
 
   // --- Grid construction ---
 
   /**
-   * Build grid cells on the XY plane at the bottom of the local bounding box.
-   * Positions are in the PCO's local coordinate space; the gridGroup's matrix
-   * is synced to the transform group's world matrix each frame by onUpdate().
+   * Build grid cells on the XZ ground plane (Y-up) at the bottom of the local
+   * bounding box.  Rows span the Z (north-south) axis, cols span the X
+   * (east-west) axis.  Positions are in the PCO's local coordinate space; the
+   * gridGroup's matrix is synced to the transform group's world matrix each
+   * frame by onUpdate().
    */
   private rebuildGrid(): void {
     this.clearGrid();
@@ -218,8 +238,8 @@ export class VirtualTilesPlugin implements ViewerPlugin {
 
     const cellW = cellSize;
     const cellH = cellSize;
-    // Place grid just below the bottom of the point cloud on Z
-    const zPos = min.z - 0.5;
+    // Place grid just below the elevation floor of the point cloud (Y = up)
+    const yPos = min.y - 0.5;
 
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
@@ -236,10 +256,12 @@ export class VirtualTilesPlugin implements ViewerPlugin {
         });
         const mesh = new Mesh(planeGeo, mat);
         mesh.renderOrder = 900;
+        // PlaneGeometry defaults to XY plane (vertical); rotate to XZ (horizontal ground)
+        mesh.rotation.x = -Math.PI / 2;
 
         const cx = min.x + (c + 0.5) * cellW;
-        const cy = min.y + (r + 0.5) * cellH;
-        mesh.position.set(cx, cy, zPos);
+        const cz = min.z + (r + 0.5) * cellH;
+        mesh.position.set(cx, yPos, cz);
 
         // Edge wireframe
         const edgeGeo = new EdgesGeometry(planeGeo);
@@ -253,6 +275,7 @@ export class VirtualTilesPlugin implements ViewerPlugin {
         const edges = new LineSegments(edgeGeo, edgeMat);
         edges.renderOrder = 901;
         edges.position.copy(mesh.position);
+        edges.rotation.copy(mesh.rotation);
 
         this.gridGroup.add(mesh);
         this.gridGroup.add(edges);
@@ -261,7 +284,6 @@ export class VirtualTilesPlugin implements ViewerPlugin {
         this.cells.set(key, { row: r, col: c, mesh, edges, material: mat });
       }
     }
-
   }
 
   private clearGrid(): void {
@@ -315,9 +337,11 @@ export class VirtualTilesPlugin implements ViewerPlugin {
     const max = this.localBBox.max;
     const cellW = cellSize;
     const cellH = cellSize;
-    const zMin = min.z;
-    const zMax = max.z;
-    const zExtent = zMax - zMin;
+    // Y is elevation (up); X-Z is the horizontal ground plane
+    const yMin = min.y;
+    const yMax = max.y;
+    const yExtent = yMax - yMin;
+    const yMid = (yMin + yMax) / 2;
 
     const transformGroup = this.ctx.getEditor().getTransformGroup();
     transformGroup.updateMatrixWorld(true);
@@ -331,16 +355,15 @@ export class VirtualTilesPlugin implements ViewerPlugin {
       const c = parseInt(cStr, 10);
 
       const cx = min.x + (c + 0.5) * cellW;
-      const cy = min.y + (r + 0.5) * cellH;
-      const cz = (zMin + zMax) / 2;
+      const cz = min.z + (r + 0.5) * cellH;
 
-      const cellMin = new Vector3(cx - cellW / 2, cy - cellH / 2, zMin);
-      const cellMax = new Vector3(cx + cellW / 2, cy + cellH / 2, zMax);
+      const cellMin = new Vector3(cx - cellW / 2, yMin, cz - cellH / 2);
+      const cellMax = new Vector3(cx + cellW / 2, yMax, cz + cellH / 2);
 
       // Local cell matrix: translate to center, then scale to cell dimensions
       const localMatrix = new Matrix4();
-      localMatrix.makeTranslation(cx, cy, cz);
-      localMatrix.scale(new Vector3(cellW, cellH, zExtent));
+      localMatrix.makeTranslation(cx, yMid, cz);
+      localMatrix.scale(new Vector3(cellW, yExtent, cellH));
 
       // World cell matrix: group transform * local cell
       const worldMatrix = groupWorld.clone().multiply(localMatrix);
@@ -350,7 +373,7 @@ export class VirtualTilesPlugin implements ViewerPlugin {
         box: new Box3(cellMin, cellMax),
         matrix: worldMatrix,
         inverse,
-        position: new Vector3(cx, cy, cz).applyMatrix4(groupWorld),
+        position: new Vector3(cx, yMid, cz).applyMatrix4(groupWorld),
       });
     }
 

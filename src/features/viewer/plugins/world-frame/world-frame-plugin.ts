@@ -8,6 +8,7 @@ import {
   Box3,
   Matrix4,
   Ray,
+  Group,
 } from 'three';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import type { ViewerPlugin, ViewerPluginContext } from '../../types';
@@ -32,8 +33,10 @@ export class WorldFramePlugin implements ViewerPlugin {
   private previewMarker: Mesh | null = null;
   private markerBaseRadius = 0.15;
 
-  // Anchor gizmo (edit anchor point in 3D)
+  // Anchor gizmo — lives at scene level (not worldRoot) to avoid the
+  // TransformControls double-inversion bug with negative-scale parents.
   private anchorGizmo: TransformControls | null = null;
+  private anchorProxy: { x: number; z: number } | null = null; // proxy start pos for delta
   private anchorOrigPc: { x: number; y: number; z: number } | null = null;
 
   // Subscriptions
@@ -359,22 +362,34 @@ export class WorldFramePlugin implements ViewerPlugin {
     const wf = useWorldFrameStore.getState();
     if (!wf.anchor1) return;
 
-    // Snapshot for cancel
     this.anchorOrigPc = { ...wf.anchor1.pc };
+
+    // Highlight marker to indicate edit mode
+    (this.marker1.material as MeshBasicMaterial).color.setHex(0xfbbf24);
+    this.marker1.scale.setScalar(this.markerBaseRadius * 1.5);
+
+    // Proxy at SCENE level so TC renders at the correct world position.
+    // TC sets its own position = attached object's world position; if TC were
+    // inside worldRoot (negative scale) that would double-invert the position.
+    this.ctx.worldRoot.updateWorldMatrix(true, false);
+    const worldPos = this.ctx.worldRoot.localToWorld(this.marker1.position.clone());
+    const proxyGroup = new Group();
+    proxyGroup.position.copy(worldPos);
+    this.ctx.scene.add(proxyGroup);
+    // Store proxy start for delta tracking
+    this.anchorProxy = { x: worldPos.x, z: worldPos.z };
 
     this.anchorGizmo = new TransformControls(this.ctx.getActiveCamera(), this.ctx.domElement);
     this.anchorGizmo.setSpace('world');
     this.anchorGizmo.setMode('translate');
-    // Y-up convention: only allow XZ movement
     this.anchorGizmo.showX = true;
     this.anchorGizmo.showY = false;
     this.anchorGizmo.showZ = true;
-    this.anchorGizmo.attach(this.marker1);
-    this.ctx.worldRoot.add(this.anchorGizmo);
+    this.anchorGizmo.attach(proxyGroup);
+    this.ctx.scene.add(this.anchorGizmo);
     this.anchorGizmo.addEventListener('dragging-changed', this.onAnchorDragChanged);
     this.anchorGizmo.addEventListener('objectChange', this.onAnchorObjectChange);
 
-    // Register cancel callback now so the panel can call it
     useWorldFrameStore.getState()._setOnCancelAnchor(() => {
       if (!this.anchorOrigPc || !this.marker1) return;
       this.marker1.position.set(this.anchorOrigPc.x, this.anchorOrigPc.y, this.anchorOrigPc.z);
@@ -383,14 +398,23 @@ export class WorldFramePlugin implements ViewerPlugin {
   }
 
   private stopAnchorEditing(): void {
-    if (!this.anchorGizmo) return;
-    this.anchorGizmo.removeEventListener('dragging-changed', this.onAnchorDragChanged);
-    this.anchorGizmo.removeEventListener('objectChange', this.onAnchorObjectChange);
-    this.anchorGizmo.detach();
-    if (this.ctx) this.ctx.worldRoot.remove(this.anchorGizmo);
-    this.anchorGizmo.dispose();
-    this.anchorGizmo = null;
+    if (this.anchorGizmo) {
+      const proxyGroup = this.anchorGizmo.object as Group | undefined;
+      this.anchorGizmo.removeEventListener('dragging-changed', this.onAnchorDragChanged);
+      this.anchorGizmo.removeEventListener('objectChange', this.onAnchorObjectChange);
+      this.anchorGizmo.detach();
+      this.ctx?.scene.remove(this.anchorGizmo);
+      this.anchorGizmo.dispose();
+      this.anchorGizmo = null;
+      if (proxyGroup) this.ctx?.scene.remove(proxyGroup);
+    }
     if (this.ctx) this.ctx.controls.enabled = true;
+    // Restore marker appearance
+    if (this.marker1) {
+      (this.marker1.material as MeshBasicMaterial).color.setHex(0x22c55e);
+      this.marker1.scale.setScalar(this.markerBaseRadius);
+    }
+    this.anchorProxy = null;
     this.anchorOrigPc = null;
     useWorldFrameStore.getState()._setOnCancelAnchor(null);
   }
@@ -400,8 +424,14 @@ export class WorldFramePlugin implements ViewerPlugin {
   };
 
   private readonly onAnchorObjectChange = (): void => {
-    if (!this.marker1 || !this.anchorOrigPc) return;
-    // Lock Y to original anchor elevation (only XZ shown anyway, but just in case)
+    if (!this.anchorGizmo || !this.marker1 || !this.anchorOrigPc || !this.anchorProxy || !this.ctx) return;
+    const proxyGroup = this.anchorGizmo.object as Group;
+    // Convert world-space delta → worldRoot-local delta (worldRoot has no
+    // rotation or translation, only ±1 scale per axis).
+    const sx = this.ctx.worldRoot.scale.x || 1;
+    const sz = this.ctx.worldRoot.scale.z || 1;
+    this.marker1.position.x = this.anchorOrigPc.x + (proxyGroup.position.x - this.anchorProxy.x) / sx;
+    this.marker1.position.z = this.anchorOrigPc.z + (proxyGroup.position.z - this.anchorProxy.z) / sz;
     this.marker1.position.y = this.anchorOrigPc.y;
     useWorldFrameStore.getState().setAnchor1PcLive({
       x: this.marker1.position.x,

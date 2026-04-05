@@ -10,6 +10,7 @@ import {
   Hand,
   MousePointer2,
   Tags,
+  PenLine,
 } from 'lucide-react';
 import {
   Button,
@@ -38,7 +39,7 @@ export function ViewerToolbar({ engine }: ViewerToolbarProps) {
   const { canUndo, canRedo, dirty, saving, undo, redo, save } =
     useEditorState(engine);
 
-  const { mode, transformSubMode, enterTransformMode, enterPoiMode, enterPointSelectMode, enterAnnotateMode, exitMode } =
+  const { mode, transformSubMode, enterTransformMode, enterPoiMode, enterPointSelectMode, enterAnnotateMode, enterReclassifyMode, exitMode } =
     useViewerModeStore();
 
   const poiPosition = usePoiStore((s) => s.position);
@@ -48,6 +49,7 @@ export function ViewerToolbar({ engine }: ViewerToolbarProps) {
   const isGrab = mode === 'idle';
   const isPointSelect = mode === 'point-select';
   const isAnnotate = mode === 'annotate';
+  const isReclassify = mode === 'reclassify';
   const isTranslate = mode === 'transform' && transformSubMode === 'translate';
   const isRotate = mode === 'transform' && transformSubMode === 'rotate';
   const poiPhase = usePoiStore((s) => s.phase);
@@ -276,6 +278,22 @@ export function ViewerToolbar({ engine }: ViewerToolbarProps) {
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">Annotate</TooltipContent>
+          </Tooltip>
+
+          {/* Reclassify */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={isReclassify ? 'default' : 'ghost'}
+                size="icon"
+                className="h-7 w-7"
+                disabled={baseMapEditing}
+                onClick={() => isReclassify ? exitMode() : enterReclassifyMode()}
+              >
+                <PenLine className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Reclassify Points</TooltipContent>
           </Tooltip>
         </div>
       </div>

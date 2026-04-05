@@ -75,28 +75,17 @@ export class OsmFeaturesPlugin implements ViewerPlugin {
 
     const box = new Box3();
     for (const pco of pcos) {
-      // Build a tight box from the position attribute's actual min/max
-      // (not the octree bbox which is padded to a cube).
-      const attrs = pco.pcoGeometry.pointAttributes;
-      const posAttr = attrs?.attributes?.find(
-        (a: { name: string }) => a.name === 'position',
-      );
-      let b: { min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number } };
-      if (posAttr?.range && Array.isArray(posAttr.range[0])) {
-        // range = [[minX,minY,minZ], [maxX,maxY,maxZ]]
-        const [mn, mx] = posAttr.range as [number[], number[]];
-        b = {
-          min: { x: mn[0], y: mn[1], z: mn[2] },
-          max: { x: mx[0], y: mx[1], z: mx[2] },
-        };
-      } else {
-        b = pco.pcoGeometry.boundingBox;
-      }
-
+      // Use pco.pcoGeometry.boundingBox — this is the decoded, float-space
+      // bounding box that matches the actual rendered vertex positions.
+      // posAttr.range from the potree JSON can be in a raw/unscaled attribute
+      // space that does NOT match the geometry positions, so avoid it here.
+      const b = pco.pcoGeometry.boundingBox;
       for (const sx of [b.min.x, b.max.x]) {
         for (const sy of [b.min.y, b.max.y]) {
           for (const sz of [b.min.z, b.max.z]) {
             const c = new Vector3(sx, sy, sz).add(pco.position);
+            // matrixWorld matches what anchor1.pc uses (world-frame-plugin
+            // picks via node.sceneNode.matrixWorld which is the same space).
             c.applyMatrix4(tg.matrixWorld);
             box.expandByPoint(c);
           }

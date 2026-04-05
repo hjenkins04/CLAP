@@ -73,7 +73,9 @@ export class RoiSelectionPlugin implements ViewerPlugin {
     this.visualsGroup.visible = false;
     this.visualsGroup.matrixAutoUpdate = false;
     this.visualsGroup.renderOrder = 910;
-    ctx.worldRoot.add(this.visualsGroup);
+    // Scene-level: tg.matrixWorld already includes worldRoot's axis flips.
+    // Parenting to worldRoot would double-apply them.
+    ctx.scene.add(this.visualsGroup);
 
     this.unsubMode = useViewerModeStore.subscribe((state, prev) => {
       const was = prev.mode === 'roi-selection';
@@ -133,7 +135,7 @@ export class RoiSelectionPlugin implements ViewerPlugin {
     this.unsubStore = null;
     this.clearVisuals();
     if (this.visualsGroup && this.ctx) {
-      this.ctx.worldRoot.remove(this.visualsGroup);
+      this.ctx.scene.remove(this.visualsGroup);
     }
     this.visualsGroup = null;
     this.ctx = null;
@@ -685,13 +687,15 @@ export class RoiSelectionPlugin implements ViewerPlugin {
     const pending = useRoiStore.getState().pendingShape;
     if (!pending) return;
 
-    // Local-space group mirroring the transform group's world matrix
+    // Scene-level group mirroring the transform group's world matrix.
+    // Must be at scene level so tg.matrixWorld is not double-applied
+    // (worldRoot's axis flips are already baked into tg.matrixWorld).
     this.editGroup = new Group();
     this.editGroup.matrixAutoUpdate = false;
     const tg = this.ctx.getEditor().getTransformGroup();
     tg.updateMatrixWorld(true);
     this.editGroup.matrix.copy(tg.matrixWorld);
-    this.ctx.worldRoot.add(this.editGroup);
+    this.ctx.scene.add(this.editGroup);
 
     // Position anchor at shape center in Three.js local space
     this.shapeAnchor = new Object3D();
@@ -714,7 +718,7 @@ export class RoiSelectionPlugin implements ViewerPlugin {
     this.editGizmo.attach(this.shapeAnchor);
     this.editGizmo.setMode('translate');
     this.editGizmo.setSpace('local');
-    this.ctx.worldRoot.add(this.editGizmo);
+    this.ctx.scene.add(this.editGizmo);
 
     this.editGizmo.addEventListener(
       'dragging-changed',
@@ -734,12 +738,12 @@ export class RoiSelectionPlugin implements ViewerPlugin {
         this.onGizmoObjectChange,
       );
       this.editGizmo.detach();
-      this.ctx?.worldRoot.remove(this.editGizmo);
+      this.ctx?.scene.remove(this.editGizmo);
       this.editGizmo.dispose();
       this.editGizmo = null;
     }
     if (this.editGroup) {
-      this.ctx?.worldRoot.remove(this.editGroup);
+      this.ctx?.scene.remove(this.editGroup);
       this.editGroup = null;
     }
     this.shapeAnchor = null;

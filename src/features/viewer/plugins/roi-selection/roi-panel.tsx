@@ -1,5 +1,5 @@
 import { Button } from '@clap/design-system';
-import { BoxSelect, Eye, EyeOff, RotateCcw, Trash2 } from 'lucide-react';
+import { BoxSelect, Eye, EyeOff, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import { useRoiStore } from './roi-store';
 import { useViewerModeStore } from '@/app/stores';
 import { getRoiPlugin } from './roi-plugin-ref';
@@ -57,6 +57,16 @@ export function RoiPanel() {
               {clipVisible ? 'Hide Shapes' : 'Show Shapes'}
             </Button>
           )}
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full gap-2 text-xs"
+            onClick={() => getRoiPlugin()?.editRoi()}
+          >
+            <Pencil className="h-3.5 w-3.5" />
+            Edit ROI
+          </Button>
 
           <Button
             variant="outline"

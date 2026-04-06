@@ -52,6 +52,18 @@ interface RoadExtractionState {
   /** Update a single boundary vertex (used during editing-boundary). */
   updatePendingVertex: (side: 'left' | 'right', index: number, pos: Vec3) => void;
 
+  // ── Shaping lines (rough left/right edges, editable before extraction) ────
+  /** Left edge polyline in world space. Set during the shaping phase. */
+  shapingLeft:  Vec3[];
+  /** Right edge polyline in world space. Set during the shaping phase. */
+  shapingRight: Vec3[];
+  setShapingLines: (left: Vec3[], right: Vec3[]) => void;
+  /** Move a single vertex on a shaping edge line. */
+  updateShapingVertex: (side: 'left' | 'right', index: number, pos: Vec3) => void;
+  /** Insert a new vertex after `afterIndex` on a shaping edge line. */
+  insertShapingVertex: (side: 'left' | 'right', afterIndex: number, pos: Vec3) => void;
+  clearShaping: () => void;
+
   // ── Prior information ─────────────────────────────────────────────────────
   prior: RoadPrior | null;
   setPrior: (p: RoadPrior | null) => void;
@@ -126,6 +138,40 @@ export const useRoadExtractionStore = create<RoadExtractionState>()(
             return { pendingRight: arr };
           }
         }),
+
+      // ── Shaping lines ──────────────────────────────────────────────────────
+      shapingLeft:  [],
+      shapingRight: [],
+
+      setShapingLines: (left, right) => set({ shapingLeft: left, shapingRight: right }),
+
+      updateShapingVertex: (side, index, pos) =>
+        set((s) => {
+          if (side === 'left') {
+            const arr = [...s.shapingLeft];
+            arr[index] = pos;
+            return { shapingLeft: arr };
+          } else {
+            const arr = [...s.shapingRight];
+            arr[index] = pos;
+            return { shapingRight: arr };
+          }
+        }),
+
+      insertShapingVertex: (side, afterIndex, pos) =>
+        set((s) => {
+          if (side === 'left') {
+            const arr = [...s.shapingLeft];
+            arr.splice(afterIndex + 1, 0, pos);
+            return { shapingLeft: arr };
+          } else {
+            const arr = [...s.shapingRight];
+            arr.splice(afterIndex + 1, 0, pos);
+            return { shapingRight: arr };
+          }
+        }),
+
+      clearShaping: () => set({ shapingLeft: [], shapingRight: [] }),
 
       // ── Prior ──────────────────────────────────────────────────────────────
       prior: null,
@@ -202,6 +248,16 @@ export const useRoadExtractionStore = create<RoadExtractionState>()(
         prior:           s.prior,
         params:          s.params,
       }),
+      // Deep-merge params so that new fields added to DEFAULT_PARAMS are
+      // present even when loading a persisted state from an older session.
+      merge: (persisted, current) => {
+        const p = persisted as Partial<typeof current>;
+        return {
+          ...current,
+          ...p,
+          params: { ...DEFAULT_PARAMS, ...(p.params ?? {}) },
+        };
+      },
     },
   ),
 );

@@ -24,6 +24,9 @@ export interface ViewerPluginContext {
   domElement: HTMLElement;
   container: HTMLElement;
   host: PluginHost;
+  /** Base URL of the currently loaded point cloud (e.g. "/pointclouds/my_scan/").
+   *  Null until a point cloud has been loaded. */
+  getBaseUrl: () => string | null;
 }
 
 export interface ViewerPlugin {

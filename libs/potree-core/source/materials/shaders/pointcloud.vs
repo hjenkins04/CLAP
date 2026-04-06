@@ -15,6 +15,12 @@ in float numberOfReturns;
 in float pointSourceID;
 in vec4 indices;
 
+#if defined use_scan_filter
+in float scan_id;
+uniform float scanIdMin;
+uniform float scanIdMax;
+#endif
+
 
 // Uniforms
 uniform mat4 modelMatrix;
@@ -433,6 +439,22 @@ void main() {
 		}
 	#endif
 
+	// SCAN ID FILTER
+	// When scanIdMin <= scanIdMax: include mode — discard points outside [min, max].
+	// When scanIdMin > scanIdMax: exclude mode (swapped) — discard points inside [max, min].
+	#if defined use_scan_filter
+		if (scanIdMin <= scanIdMax) {
+			if (scan_id < scanIdMin || scan_id > scanIdMax) {
+				gl_Position = vec4(1000.0);
+				return;
+			}
+		} else {
+			if (scan_id >= scanIdMax && scan_id <= scanIdMin) {
+				gl_Position = vec4(1000.0);
+				return;
+			}
+		}
+	#endif
 
 	// POINT COLOR SELECTION
 	#ifdef new_format

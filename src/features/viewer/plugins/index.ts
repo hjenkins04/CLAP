@@ -14,3 +14,5 @@ export { CustomMapPlugin } from './custom-map';
 export { StaticObstaclePlugin } from './static-obstacle';
 export { ReclassifyPlugin } from './reclassify';
 export { RoadExtractionPlugin } from './road-extraction';
+export { ScanFilterPlugin, useScanFilterStore } from './scan-filter';
+export { PointInfoPlugin, usePointInfoStore } from './point-info';

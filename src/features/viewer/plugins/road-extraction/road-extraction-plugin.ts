@@ -1,4 +1,5 @@
 import {
+  DoubleSide,
   Group,
   Line,
   Mesh,
@@ -25,21 +26,32 @@ import { PointGridIndex } from './services/point-grid-index';
 import { sampleCenterline } from './services/centerline-sampler';
 import { analyzeSection, buildBoundaryFromResults } from './services/cross-section-analyzer';
 import { useAnnotateStore } from '../annotate/annotate-store';
+import {
+  upsamplePolyline,
+  chaikinSmooth,
+  offsetPolyline,
+  deriveCenterline,
+  projectLineToFrames,
+} from './services/centerline-utils';
 
 /** Pre-extracted clip inverse matrix elements for fast per-point testing. */
 interface ClipInverse { e: Float64Array }
 
 // ── Visual constants ──────────────────────────────────────────────────────────
 
-const COLOR_CENTRELINE    = 0xffcc00;
-const COLOR_LEFT          = 0x00ff88;
-const COLOR_RIGHT         = 0xff6600;
-const COLOR_HANDLE_LEFT   = 0x00ff88;
-const COLOR_HANDLE_RIGHT  = 0xff6600;
-const COLOR_HANDLE_HOVER  = 0xffffff;
-const HANDLE_RADIUS       = 0.15;       // metres
-const RENDER_ORDER        = 950;
-const BATCH_SIZE          = 40;         // sections per async tick
+const COLOR_CENTRELINE      = 0xffcc00;
+const COLOR_LEFT            = 0x00ff88;
+const COLOR_RIGHT           = 0xff6600;
+const COLOR_HANDLE_LEFT     = 0x00ff88;
+const COLOR_HANDLE_RIGHT    = 0xff6600;
+const COLOR_HANDLE_HOVER    = 0xffffff;
+const COLOR_MIDPOINT        = 0xaaaaff;
+const COLOR_SHAPING_FILL    = 0x0099cc;
+const HANDLE_RADIUS         = 0.15;       // metres
+const MIDPOINT_RADIUS       = 0.10;       // metres
+const RENDER_ORDER          = 950;
+const BATCH_SIZE            = 40;         // sections per async tick
+const MIDPOINT_SCREEN_PX    = 20;         // hover detection threshold (pixels)
 
 // ── Plugin ────────────────────────────────────────────────────────────────────
 
@@ -72,6 +84,22 @@ export class RoadExtractionPlugin implements ViewerPlugin {
   private rightBoundaryLine:     Line | null    = null;
   private committedGroups = new Map<string, Group>();
   private editHandleGroup: Group | null         = null;
+
+  // ── Shaping phase ─────────────────────────────────────────────────────────
+  private shapingGroup:             Group | null = null;
+  private shapingPolygonMesh:       Mesh  | null = null;
+  private shapingCentrelineLine:    Line  | null = null;
+  private shapingLeftLine:          Line  | null = null;
+  private shapingRightLine:         Line  | null = null;
+  private shapingHandleGroup:       Group | null = null;
+  private shapingMidpointIndicator: Mesh  | null = null;
+  /** Local mutable copies used for smooth direct-update during drag. */
+  private shapingLeftLocal:  Vec3[] = [];
+  private shapingRightLocal: Vec3[] = [];
+  private shapingListening        = false;
+  private shapingDragHandle:      Mesh | null = null;
+  private shapingDragHandleMat:   MeshBasicMaterial | null = null;
+  private shapingHoveredMidpoint: { side: 'left' | 'right'; afterIndex: number; worldPos: Vec3 } | null = null;
 
   // ── Extraction runtime ────────────────────────────────────────────────────
   private gridIndex:     PointGridIndex | null  = null;
@@ -160,13 +188,16 @@ export class RoadExtractionPlugin implements ViewerPlugin {
   private exitMode(): void {
     this.cancelExtract?.();
     this.stopDrawingListeners();
+    this.stopShapingListeners();
     this.stopEditListeners();
     this.clearPreviewLines();
+    this.clearShapingVisuals();
     this.clearEditHandles();
     this.drawingPoints = [];
     const store = useRoadExtractionStore.getState();
     store.clearPending();
     store.clearCenterline();
+    store.clearShaping();
     store.setProgress(null);
     store.setPhase('idle');
   }
@@ -186,15 +217,27 @@ export class RoadExtractionPlugin implements ViewerPlugin {
 
       case 'drawing':
         this.cancelExtract?.();
+        this.stopShapingListeners();
+        this.clearShapingVisuals();
         this.stopEditListeners();
         this.clearPreviewLines();
         this.clearEditHandles();
         this.drawingPoints = [];
+        useRoadExtractionStore.getState().clearShaping();
         this.startDrawingListeners();
+        break;
+
+      case 'shaping':
+        this.stopDrawingListeners();
+        this.stopEditListeners();
+        this.clearEditHandles();
+        this.enterShaping();
         break;
 
       case 'extracting':
         this.stopDrawingListeners();
+        this.stopShapingListeners();
+        this.clearShapingVisuals();
         this.stopEditListeners();
         this.clearPreviewLines();
         this.clearEditHandles();
@@ -226,12 +269,12 @@ export class RoadExtractionPlugin implements ViewerPlugin {
 
   // ── Public API (called by overlay / panel) ────────────────────────────────
 
-  /** Confirm the drawn centreline and start extraction. */
+  /** Confirm the drawn centreline → enter shaping phase. */
   confirmCenterline(): void {
     const store = useRoadExtractionStore.getState();
     if (this.drawingPoints.length < 2) return;
     store.setCenterlinePoints([...this.drawingPoints]);
-    store.setPhase('extracting');
+    store.setPhase('shaping');
   }
 
   /** Cancel during drawing — return to idle. */
@@ -246,6 +289,25 @@ export class RoadExtractionPlugin implements ViewerPlugin {
     if (store.centerlinePoints.length < 2) return;
     this.drawingPoints = [...store.centerlinePoints];
     store.setPhase('extracting');
+  }
+
+  /** Confirm the shaping polygon and trigger extraction. */
+  confirmShaping(): void {
+    const store = useRoadExtractionStore.getState();
+    const { shapingLeft, shapingRight } = store;
+    if (shapingLeft.length < 2 || shapingRight.length < 2) return;
+
+    // Re-derive centreline as midpoints of left/right edge lines
+    const newCentreline = deriveCenterline(shapingLeft, shapingRight);
+    store.setCenterlinePoints(newCentreline);
+    this.drawingPoints = [...newCentreline];
+    // shapingLeft/Right stay in store as extraction hints
+    store.setPhase('extracting');
+  }
+
+  /** Go back to shaping from reviewing to re-adjust the road polygon. */
+  backToShaping(): void {
+    useRoadExtractionStore.getState().setPhase('shaping');
   }
 
   /** Enter boundary-editing mode. */
@@ -315,10 +377,11 @@ export class RoadExtractionPlugin implements ViewerPlugin {
     const isDbl = now - this.drawLastClickTime < 350;
     this.drawLastClickTime = now;
 
-    if (isDbl && this.drawingPoints.length >= 1) {
-      // Double-click: remove the pending last point (duplicate of dbl-first-click)
-      this.drawingPoints.pop();
-      if (this.drawingPoints.length >= 2) this.confirmCenterline();
+    if (isDbl && this.drawingPoints.length >= 2) {
+      // Double-click: the first click already added the point; just confirm.
+      // Do NOT pop — the user expects double-click to mean "add final point + finish",
+      // which is standard drawing-tool convention.
+      this.confirmCenterline();
       return;
     }
 
@@ -348,6 +411,326 @@ export class RoadExtractionPlugin implements ViewerPlugin {
       }
     }
   };
+
+  // ── Shaping phase ─────────────────────────────────────────────────────────
+
+  private enterShaping(): void {
+    const store = useRoadExtractionStore.getState();
+    const { centerlinePoints, params } = store;
+    if (centerlinePoints.length < 2) return;
+
+    // Resolve params defensively — persisted state from an older session may
+    // be missing new fields if the persist merge hasn't kicked in yet.
+    const clSpacing   = params.centerlineUpsampleSpacing > 0 ? params.centerlineUpsampleSpacing : 0.25;
+    const denseSpacing = params.upsampleSpacing > 0 ? params.upsampleSpacing : 0.5;
+    const passes      = Number.isFinite(params.smoothingPasses) ? Math.round(params.smoothingPasses) : 3;
+    const width       = params.roadWidth > 0 ? params.roadWidth : 8.0;
+
+    // 1. Upsample raw drawn line at fine spacing → smooth → re-sample at output spacing
+    const upsampled = upsamplePolyline(centerlinePoints, clSpacing);
+    const smoothed  = chaikinSmooth(upsampled, passes);
+    const dense     = upsamplePolyline(smoothed, denseSpacing);
+
+    if (dense.length < 2) return;
+
+    // 2. Offset left and right by roadWidth / 2
+    const half  = width / 2;
+    const left  = offsetPolyline(dense,  half);
+    const right = offsetPolyline(dense, -half);
+
+    store.setShapingLines(left, right);
+    this.rebuildShapingVisuals(left, right, dense);
+    this.startShapingListeners();
+  }
+
+  private rebuildShapingVisuals(left: Vec3[], right: Vec3[], centre?: Vec3[]): void {
+    this.clearShapingVisuals();
+    if (left.length < 2 || right.length < 2 || !this.rootGroup) return;
+
+    this.shapingGroup = new Group();
+    this.shapingGroup.name = 'road-shaping';
+    this.rootGroup.add(this.shapingGroup);
+
+    // Filled polygon
+    this.shapingPolygonMesh = buildRibbonMesh(left, right);
+    if (this.shapingPolygonMesh) {
+      this.shapingPolygonMesh.renderOrder = RENDER_ORDER - 5;
+      this.shapingGroup.add(this.shapingPolygonMesh);
+    }
+
+    // Reference centreline
+    const cl = centre ?? useRoadExtractionStore.getState().centerlinePoints;
+    if (cl.length >= 2) {
+      this.shapingCentrelineLine = buildLine(cl, COLOR_CENTRELINE, true);
+      this.shapingCentrelineLine.renderOrder = RENDER_ORDER;
+      this.shapingGroup.add(this.shapingCentrelineLine);
+    }
+
+    // Edge lines
+    this.shapingLeftLine = buildLine(left, COLOR_LEFT, false);
+    this.shapingLeftLine.renderOrder = RENDER_ORDER + 1;
+    this.shapingGroup.add(this.shapingLeftLine);
+
+    this.shapingRightLine = buildLine(right, COLOR_RIGHT, false);
+    this.shapingRightLine.renderOrder = RENDER_ORDER + 1;
+    this.shapingGroup.add(this.shapingRightLine);
+
+    // Vertex handles
+    this.shapingHandleGroup = new Group();
+    this.shapingHandleGroup.name = 'shaping-handles';
+    this.shapingGroup.add(this.shapingHandleGroup);
+
+    const hGeom = new SphereGeometry(HANDLE_RADIUS, 8, 6);
+    left.forEach((p, i) => {
+      const m = new Mesh(hGeom, new MeshBasicMaterial({ color: COLOR_HANDLE_LEFT, depthTest: false }));
+      m.position.set(p.x, p.y, p.z);
+      m.renderOrder = RENDER_ORDER + 10;
+      m.userData = { side: 'left', index: i };
+      this.shapingHandleGroup!.add(m);
+    });
+    right.forEach((p, i) => {
+      const m = new Mesh(hGeom, new MeshBasicMaterial({ color: COLOR_HANDLE_RIGHT, depthTest: false }));
+      m.position.set(p.x, p.y, p.z);
+      m.renderOrder = RENDER_ORDER + 10;
+      m.userData = { side: 'right', index: i };
+      this.shapingHandleGroup!.add(m);
+    });
+
+    // Single reusable midpoint-hover indicator
+    const mpGeom = new SphereGeometry(MIDPOINT_RADIUS, 8, 6);
+    this.shapingMidpointIndicator = new Mesh(
+      mpGeom,
+      new MeshBasicMaterial({ color: COLOR_MIDPOINT, depthTest: false, transparent: true, opacity: 0.85 }),
+    );
+    this.shapingMidpointIndicator.visible = false;
+    this.shapingMidpointIndicator.renderOrder = RENDER_ORDER + 15;
+    this.shapingGroup.add(this.shapingMidpointIndicator);
+
+    // Keep local copies for direct-update during drag
+    this.shapingLeftLocal  = [...left];
+    this.shapingRightLocal = [...right];
+  }
+
+  private clearShapingVisuals(): void {
+    this.stopShapingListeners();
+    if (this.shapingGroup && this.rootGroup) {
+      disposeGroup(this.shapingGroup);
+      this.rootGroup.remove(this.shapingGroup);
+    }
+    this.shapingGroup             = null;
+    this.shapingPolygonMesh       = null;
+    this.shapingCentrelineLine    = null;
+    this.shapingLeftLine          = null;
+    this.shapingRightLine         = null;
+    this.shapingHandleGroup       = null;
+    this.shapingMidpointIndicator = null;
+    this.shapingDragHandle        = null;
+    this.shapingDragHandleMat     = null;
+    this.shapingHoveredMidpoint   = null;
+  }
+
+  // ── Shaping listeners ──────────────────────────────────────────────────────
+
+  private startShapingListeners(): void {
+    if (this.shapingListening || !this.ctx) return;
+    this.shapingListening = true;
+    this.ctx.domElement.addEventListener('pointerdown', this.onShapingPointerDown);
+    this.ctx.domElement.addEventListener('pointermove', this.onShapingPointerMove);
+    this.ctx.domElement.addEventListener('pointerup',   this.onShapingPointerUp);
+    this.ctx.domElement.style.cursor = 'default';
+  }
+
+  private stopShapingListeners(): void {
+    if (!this.shapingListening || !this.ctx) return;
+    this.shapingListening = false;
+    this.ctx.domElement.removeEventListener('pointerdown', this.onShapingPointerDown);
+    this.ctx.domElement.removeEventListener('pointermove', this.onShapingPointerMove);
+    this.ctx.domElement.removeEventListener('pointerup',   this.onShapingPointerUp);
+    this.ctx.domElement.style.cursor = '';
+    this.shapingDragHandle = null;
+    if (this.ctx?.controls) this.ctx.controls.enabled = true;
+  }
+
+  private readonly onShapingPointerDown = (e: PointerEvent): void => {
+    if (e.button !== 0 || !this.ctx || !this.shapingHandleGroup) return;
+
+    // Check vertex handle hit
+    const handle = this.raycastShapingHandles(e.clientX, e.clientY);
+    if (handle) {
+      this.shapingDragHandle    = handle;
+      this.shapingDragHandleMat = handle.material as MeshBasicMaterial;
+      this.shapingDragHandleMat.color.setHex(COLOR_HANDLE_HOVER);
+      if (this.ctx.controls) this.ctx.controls.enabled = false;
+      return;
+    }
+
+    // Check midpoint hover → insert vertex
+    if (this.shapingHoveredMidpoint) {
+      const { side, afterIndex, worldPos } = this.shapingHoveredMidpoint;
+      useRoadExtractionStore.getState().insertShapingVertex(side, afterIndex, worldPos);
+      const store = useRoadExtractionStore.getState();
+      this.rebuildShapingVisuals(store.shapingLeft, store.shapingRight);
+      this.startShapingListeners();
+    }
+  };
+
+  private readonly onShapingPointerMove = (e: PointerEvent): void => {
+    if (!this.ctx) return;
+
+    if (this.shapingDragHandle) {
+      // Drag vertex along its horizontal plane
+      const handleY = this.shapingDragHandle.position.y;
+      const ndc = clientToNdc(e.clientX, e.clientY, this.ctx.domElement);
+      const camera = this.ctx.getActiveCamera();
+      const worldPos = raycastHorizontalPlane(ndc, camera, handleY);
+      if (!worldPos) return;
+
+      const { side, index } = this.shapingDragHandle.userData as { side: 'left' | 'right'; index: number };
+      const pos: Vec3 = { x: worldPos.x, y: handleY, z: worldPos.z };
+
+      // Update local copy and handle mesh position
+      if (side === 'left')  this.shapingLeftLocal[index]  = pos;
+      else                  this.shapingRightLocal[index] = pos;
+      this.shapingDragHandle.position.set(pos.x, pos.y, pos.z);
+
+      // Update line geometry in place (fast — no mesh rebuild)
+      this.updateShapingLineGeometry(side === 'left' ? this.shapingLeftLine : this.shapingRightLine,
+                                     side === 'left' ? this.shapingLeftLocal : this.shapingRightLocal);
+      // Rebuild polygon (small, fast)
+      this.rebuildShapingPolygonInPlace();
+      return;
+    }
+
+    // Midpoint hover detection
+    this.updateShapingMidpointHover(e.clientX, e.clientY);
+  };
+
+  private readonly onShapingPointerUp = (_e: PointerEvent): void => {
+    if (!this.shapingDragHandle) return;
+
+    const { side, index } = this.shapingDragHandle.userData as { side: 'left' | 'right'; index: number };
+    const pos = this.shapingDragHandle.position;
+
+    // Restore handle colour
+    if (this.shapingDragHandleMat) {
+      this.shapingDragHandleMat.color.setHex(
+        side === 'left' ? COLOR_HANDLE_LEFT : COLOR_HANDLE_RIGHT,
+      );
+    }
+
+    // Commit final position to store
+    useRoadExtractionStore.getState().updateShapingVertex(
+      side, index, { x: pos.x, y: pos.y, z: pos.z },
+    );
+
+    this.shapingDragHandle    = null;
+    this.shapingDragHandleMat = null;
+    if (this.ctx?.controls) this.ctx.controls.enabled = true;
+  };
+
+  private raycastShapingHandles(clientX: number, clientY: number): Mesh | null {
+    if (!this.ctx || !this.shapingHandleGroup) return null;
+    const camera = this.ctx.getActiveCamera();
+    const rect   = this.ctx.domElement.getBoundingClientRect();
+    const ndc    = new Vector2(
+      ((clientX - rect.left) / rect.width)  *  2 - 1,
+      ((clientY - rect.top)  / rect.height) * -2 + 1,
+    );
+    const rc = new Raycaster();
+    rc.setFromCamera(ndc, camera);
+    const hits = rc.intersectObjects(this.shapingHandleGroup.children, false);
+    return hits.length > 0 ? (hits[0].object as Mesh) : null;
+  }
+
+  private updateShapingMidpointHover(clientX: number, clientY: number): void {
+    if (!this.ctx || !this.shapingMidpointIndicator) return;
+
+    const camera = this.ctx.getActiveCamera();
+    camera.updateMatrixWorld(true);
+    const rect = this.ctx.domElement.getBoundingClientRect();
+
+    // View-projection matrix for screen-space projection
+    const vpMat = new Matrix4().multiplyMatrices(
+      camera.projectionMatrix,
+      camera.matrixWorldInverse,
+    );
+    const m = vpMat.elements;
+
+    const toScreen = (wx: number, wy: number, wz: number): { sx: number; sy: number } | null => {
+      const w = m[3] * wx + m[7] * wy + m[11] * wz + m[15];
+      if (w <= 0) return null;
+      return {
+        sx: (((m[0] * wx + m[4] * wy + m[8]  * wz + m[12]) / w) + 1) / 2 * rect.width  + rect.left,
+        sy: ((-(m[1] * wx + m[5] * wy + m[9] * wz + m[13]) / w) + 1) / 2 * rect.height + rect.top,
+      };
+    };
+
+    let best: { side: 'left' | 'right'; afterIndex: number; worldPos: Vec3; dist: number } | null = null;
+
+    const check = (pts: Vec3[], side: 'left' | 'right') => {
+      for (let i = 0; i < pts.length - 1; i++) {
+        const mp: Vec3 = {
+          x: (pts[i].x + pts[i + 1].x) / 2,
+          y: (pts[i].y + pts[i + 1].y) / 2,
+          z: (pts[i].z + pts[i + 1].z) / 2,
+        };
+        const sc = toScreen(mp.x, mp.y, mp.z);
+        if (!sc) continue;
+        const dx = sc.sx - clientX, dy = sc.sy - clientY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < MIDPOINT_SCREEN_PX && (!best || dist < best.dist)) {
+          best = { side, afterIndex: i, worldPos: mp, dist };
+        }
+      }
+    };
+
+    check(this.shapingLeftLocal,  'left');
+    check(this.shapingRightLocal, 'right');
+
+    if (best) {
+      this.shapingHoveredMidpoint = best;
+      this.shapingMidpointIndicator.position.set(best.worldPos.x, best.worldPos.y, best.worldPos.z);
+      this.shapingMidpointIndicator.visible = true;
+      (this.shapingMidpointIndicator.material as MeshBasicMaterial).color.setHex(
+        best.side === 'left' ? COLOR_LEFT : COLOR_RIGHT,
+      );
+      if (this.ctx) this.ctx.domElement.style.cursor = 'copy';
+    } else {
+      this.shapingHoveredMidpoint = null;
+      this.shapingMidpointIndicator.visible = false;
+      if (this.ctx && !this.shapingDragHandle) this.ctx.domElement.style.cursor = 'default';
+    }
+  }
+
+  /** Update a single edge line's position buffer in place. */
+  private updateShapingLineGeometry(line: Line | null, pts: Vec3[]): void {
+    if (!line || pts.length < 2) return;
+    const posAttr = line.geometry.getAttribute('position') as BufferAttribute;
+    if (posAttr.count !== pts.length) {
+      // Point count mismatch (shouldn't happen during drag, only after insert)
+      return;
+    }
+    for (let i = 0; i < pts.length; i++) {
+      posAttr.setXYZ(i, pts[i].x, pts[i].y, pts[i].z);
+    }
+    posAttr.needsUpdate = true;
+  }
+
+  /** Dispose the current polygon mesh and rebuild it from the local copies. */
+  private rebuildShapingPolygonInPlace(): void {
+    if (!this.shapingGroup) return;
+    if (this.shapingPolygonMesh) {
+      disposeObject(this.shapingPolygonMesh);
+      this.shapingGroup.remove(this.shapingPolygonMesh);
+      this.shapingPolygonMesh = null;
+    }
+    const mesh = buildRibbonMesh(this.shapingLeftLocal, this.shapingRightLocal);
+    if (mesh) {
+      mesh.renderOrder = RENDER_ORDER - 5;
+      this.shapingGroup.add(mesh);
+      this.shapingPolygonMesh = mesh;
+    }
+  }
 
   // ── Extraction ─────────────────────────────────────────────────────────────
 
@@ -397,6 +780,11 @@ export class RoadExtractionPlugin implements ViewerPlugin {
       return;
     }
 
+    // 2a. Compute per-frame edge hints from the shaping lines (if available)
+    const { shapingLeft, shapingRight } = store;
+    const hintLeft  = shapingLeft.length  >= 2 ? projectLineToFrames(shapingLeft,  frames) : null;
+    const hintRight = shapingRight.length >= 2 ? projectLineToFrames(shapingRight, frames) : null;
+
     store.setProgress({ done: 0, total: frames.length });
 
     // 3. Process sections in async batches
@@ -408,7 +796,8 @@ export class RoadExtractionPlugin implements ViewerPlugin {
       const end = Math.min(i + BATCH_SIZE, frames.length);
       for (let j = i; j < end; j++) {
         rawResults.push(
-          analyzeSection(grid, frames[j], j, params, store.prior),
+          analyzeSection(grid, frames[j], j, params, store.prior,
+            hintLeft?.[j], hintRight?.[j]),
         );
       }
 
@@ -436,16 +825,48 @@ export class RoadExtractionPlugin implements ViewerPlugin {
     store.setPhase('reviewing');
   }
 
-  /** Build the spatial grid in a yielding fashion (one PCO node per tick). */
+  /** Build the spatial grid in a yielding fashion (one PCO node per tick).
+   *
+   * Respects the current viewport filters exactly as the renderer does:
+   *   - Active ROI / virtual-tile clip boxes and cylinders
+   *   - Classification visibility and active state (from annotate store)
+   *   - Point-cloud visibility flag
+   */
   private async buildGridAsync(isCancelled: () => boolean): Promise<PointGridIndex> {
     const grid = new PointGridIndex(0.5);
     if (!this.ctx) return grid;
 
+    const { classVisibility, classActive } = useAnnotateStore.getState();
+
     const pcos = this.ctx.getPointClouds();
     for (const pco of pcos) {
+      if (!pco.visible) continue;
+
+      // --- Extract active clip regions from material ---
+      const mat = pco.material;
+      let clipBoxes: ClipInverse[] | null = null;
+      let clipCylinders: ClipInverse[] | null = null;
+
+      if (mat.clipMode !== ClipMode.DISABLED) {
+        clipBoxes = mat.clipBoxes.map((cb: { inverse: Matrix4 }) => ({
+          e: new Float64Array(cb.inverse.elements),
+        }));
+        if (mat.clipCylinders?.length) {
+          clipCylinders = (mat.clipCylinders as Array<{ inverse: Matrix4 }>).map((cc) => ({
+            e: new Float64Array(cc.inverse.elements),
+          }));
+        }
+        // Only keep if at least one region is defined
+        if (clipBoxes.length === 0) clipBoxes = null;
+        if (clipCylinders?.length === 0) clipCylinders = null;
+      }
+
+      const hasClip = clipBoxes !== null || clipCylinders !== null;
+
       const iRange = pco.material.intensityRange as [number, number] ?? [0, 65535];
       const iMin = iRange[0];
       const iMax = iRange[1];
+      const iRangeSpan = iMax - iMin || 1;
 
       for (const node of pco.visibleNodes) {
         if (isCancelled()) return grid;
@@ -458,15 +879,71 @@ export class RoadExtractionPlugin implements ViewerPlugin {
         const posAttr = geom.getAttribute('position');
         if (!posAttr) continue;
 
-        const positions  = posAttr.array as Float32Array;
-        const count      = posAttr.count;
-        const intAttr    = geom.getAttribute('intensity');
-        const intensities = intAttr ? (intAttr.array as Float32Array) : null;
-
         sceneNode.updateMatrixWorld(true);
-        const me = sceneNode.matrixWorld.elements;
+        const ne = sceneNode.matrixWorld.elements;
 
-        grid.insertFromNode(positions, intensities, me, iMin, iMax, count);
+        const positions   = posAttr.array as Float32Array;
+        const count       = posAttr.count;
+        const intAttr     = geom.getAttribute('intensity');
+        const intensities = intAttr ? (intAttr.array as Float32Array) : null;
+        const classAttr   = geom.getAttribute('classification');
+
+        const needsClassFilter = classAttr !== null && classAttr !== undefined;
+
+        for (let i = 0; i < count; i++) {
+          // --- Classification filter ---
+          if (needsClassFilter) {
+            const classVal = String(Math.round(classAttr.getX(i)));
+            if (!(classVisibility[classVal] ?? true)) continue;
+            if (!(classActive[classVal] ?? true)) continue;
+          }
+
+          const lx = positions[i * 3];
+          const ly = positions[i * 3 + 1];
+          const lz = positions[i * 3 + 2];
+
+          // Transform to world space
+          const wx = ne[0] * lx + ne[4] * ly + ne[8]  * lz + ne[12];
+          const wy = ne[1] * lx + ne[5] * ly + ne[9]  * lz + ne[13];
+          const wz = ne[2] * lx + ne[6] * ly + ne[10] * lz + ne[14];
+
+          // --- Clip region filter (ROI, virtual tiles, etc.) ---
+          if (hasClip) {
+            let inside = false;
+
+            if (clipBoxes) {
+              for (const { e } of clipBoxes) {
+                const clx = e[0] * wx + e[4] * wy + e[8]  * wz + e[12];
+                const cly = e[1] * wx + e[5] * wy + e[9]  * wz + e[13];
+                const clz = e[2] * wx + e[6] * wy + e[10] * wz + e[14];
+                if (clx >= -0.5 && clx <= 0.5 && cly >= -0.5 && cly <= 0.5 && clz >= -0.5 && clz <= 0.5) {
+                  inside = true;
+                  break;
+                }
+              }
+            }
+
+            if (!inside && clipCylinders) {
+              for (const { e } of clipCylinders) {
+                const clx = e[0] * wx + e[4] * wy + e[8]  * wz + e[12];
+                const cly = e[1] * wx + e[5] * wy + e[9]  * wz + e[13];
+                const clz = e[2] * wx + e[6] * wy + e[10] * wz + e[14];
+                if (clx * clx + cly * cly <= 0.25 && clz >= -0.5 && clz <= 0.5) {
+                  inside = true;
+                  break;
+                }
+              }
+            }
+
+            if (!inside) continue;
+          }
+
+          // Normalise intensity to [0, 255]
+          const rawI  = intensities ? intensities[i] : 128;
+          const normI = ((rawI - iMin) / iRangeSpan) * 255;
+
+          grid.insert(wx, wy, wz, normI);
+        }
 
         // Yield every node to keep UI responsive
         await yieldToMain();
@@ -774,12 +1251,94 @@ export class RoadExtractionPlugin implements ViewerPlugin {
 
 // ── Module-level helpers ──────────────────────────────────────────────────────
 
+/**
+ * Build a semi-transparent ribbon mesh between two edge polylines.
+ * Both lines are resampled to the same count for clean triangulation.
+ */
+/** Return true when all three coordinates of a Vec3 are finite numbers. */
+function isFiniteVec3(p: Vec3): boolean {
+  return isFinite(p.x) && isFinite(p.y) && isFinite(p.z);
+}
+
+function buildRibbonMesh(left: Vec3[], right: Vec3[]): Mesh | null {
+  const cleanL = left.filter(isFiniteVec3);
+  const cleanR = right.filter(isFiniteVec3);
+  if (cleanL.length < 2 || cleanR.length < 2) return null;
+  // Use cleaned copies for the rest of the function
+  left  = cleanL;
+  right = cleanR;
+
+  const M = Math.max(left.length, right.length, 60);
+  // Inline resample (avoid circular import — centerline-utils used at top)
+  const resample = (pts: Vec3[], count: number): Vec3[] => {
+    if (pts.length < 2) return [...pts];
+    const arcs: number[] = [0];
+    for (let i = 1; i < pts.length; i++) {
+      const dx = pts[i].x - pts[i - 1].x, dz = pts[i].z - pts[i - 1].z;
+      arcs.push(arcs[i - 1] + Math.sqrt(dx * dx + dz * dz));
+    }
+    const total = arcs[arcs.length - 1];
+    const out: Vec3[] = [];
+    for (let j = 0; j < count; j++) {
+      const s = (j / (count - 1)) * total;
+      let lo = 0, hi = arcs.length - 2;
+      while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (arcs[mid] <= s) lo = mid; else hi = mid - 1; }
+      const span = arcs[lo + 1] - arcs[lo];
+      const t = span > 1e-10 ? (s - arcs[lo]) / span : 0;
+      out.push({
+        x: pts[lo].x + t * (pts[lo + 1].x - pts[lo].x),
+        y: pts[lo].y + t * (pts[lo + 1].y - pts[lo].y),
+        z: pts[lo].z + t * (pts[lo + 1].z - pts[lo].z),
+      });
+    }
+    return out;
+  };
+
+  const l = resample(left,  M);
+  const r = resample(right, M);
+
+  const positions = new Float32Array(M * 2 * 3);
+  for (let i = 0; i < M; i++) {
+    positions[(i * 2)     * 3 + 0] = l[i].x; positions[(i * 2)     * 3 + 1] = l[i].y; positions[(i * 2)     * 3 + 2] = l[i].z;
+    positions[(i * 2 + 1) * 3 + 0] = r[i].x; positions[(i * 2 + 1) * 3 + 1] = r[i].y; positions[(i * 2 + 1) * 3 + 2] = r[i].z;
+  }
+
+  const indices: number[] = [];
+  for (let i = 0; i < M - 1; i++) {
+    const a = i * 2, b = i * 2 + 1, c = i * 2 + 2, d = i * 2 + 3;
+    indices.push(a, b, c,  b, d, c);
+  }
+
+  const geom = new BufferGeometry();
+  geom.setAttribute('position', new BufferAttribute(positions, 3));
+  geom.setIndex(indices);
+
+  const mat = new MeshBasicMaterial({
+    color:       COLOR_SHAPING_FILL,
+    transparent: true,
+    opacity:     0.18,
+    side:        DoubleSide,
+    depthWrite:  false,
+  });
+
+  return new Mesh(geom, mat);
+}
+
+function disposeObject(obj: Mesh | Line): void {
+  obj.geometry.dispose();
+  const mat = obj.material;
+  if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
+  else mat.dispose();
+}
+
 function buildLine(pts: Vec3[], color: number, dashed: boolean): Line {
-  const positions = new Float32Array(pts.length * 3);
-  pts.forEach((p, i) => {
-    positions[i * 3]     = p.x;
-    positions[i * 3 + 1] = p.y;
-    positions[i * 3 + 2] = p.z;
+  const safe = pts.filter(isFiniteVec3);
+  const usePts = safe.length >= 2 ? safe : pts;
+  const positions = new Float32Array(usePts.length * 3);
+  usePts.forEach((p, i) => {
+    positions[i * 3]     = isFinite(p.x) ? p.x : 0;
+    positions[i * 3 + 1] = isFinite(p.y) ? p.y : 0;
+    positions[i * 3 + 2] = isFinite(p.z) ? p.z : 0;
   });
   const geom = new BufferGeometry();
   geom.setAttribute('position', new BufferAttribute(positions, 3));

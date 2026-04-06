@@ -24,6 +24,12 @@ import type { PointGridIndex } from './point-grid-index';
 
 /**
  * Analyse one cross-section slab and return detected boundary distances.
+ *
+ * @param hintLeftDist  Optional: expected left edge lateral distance (metres,
+ *   +ve).  When provided the search is narrowed to
+ *   [hint − shapingSearchWindow, hint + shapingSearchWindow].
+ * @param hintRightDist Optional: expected right edge lateral distance (metres,
+ *   -ve).  Same narrowing applies.
  */
 export function analyzeSection(
   index: PointGridIndex,
@@ -31,6 +37,8 @@ export function analyzeSection(
   frameIdx: number,
   params: ExtractionParams,
   prior: RoadPrior | null,
+  hintLeftDist?: number | null,
+  hintRightDist?: number | null,
 ): SectionResult {
   // Conservative AABB for the slab (diagonal of the rectangle)
   const diag = Math.sqrt(
@@ -83,7 +91,7 @@ export function analyzeSection(
   // Estimate the road-surface height at the centre: median of points within ±1 m
   const centrePts = sectionPoints.filter((p) => Math.abs(p.lateralDist) < 1.0);
   const centreHeight = centrePts.length > 0
-    ? median(centrePts.map((p) => p.height))
+    ? medianOf(centrePts.map((p) => p.height))
     : baseY;
 
   // Ground-level filter: only include returns within the road surface height band.
@@ -101,12 +109,38 @@ export function analyzeSection(
   const binnedLeft  = groundBin(groundPts.filter((p) => p.lateralDist >= 0));
   const binnedRight = groundBin(groundPts.filter((p) => p.lateralDist <= 0)).reverse();
 
-  // Split into left (positive) and right (negative) sides, each starting at centre
-  const leftPts  = binnedLeft;
-  const rightPts = binnedRight;
+  // When shaping hints are provided, narrow the search to a local window
+  // around the expected edge position so the march doesn't traverse the
+  // road interior and fire falsely on lane markings or internal features.
+  const sw = params.shapingSearchWindow ?? 2.5;
 
-  const leftEdge  = marchToEdge(leftPts,  centreHeight, params, prior);
-  const rightEdge = marchToEdge(rightPts, centreHeight, params, prior);
+  let leftPts  = binnedLeft;
+  let rightPts = binnedRight;
+  let leftSeed  = centreHeight;
+  let rightSeed = centreHeight;
+
+  if (hintLeftDist != null) {
+    const minL = Math.max(0, hintLeftDist - sw);
+    const maxL = hintLeftDist + sw;
+    const filtered = binnedLeft.filter((p) => p.lateralDist >= minL && p.lateralDist <= maxL);
+    if (filtered.length >= 3) {
+      leftPts  = filtered;
+      leftSeed = filtered.length > 0 ? medianOf(filtered.map((p) => p.height)) : centreHeight;
+    }
+  }
+
+  if (hintRightDist != null) {
+    const minR = hintRightDist - sw;
+    const maxR = Math.min(0, hintRightDist + sw);
+    const filtered = binnedRight.filter((p) => p.lateralDist >= minR && p.lateralDist <= maxR);
+    if (filtered.length >= 3) {
+      rightPts  = filtered;
+      rightSeed = filtered.length > 0 ? medianOf(filtered.map((p) => p.height)) : centreHeight;
+    }
+  }
+
+  const leftEdge  = marchToEdge(leftPts,  leftSeed,  params, prior);
+  const rightEdge = marchToEdge(rightPts, rightSeed, params, prior);
 
   return {
     frameIdx,
@@ -344,7 +378,7 @@ function rejectOutliers(
 }
 
 /** Compute the median of an array of numbers. */
-function median(values: number[]): number {
+function medianOf(values: number[]): number {
   if (values.length === 0) return 0;
   const sorted = [...values].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
@@ -352,6 +386,9 @@ function median(values: number[]): number {
     ? sorted[mid]
     : (sorted[mid - 1] + sorted[mid]) / 2;
 }
+
+/** Alias used by internal helpers that previously called median(). */
+const median = medianOf;
 
 /** 1-D median filter over nullable number array. */
 function medianFilter(

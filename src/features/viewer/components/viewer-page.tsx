@@ -20,6 +20,9 @@ import { WorldFrameMapModal } from './world-frame-map-modal';
 import { StaticObstacleOverlay } from '../plugins/static-obstacle';
 import { ReclassifyGizmo, ReclassifyOverlay } from '../plugins/reclassify';
 import { RoadExtractionOverlay } from '../plugins/road-extraction';
+import { ScanTimeline } from './scan-timeline';
+import { ScanFilterCommandPanel } from './scan-filter-command-panel';
+import { PointInfoPanel } from './point-info-panel';
 
 export function ViewerPage() {
   const { theme, cycleTheme } = useUIStore();
@@ -69,6 +72,9 @@ export function ViewerPage() {
         <StaticObstacleOverlay engine={engine} />
         <ReclassifyOverlay engine={engine} />
         <RoadExtractionOverlay engine={engine} />
+        <ScanTimeline />
+        <ScanFilterCommandPanel engine={engine} />
+        <PointInfoPanel engine={engine} />
         <ReclassifyGizmo />
       </main>
     </div>

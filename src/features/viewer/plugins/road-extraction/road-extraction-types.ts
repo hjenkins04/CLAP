@@ -30,6 +30,7 @@
 export type RoadExtractionPhase =
   | 'idle'
   | 'drawing'            // user is placing centerline vertices
+  | 'shaping'            // user adjusting the initial left/right road-edge polygon
   | 'extracting'         // algorithm is running (async)
   | 'reviewing'          // result shown, params adjustable
   | 'editing-boundary'   // user dragging individual boundary vertices
@@ -50,30 +51,56 @@ export interface ExtractionParams {
   curbHeightMax: number;
   /** Downward height drop that signals an embankment / edge (metres). Default 0.12 */
   dropOffThreshold: number;
-  /** Intensity change (0-255 scale) that signals a surface-type transition. Default 30 */
+  /** Intensity change (0-255 scale) that signals a surface-type transition. Default 50 */
   intensityThreshold: number;
-  /** Minimum stable points before the intensity edge can fire. Default 4 */
+  /** Minimum stable points before the intensity edge can fire. Default 5 */
   minStablePoints: number;
-  /** Median-filter window (number of sections) for boundary smoothing. Default 5 */
+  /** Median-filter window (number of sections) for boundary smoothing. Default 9 */
   smoothingWindow: number;
-  /** Height range above the centreline to include in the slab (metres). Default 1.5 */
+  /** Height range above the centreline to include in the slab (metres). Default 0.5 */
   slabHeightAbove: number;
   /** Height range below the centreline to include in the slab (metres). Default 0.5 */
   slabHeightBelow: number;
+
+  // ── Shaping-phase params ──────────────────────────────────────────────────
+  /** Total initial road width for the shaping polygon (metres). Default 8.0 */
+  roadWidth: number;
+  /**
+   * Arc-length spacing used to upsample the *raw drawn* centreline before
+   * smoothing (metres). Finer = more source vertices fed into Chaikin.
+   * Default 0.25 (half the post-smooth spacing).
+   */
+  centerlineUpsampleSpacing: number;
+  /** Arc-length spacing used to re-sample the smoothed centreline before
+   * offsetting into left/right edge lines (metres). Default 0.5 */
+  upsampleSpacing: number;
+  /** Number of Chaikin corner-cutting passes for centreline smoothing. Default 3 */
+  smoothingPasses: number;
+  /**
+   * Half-width of the local search window around each shaping-line hint
+   * (metres). When >0 the extractor only looks within ±window of the
+   * pre-defined edge rather than the full maxHalfWidth. Default 2.5
+   */
+  shapingSearchWindow: number;
 }
 
 export const DEFAULT_PARAMS: ExtractionParams = {
-  sectionSpacing:    0.5,
-  slabHalfDepth:     0.15,
-  maxHalfWidth:      15,
-  curbHeightMin:     0.06,
-  curbHeightMax:     0.40,
-  dropOffThreshold:  0.12,
-  intensityThreshold: 50,
-  minStablePoints:   5,
-  smoothingWindow:   9,
-  slabHeightAbove:   0.5,
-  slabHeightBelow:   0.5,
+  sectionSpacing:      0.5,
+  slabHalfDepth:       0.15,
+  maxHalfWidth:        15,
+  curbHeightMin:       0.06,
+  curbHeightMax:       0.40,
+  dropOffThreshold:    0.12,
+  intensityThreshold:  50,
+  minStablePoints:     5,
+  smoothingWindow:     9,
+  slabHeightAbove:     0.5,
+  slabHeightBelow:     0.5,
+  roadWidth:                  8.0,
+  centerlineUpsampleSpacing:  0.25,
+  upsampleSpacing:            0.5,
+  smoothingPasses:     3,
+  shapingSearchWindow: 2.5,
 };
 
 // ── Geometry ──────────────────────────────────────────────────────────────────

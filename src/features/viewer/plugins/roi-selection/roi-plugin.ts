@@ -37,6 +37,9 @@ export class RoiSelectionPlugin implements ViewerPlugin {
     setRoiPluginRef(this);
 
     this.engine = new ShapeEditorEngine(ctx, {
+      vertexHandleRadius: 0.09,
+      edgeHandleRadius:   0.07,
+      faceHandleRadius:   0.08,
       snapToGrid: false,
       showEdgeMidHandles: true,
       showFaceExtrudeHandles: true,
@@ -137,15 +140,17 @@ export class RoiSelectionPlugin implements ViewerPlugin {
     const store = useRoiStore.getState();
 
     // If we're re-entering after a clear/redefine, start fresh.
+    // editRoi() pre-sets phase='editing' to skip this clear and keep existing shapes.
     if (store.phase !== 'editing') {
       store.clearShapes();
       this.engine?.clearShapes();
     }
 
-    // enterEditing sets phase='editing', editSubMode='shape', resets selectionInfo.
-    // The store subscription fires onPhaseChanged('editing') which puts the engine
-    // into select mode — but only after this function returns (synchronous Zustand).
     store.enterEditing();
+
+    // Always activate select mode here — onPhaseChanged won't fire when phase was
+    // already 'editing' (e.g. coming from editRoi()), so we do it unconditionally.
+    this.engine?.startSelect('shape');
   }
 
   /**
@@ -268,6 +273,17 @@ export class RoiSelectionPlugin implements ViewerPlugin {
   redefine(): void {
     this.clearClipRegions();
     useRoiStore.getState().setClipEnabled(false);
+    useViewerModeStore.getState().enterRoiSelectionMode();
+  }
+
+  /**
+   * Re-enter editing mode while keeping existing shapes intact.
+   * Unlike redefine(), this does NOT clear the shapes — the user can adjust
+   * vertices, move, and resize the existing ROI without redrawing from scratch.
+   */
+  editRoi(): void {
+    // Pre-set phase to 'editing' so enterMode() skips the shape-clear guard.
+    useRoiStore.getState().setPhase('editing');
     useViewerModeStore.getState().enterRoiSelectionMode();
   }
 

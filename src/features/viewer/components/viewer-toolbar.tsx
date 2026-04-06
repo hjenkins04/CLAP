@@ -11,6 +11,8 @@ import {
   MousePointer2,
   Tags,
   PenLine,
+  Route,
+  ScanSearch,
 } from 'lucide-react';
 import {
   Button,
@@ -27,6 +29,8 @@ import {
 import { useViewerModeStore } from '@/app/stores';
 import { usePoiStore } from '../plugins/poi';
 import { usePointSelectStore, PointSelectPlugin } from '../plugins/point-select';
+import { useScanFilterStore } from '../plugins/scan-filter';
+import { usePointInfoStore } from '../plugins/point-info';
 import { useBaseMapStore } from '../plugins/base-map';
 import type { ViewerEngine } from '../services/viewer-engine';
 import { useEditorState } from '../hooks/use-editor-state';
@@ -39,7 +43,7 @@ export function ViewerToolbar({ engine }: ViewerToolbarProps) {
   const { canUndo, canRedo, dirty, saving, undo, redo, save } =
     useEditorState(engine);
 
-  const { mode, transformSubMode, enterTransformMode, enterPoiMode, enterPointSelectMode, enterAnnotateMode, enterReclassifyMode, exitMode } =
+  const { mode, transformSubMode, enterTransformMode, enterPoiMode, enterPointSelectMode, enterAnnotateMode, enterReclassifyMode, enterScanFilterMode, enterPointInfoMode, exitMode } =
     useViewerModeStore();
 
   const poiPosition = usePoiStore((s) => s.position);
@@ -50,6 +54,12 @@ export function ViewerToolbar({ engine }: ViewerToolbarProps) {
   const isPointSelect = mode === 'point-select';
   const isAnnotate = mode === 'annotate';
   const isReclassify = mode === 'reclassify';
+  const isScanFilter = mode === 'scan-filter';
+  const scanFilterPhase = useScanFilterStore((s) => s.phase);
+  const scanFilterHasData = useScanFilterStore((s) => s.trajectoryData !== null);
+  const scanFilterActive = scanFilterPhase === 'applied' || isScanFilter;
+  const isPointInfo = mode === 'point-info';
+  const hasPickedPoint = usePointInfoStore((s) => s.pickedPoint !== null);
   const isTranslate = mode === 'transform' && transformSubMode === 'translate';
   const isRotate = mode === 'transform' && transformSubMode === 'rotate';
   const poiPhase = usePoiStore((s) => s.phase);
@@ -295,6 +305,43 @@ export function ViewerToolbar({ engine }: ViewerToolbarProps) {
             </TooltipTrigger>
             <TooltipContent side="bottom">Reclassify Points</TooltipContent>
           </Tooltip>
+
+          <Separator orientation="vertical" className="mx-0.5 h-4" />
+
+          {/* Scan Filter */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={scanFilterActive ? 'default' : 'ghost'}
+                size="icon"
+                className="h-7 w-7"
+                disabled={baseMapEditing || !scanFilterHasData}
+                onClick={() => isScanFilter ? exitMode() : enterScanFilterMode()}
+              >
+                <Route className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              {scanFilterPhase === 'applied' ? 'Scan Filter (active)' : 'Scan Filter'}
+            </TooltipContent>
+          </Tooltip>
+
+          {/* Point Info */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={(isPointInfo || hasPickedPoint) ? 'default' : 'ghost'}
+                size="icon"
+                className="h-7 w-7"
+                disabled={baseMapEditing}
+                onClick={() => isPointInfo ? exitMode() : enterPointInfoMode()}
+              >
+                <ScanSearch className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Point Info</TooltipContent>
+          </Tooltip>
+
         </div>
       </div>
     </TooltipProvider>

@@ -22,9 +22,12 @@ Options:
   --cell-size FLOAT        DEM cell size in meters (default: 1.0)
   --skip-dem               Skip DEM generation
   --skip-potree            Skip Potree conversion (DEM only)
+  --skip-trajectory        Skip trajectory.json extraction
   --potree-encoding        BROTLI or UNCOMPRESSED (default: UNCOMPRESSED)
   --potree-converter PATH  Path to PotreeConverter executable
                            (overrides CLAP_POTREE_CONVERTER env var and default)
+  --origin-easting FLOAT   Fix UTM easting origin (use value from origin.json of existing run)
+  --origin-northing FLOAT  Fix UTM northing origin (use value from origin.json of existing run)
 
 Examples:
   python preprocess.py /data/scan.laz my_scan
@@ -165,7 +168,7 @@ def utm_to_lnglat(easting: float, northing: float, zone: int, hemisphere: str) -
 # ---------------------------------------------------------------------------
 
 def pretransform_las(las_path: str, output_path: str,
-                     fixed_origin: tuple[float, float] | None = None) -> dict | None:
+                     fixed_origin: tuple[float, float] | None = None) -> tuple[dict | None, tuple[float, float]]:
     """Center the point cloud and reorder axes to Three.js Y-up convention.
 
     Regardless of CRS, the output LAS always uses:
@@ -180,7 +183,7 @@ def pretransform_las(las_path: str, output_path: str,
     native XY plane; no geo reference is available, so None is returned.
     The viewer will load the cloud in local coordinates without a world frame.
 
-    Returns crs_info dict (UTM only) or None (local / unknown CRS).
+    Returns (crs_info dict or None, (origin_x, origin_y)).
     """
     _CHUNK = 5_000_000  # points per streaming chunk (~180 MB at 36 bytes/pt)
 
@@ -280,7 +283,97 @@ def pretransform_las(las_path: str, output_path: str,
                     bar.update(len(chunk))
 
         tqdm.write(f"  [crs] Pre-transformed LAS written: {output_path}")
-        return crs_info
+        return crs_info, (origin_x, origin_y)
+
+
+# ---------------------------------------------------------------------------
+# Step 0b — Extract trajectory.json from pretransformed LAS
+# ---------------------------------------------------------------------------
+
+def extract_trajectory(las_path: str, output_dir: str) -> None:
+    """Extract pose/trajectory points from a pretransformed (Y-up) LAS file.
+
+    Looks for points where the 'is_pose' extra dimension equals 1. Each pose
+    point must also have a 'scan_id' extra dimension and a standard 'gps_time'
+    field. Results are written to <output_dir>/trajectory.json.
+
+    The output coordinates are already in Three.js Y-up local space (the same
+    as the pretransformed LAS), so the viewer can use them directly.
+    """
+    required_dims = {'is_pose', 'scan_id'}
+
+    print("Extracting trajectory points...")
+
+    with laspy.LasReader(open(las_path, 'rb')) as reader:
+        extra_names = {d.name for d in _safe_extra_dims(reader.header.point_format)}
+        missing = required_dims - extra_names
+        if missing:
+            tqdm.write(f"  [trajectory] Skipping — missing extra dimensions: {', '.join(missing)}")
+            return
+
+        _CHUNK = 5_000_000
+        pose_x: list[np.ndarray] = []
+        pose_y: list[np.ndarray] = []
+        pose_z: list[np.ndarray] = []
+        pose_scan_id: list[np.ndarray] = []
+        pose_gps_time: list[np.ndarray] = []
+
+        total = reader.header.point_count
+        with tqdm(total=total, desc="  Scan trajectory", **_BAR_OPTS) as bar:
+            for chunk in reader.chunk_iterator(_CHUNK):
+                mask = np.asarray(chunk['is_pose'], dtype=np.uint8) == 1
+                if mask.any():
+                    pose_x.append(np.asarray(chunk.x, dtype=np.float64)[mask])
+                    pose_y.append(np.asarray(chunk.y, dtype=np.float64)[mask])
+                    pose_z.append(np.asarray(chunk.z, dtype=np.float64)[mask])
+                    pose_scan_id.append(np.asarray(chunk['scan_id'], dtype=np.int32)[mask])
+                    # gps_time is a standard field in LAS; fall back to zeros if absent
+                    try:
+                        pose_gps_time.append(np.asarray(chunk.gps_time, dtype=np.float64)[mask])
+                    except Exception:
+                        pose_gps_time.append(np.zeros(int(mask.sum()), dtype=np.float64))
+                bar.update(len(chunk))
+
+    if not pose_x:
+        tqdm.write("  [trajectory] No pose points found (is_pose == 1) — skipping trajectory.json")
+        return
+
+    xs  = np.concatenate(pose_x)
+    ys  = np.concatenate(pose_y)
+    zs  = np.concatenate(pose_z)
+    ids = np.concatenate(pose_scan_id)
+    gps = np.concatenate(pose_gps_time)
+
+    # Sort by scan_id for deterministic ordering
+    order = np.argsort(ids, kind='stable')
+    xs, ys, zs, ids, gps = xs[order], ys[order], zs[order], ids[order], gps[order]
+
+    points = [
+        {
+            "x": float(xs[i]),
+            "y": float(ys[i]),
+            "z": float(zs[i]),
+            "scanId": int(ids[i]),
+            "gpsTime": float(gps[i]),
+        }
+        for i in range(len(xs))
+    ]
+
+    traj_data = {
+        "version": 1,
+        "count": len(points),
+        "scanIdRange": [int(ids.min()), int(ids.max())],
+        "gpsTimeRange": [float(gps.min()), float(gps.max())],
+        "points": points,
+    }
+
+    out_path = os.path.join(output_dir, "trajectory.json")
+    with open(out_path, "w") as f:
+        json.dump(traj_data, f, separators=(',', ':'))
+
+    size_kb = os.path.getsize(out_path) / 1024
+    tqdm.write(f"  [trajectory] {len(points)} pose points extracted, scan IDs {ids.min()}-{ids.max()}")
+    tqdm.write(f"  [trajectory] Written: {out_path} ({size_kb:.1f} KB)")
 
 
 # ---------------------------------------------------------------------------
@@ -651,6 +744,7 @@ def main():
     parser.add_argument("--cell-size", type=float, default=1.0, help="DEM cell size in meters (default: 1.0)")
     parser.add_argument("--skip-dem", action="store_true", help="Skip DEM generation")
     parser.add_argument("--skip-potree", action="store_true", help="Skip Potree conversion")
+    parser.add_argument("--skip-trajectory", action="store_true", help="Skip trajectory.json extraction")
     parser.add_argument("--potree-encoding", default="UNCOMPRESSED", choices=["BROTLI", "UNCOMPRESSED"])
     parser.add_argument("--origin-easting", type=float, default=None,
                         help="Fix the UTM easting origin instead of using the cloud centroid")
@@ -703,7 +797,7 @@ def main():
     fixed_origin = None
     if args.origin_easting is not None and args.origin_northing is not None:
         fixed_origin = (args.origin_easting, args.origin_northing)
-    crs_info = pretransform_las(merged_path, pretransformed_path, fixed_origin=fixed_origin)
+    crs_info, (origin_x, origin_y) = pretransform_las(merged_path, pretransformed_path, fixed_origin=fixed_origin)
     work_path = pretransformed_path
     if crs_info:
         print(f"  UTM detected — crs.json will be written for geo world frame auto-setup")
@@ -712,6 +806,13 @@ def main():
     print()
 
     try:
+        # Extract trajectory.json (pose points) from the pretransformed LAS
+        if not args.skip_trajectory:
+            extract_trajectory(work_path, output_dir)
+        else:
+            print("Skipping trajectory extraction")
+        print()
+
         # Step 2 — DEM
         if not args.skip_dem:
             dem_path = os.path.join(output_dir, "dem.json")
@@ -733,6 +834,15 @@ def main():
             with open(crs_path, "w") as f:
                 json.dump(crs_info, f, indent=2)
             print(f"CRS written:    {crs_path}")
+
+        # Always write origin.json so all pipeline outputs (potree, trajectory, DEM)
+        # can be verified as having the same centering origin. If trajectory.json is
+        # ever regenerated separately, pass these values via --origin-easting /
+        # --origin-northing to guarantee alignment.
+        origin_path = os.path.join(output_dir, "origin.json")
+        with open(origin_path, "w") as f:
+            json.dump({"originX": origin_x, "originY": origin_y}, f, indent=2)
+        print(f"Origin written: {origin_path}  (easting={origin_x:.3f}, northing={origin_y:.3f})")
 
     finally:
         if cleanup_merged and merged_path and os.path.isfile(merged_path):

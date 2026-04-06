@@ -376,6 +376,8 @@ export class PoiPlugin implements ViewerPlugin {
     const hit = this.findClosestPoint(raycaster.ray);
     if (!hit) return;
 
+    console.info('[POI] Picked world position:', hit.x.toFixed(3), hit.y.toFixed(3), hit.z.toFixed(3));
+
     // Place marker and enter confirming phase
     const store = usePoiStore.getState();
     store.setPosition(hit.x, hit.y, hit.z);

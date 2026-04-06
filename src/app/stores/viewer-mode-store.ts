@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 
 // --- Mode definitions ---
 
-export type ViewerMode = 'idle' | 'transform' | 'poi' | 'virtual-tiles' | 'roi-selection' | 'point-select' | 'annotate' | 'reclassify' | 'world-frame' | 'static-obstacle' | 'road-extraction';
+export type ViewerMode = 'idle' | 'transform' | 'poi' | 'virtual-tiles' | 'roi-selection' | 'point-select' | 'annotate' | 'reclassify' | 'world-frame' | 'static-obstacle' | 'road-extraction' | 'scan-filter' | 'point-info';
 export type TransformSubMode = 'translate' | 'rotate';
 
 // --- State ---
@@ -33,6 +33,8 @@ interface ViewerModeState {
   enterWorldFrameMode: () => void;
   enterStaticObstacleMode: () => void;
   enterRoadExtractionMode: () => void;
+  enterScanFilterMode: () => void;
+  enterPointInfoMode: () => void;
   exitMode: () => void;
   setCameraLocked: (locked: boolean) => void;
   toggleCameraLocked: () => void;
@@ -74,6 +76,10 @@ export const useViewerModeStore = create<ViewerModeState>()(
       enterStaticObstacleMode: () => set({ mode: 'static-obstacle' }),
 
       enterRoadExtractionMode: () => set({ mode: 'road-extraction' }),
+
+      enterScanFilterMode: () => set({ mode: 'scan-filter' }),
+
+      enterPointInfoMode: () => set({ mode: 'point-info' }),
 
       exitMode: () => set({ mode: 'idle', cameraLocked: false }),
 

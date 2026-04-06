@@ -402,13 +402,13 @@ export class ReclassifyPlugin implements ViewerPlugin {
     );
 
     const mat = new PointsMaterial({
-      color: 0x00d4ff,
-      size: 3,
+      color: 0xfde047,
+      size: 4,
       sizeAttenuation: false,
       depthTest: false,
       depthWrite: false,
       transparent: true,
-      opacity: 0.9,
+      opacity: 0.92,
     });
 
     this.highlightPoints = new Points(geom, mat);

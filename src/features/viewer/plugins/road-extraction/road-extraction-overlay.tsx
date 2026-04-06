@@ -7,6 +7,7 @@ import {
   X,
   ChevronRight,
   Loader2,
+  Spline,
 } from 'lucide-react';
 import { useRoadExtractionStore } from './road-extraction-store';
 import { useViewerModeStore } from '@/app/stores';
@@ -37,7 +38,7 @@ function DrawingToolbar({ plugin }: { plugin: RoadExtractionPlugin | undefined }
     <div className="absolute bottom-3 left-1/2 z-20 -translate-x-1/2">
       <div className="flex items-center gap-1 rounded-lg border border-border bg-card/95 px-2 py-1 shadow-md backdrop-blur-sm">
         <span className="mr-1 text-[11px] text-muted-foreground">
-          Centreline: click to place · double-click or Enter to confirm
+          Centreline: click to place · double-click on last point or press Enter to finish
         </span>
         <div className="mx-1 h-4 w-px bg-border" />
         <Button
@@ -62,6 +63,68 @@ function DrawingToolbar({ plugin }: { plugin: RoadExtractionPlugin | undefined }
         </Button>
       </div>
     </div>
+  );
+}
+
+// ── Shaping toolbar ───────────────────────────────────────────────────────────
+
+function ShapingToolbar({ plugin }: { plugin: RoadExtractionPlugin | undefined }) {
+  const leftCount  = useRoadExtractionStore((s) => s.shapingLeft.length);
+  const rightCount = useRoadExtractionStore((s) => s.shapingRight.length);
+
+  return (
+    <>
+      <div className="pointer-events-none absolute bottom-20 left-1/2 -translate-x-1/2">
+        <div className="rounded-lg bg-black/70 px-4 py-2 text-xs text-white backdrop-blur-sm text-center leading-relaxed">
+          <span className="font-medium text-green-400">Green</span> = left edge ·{' '}
+          <span className="font-medium text-orange-400">Orange</span> = right edge
+          <br />
+          Drag handles to reshape · hover an edge midpoint and click to add a vertex
+          <br />
+          <span className="text-white/60">L: {leftCount} pts · R: {rightCount} pts</span>
+        </div>
+      </div>
+
+      <div className="absolute bottom-3 left-1/2 z-20 -translate-x-1/2">
+        <div className="flex items-center gap-1 rounded-lg border border-border bg-card/95 px-2 py-1 shadow-md backdrop-blur-sm">
+          <Spline className="ml-1 h-3.5 w-3.5 text-muted-foreground" />
+          <span className="mr-1 text-[11px] text-muted-foreground">
+            Road shape
+          </span>
+          <div className="mx-1 h-4 w-px bg-border" />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 gap-1.5 text-xs text-muted-foreground"
+            onClick={() => plugin?.redrawCenterline()}
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            Redraw
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 gap-1.5 text-xs text-muted-foreground"
+            onClick={() => plugin?.cancelDrawing()}
+          >
+            <X className="h-3.5 w-3.5" />
+            Cancel
+          </Button>
+          <div className="mx-1 h-4 w-px bg-border" />
+          <Button
+            size="sm"
+            className="h-7 gap-1.5 text-xs text-green-600 hover:text-green-500"
+            variant="ghost"
+            onClick={() => plugin?.confirmShaping()}
+            disabled={leftCount < 2 || rightCount < 2}
+          >
+            <Check className="h-3.5 w-3.5" />
+            Confirm & Extract
+            <ChevronRight className="h-3 w-3" />
+          </Button>
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -137,6 +200,16 @@ function ReviewingToolbar({ plugin }: { plugin: RoadExtractionPlugin | undefined
           </Button>
 
           <div className="mx-1 h-4 w-px bg-border" />
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 gap-1.5 text-xs text-muted-foreground"
+            onClick={() => plugin?.backToShaping()}
+          >
+            <Spline className="h-3.5 w-3.5" />
+            Reshape
+          </Button>
 
           <Button
             variant="ghost"
@@ -270,6 +343,10 @@ export function RoadExtractionOverlay({ engine }: RoadExtractionOverlayProps) {
           <PhaseHint message="Click to place centreline vertices · double-click or Enter to finish · Backspace to undo · Esc to cancel" />
           <DrawingToolbar plugin={plugin} />
         </>
+      )}
+
+      {phase === 'shaping' && (
+        <ShapingToolbar plugin={plugin} />
       )}
 
       {phase === 'extracting' && (

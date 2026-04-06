@@ -203,6 +203,10 @@ export interface IPointCloudMaterialUniforms {
 	highlightedPointScale: IUniform<number>;
 	/** Scale factor for view-dependent sizing */
 	viewScale: IUniform<number>;
+	/** Minimum scan_id to render (inclusive). When > scanIdMax, signals exclude mode. */
+	scanIdMin: IUniform<number>;
+	/** Maximum scan_id to render (inclusive). When < scanIdMin, signals exclude mode. */
+	scanIdMax: IUniform<number>;
 }
 
 const TREE_TYPE_DEFS = {
@@ -356,7 +360,9 @@ export class PointCloudMaterial extends RawShaderMaterial
 		highlightedPointColor: makeUniform('fv', DEFAULT_HIGHLIGHT_COLOR.clone()),
 		enablePointHighlighting: makeUniform('b', true),
 		highlightedPointScale: makeUniform('f', 2.0),
-		viewScale: makeUniform('f', 1.0)
+		viewScale: makeUniform('f', 1.0),
+		scanIdMin: makeUniform('f', 0),
+		scanIdMax: makeUniform('f', 65535),
 	};
 
   @uniform('bbSize') bbSize!: [number, number, number];
@@ -462,6 +468,8 @@ export class PointCloudMaterial extends RawShaderMaterial
 
   @requiresShaderUpdate() useFilterByNormal: boolean = false;
 
+  @requiresShaderUpdate() useScanFilter: boolean = false;
+
   @requiresShaderUpdate() highlightPoint: boolean = false;
 
   @requiresShaderUpdate() inputColorEncoding: ColorEncoding = ColorEncoding.SRGB;
@@ -479,7 +487,8 @@ export class PointCloudMaterial extends RawShaderMaterial
   	returnNumber: {type: 'f', value: []},
   	numberOfReturns: {type: 'f', value: []},
   	pointSourceID: {type: 'f', value: []},
-  	indices: {type: 'fv', value: []}
+  	indices: {type: 'fv', value: []},
+  	scan_id: {type: 'f', value: []}
   };
 
   newFormat: boolean;
@@ -616,9 +625,14 @@ export class PointCloudMaterial extends RawShaderMaterial
   		define('use_rgb_gamma_contrast_brightness');
   	}
 
-  	if (this.useFilterByNormal) 
+  	if (this.useFilterByNormal)
   	{
   		define('use_filter_by_normal');
+  	}
+
+  	if (this.useScanFilter)
+  	{
+  		define('use_scan_filter');
   	}
 
   	if (this.useEDL) 
@@ -792,6 +806,30 @@ export class PointCloudMaterial extends RawShaderMaterial
   	else
   	{
   		this.setUniform('clipPolygonVertexCount', 0);
+  	}
+  }
+
+  /**
+   * Enable scan_id-based filtering. Only points whose scan_id is in [min, max]
+   * (inclusive) will be rendered. Triggers a shader recompile on first call.
+   */
+  setScanFilter(min: number, max: number, exclude = false): void
+  {
+  	// Swapped min/max encodes exclude mode: shader detects scanIdMin > scanIdMax → exclude [max, min]
+  	this.setUniform('scanIdMin', exclude ? max : min);
+  	this.setUniform('scanIdMax', exclude ? min : max);
+  	if (!this.useScanFilter)
+  	{
+  		this.useScanFilter = true; // triggers updateShaderSource via @requiresShaderUpdate
+  	}
+  }
+
+  /** Disable scan_id-based filtering and show all points. */
+  clearScanFilter(): void
+  {
+  	if (this.useScanFilter)
+  	{
+  		this.useScanFilter = false;
   	}
   }
 

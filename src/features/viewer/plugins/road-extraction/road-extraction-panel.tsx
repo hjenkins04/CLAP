@@ -59,10 +59,71 @@ function SliderRow({ label, value, min, max, step, unit = '', tooltip, onChange 
   );
 }
 
-// ── Params section ────────────────────────────────────────────────────────────
+// ── Shape params section ──────────────────────────────────────────────────────
+
+function ShapeParamsSection() {
+  const [open, setOpen] = useState(true);
+  const params    = useRoadExtractionStore((s) => s.params);
+  const setParams = useRoadExtractionStore((s) => s.setParams);
+
+  const set = (partial: Partial<ExtractionParams>) => setParams(partial);
+
+  return (
+    <div className="rounded-lg border border-border">
+      <button
+        className="flex w-full items-center justify-between px-3 py-2 text-xs font-medium"
+        onClick={() => setOpen((o) => !o)}
+      >
+        <span>Shape Parameters</span>
+        {open ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+      </button>
+      {open && (
+        <div className="space-y-3 border-t border-border px-3 pb-3 pt-2">
+          <SliderRow
+            label="Road width"
+            value={params.roadWidth}
+            min={2} max={30} step={0.5} unit=" m"
+            tooltip="Initial total road width used to offset left and right edges."
+            onChange={(v) => set({ roadWidth: v })}
+          />
+          <SliderRow
+            label="Centreline upsample spacing"
+            value={params.centerlineUpsampleSpacing}
+            min={0.05} max={1.0} step={0.05} unit=" m"
+            tooltip="Arc-length spacing for the initial upsample of the raw drawn centreline before smoothing. Finer = more detail fed into Chaikin."
+            onChange={(v) => set({ centerlineUpsampleSpacing: v })}
+          />
+          <SliderRow
+            label="Output edge spacing"
+            value={params.upsampleSpacing}
+            min={0.1} max={2.0} step={0.1} unit=" m"
+            tooltip="Arc-length spacing for re-sampling the smoothed line into the final left/right edge vertices."
+            onChange={(v) => set({ upsampleSpacing: v })}
+          />
+          <SliderRow
+            label="Smoothing passes"
+            value={params.smoothingPasses}
+            min={0} max={6} step={1} unit=""
+            tooltip="Number of Chaikin corner-cutting passes. More = smoother curve."
+            onChange={(v) => set({ smoothingPasses: v })}
+          />
+          <SliderRow
+            label="Edge search window"
+            value={params.shapingSearchWindow}
+            min={0.5} max={5.0} step={0.25} unit=" m"
+            tooltip="Half-width of local search around the shaped edge. 0 = use full maxHalfWidth."
+            onChange={(v) => set({ shapingSearchWindow: v })}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Detection params section ──────────────────────────────────────────────────
 
 function ParamsSection({ onRerun }: { onRerun: () => void }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const params    = useRoadExtractionStore((s) => s.params);
   const setParams = useRoadExtractionStore((s) => s.setParams);
   const resetParams = useRoadExtractionStore((s) => s.resetParams);
@@ -131,7 +192,7 @@ function ParamsSection({ onRerun }: { onRerun: () => void }) {
           <SliderRow
             label="Smoothing window"
             value={params.smoothingWindow}
-            min={1} max={15} step={2} unit=" sec"
+            min={1} max={21} step={2} unit=" secs"
             tooltip="Median filter window applied to boundary distances."
             onChange={(v) => set({ smoothingWindow: v })}
           />
@@ -385,6 +446,7 @@ export function RoadExtractionPanel() {
       {isActive && phase !== 'idle' && (
         <div className="rounded-md bg-muted px-3 py-2 text-[11px] text-muted-foreground">
           {phase === 'drawing'          && 'Click to trace road centreline in 3D view'}
+          {phase === 'shaping'          && 'Adjust road edge polygon · drag handles · click midpoints to add vertices'}
           {phase === 'extracting'       && 'Analysing point cloud…'}
           {phase === 'reviewing'        && 'Review boundaries in 3D · adjust params below'}
           {phase === 'editing-boundary' && 'Drag handles in 3D view to adjust boundaries'}
@@ -392,7 +454,10 @@ export function RoadExtractionPanel() {
         </div>
       )}
 
-      {/* Parameters */}
+      {/* Shape parameters */}
+      <ShapeParamsSection />
+
+      {/* Detection parameters */}
       <ParamsSection
         onRerun={() => rerunFn('extracting')}
       />

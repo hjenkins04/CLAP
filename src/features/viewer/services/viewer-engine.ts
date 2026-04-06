@@ -67,6 +67,7 @@ export class ViewerEngine implements PluginHost {
   private editor: PointCloudEditor;
   private plugins: Map<string, ViewerPlugin> = new Map();
   private pluginCtx: ViewerPluginContext;
+  private pcBaseUrl: string | null = null;
   private animationFrameId: number | null = null;
   private lastFrameTime: number = 0;
   private container: HTMLElement;
@@ -183,6 +184,7 @@ export class ViewerEngine implements PluginHost {
       domElement: this.renderer.domElement,
       container: this.container,
       host: this,
+      getBaseUrl: () => this.pcBaseUrl,
     };
 
     // Register plugins
@@ -223,6 +225,7 @@ export class ViewerEngine implements PluginHost {
   // --- Point Cloud ---
 
   async loadPointCloud(url: string, baseUrl: string): Promise<void> {
+    this.pcBaseUrl = baseUrl;
     const requestManager = {
       getUrl: async (relativeUrl: string) => `${baseUrl}${relativeUrl}`,
       fetch: electronFetch,
@@ -230,6 +233,8 @@ export class ViewerEngine implements PluginHost {
     const pco = await this.potree.loadPointCloud(url, requestManager);
 
     pco.material.size = 0.1;
+    pco.material.minSize = 1.5;
+    pco.material.maxSize = 12; // cap adaptive size — sparse nodes would otherwise balloon to 50px
     pco.material.shape = 2; // PARABOLOID
     pco.material.inputColorEncoding = 1; // sRGB
     pco.material.outputColorEncoding = 1; // sRGB

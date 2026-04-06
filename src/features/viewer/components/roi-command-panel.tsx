@@ -1,4 +1,4 @@
-import { Check, Pentagon, Power, PowerOff, RotateCcw, Spline, Square, Trash2 } from 'lucide-react';
+import { Check, Pentagon, Pencil, Power, PowerOff, RotateCcw, Spline, Square, Trash2 } from 'lucide-react';
 import { useViewerModeStore } from '@/app/stores';
 import { useRoiStore, RoiSelectionPlugin, type RoiDrawTool } from '../plugins/roi-selection';
 import { CommandPopup } from './command-popup';
@@ -113,6 +113,16 @@ export function RoiCommandPanel({ engine }: RoiCommandPanelProps) {
             >
               {clipEnabled ? <PowerOff className="h-3.5 w-3.5" /> : <Power className="h-3.5 w-3.5" />}
               {clipEnabled ? 'Disable Crop' : 'Enable Crop'}
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 w-full gap-1.5 text-xs"
+              onClick={() => plugin?.editRoi()}
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              Edit ROI
             </Button>
 
             <Button

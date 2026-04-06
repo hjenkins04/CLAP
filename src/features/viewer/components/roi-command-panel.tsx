@@ -1,4 +1,4 @@
-import { Check, Pentagon, Pencil, Power, PowerOff, RotateCcw, Spline, Square, Trash2 } from 'lucide-react';
+import { Check, Pentagon, Pencil, Power, PowerOff, RotateCcw, Spline, Square, RectangleHorizontal, Trash2 } from 'lucide-react';
 import { useViewerModeStore } from '@/app/stores';
 import { useRoiStore, RoiSelectionPlugin, type RoiDrawTool } from '../plugins/roi-selection';
 import { CommandPopup } from './command-popup';
@@ -9,10 +9,11 @@ interface RoiCommandPanelProps {
   engine: ViewerEngine | null;
 }
 
-const DRAW_TOOLS: { id: RoiDrawTool; label: string; icon: typeof Square; key: string }[] = [
-  { id: 'box',      label: '3D Box',   icon: Square,   key: '1' },
-  { id: 'polygon',  label: 'Polygon',  icon: Pentagon, key: '2' },
-  { id: 'polyline', label: 'Polyline', icon: Spline,   key: '3' },
+const DRAW_TOOLS: { id: RoiDrawTool; label: string; icon: typeof Square }[] = [
+  { id: 'box',      label: '3D Box',   icon: Square              },
+  { id: 'flat-box', label: '2D Plane', icon: RectangleHorizontal },
+  { id: 'polygon',  label: 'Polygon',  icon: Pentagon            },
+  { id: 'polyline', label: 'Polyline', icon: Spline              },
 ];
 
 export function RoiCommandPanel({ engine }: RoiCommandPanelProps) {
@@ -51,8 +52,8 @@ export function RoiCommandPanel({ engine }: RoiCommandPanelProps) {
         {(isEditing || isDrawing) && (
           <div className="space-y-1.5">
             <Label className="text-xs text-muted-foreground">Draw Region</Label>
-            <div className="grid grid-cols-3 gap-1">
-              {DRAW_TOOLS.map(({ id, label, icon: Icon, key }) => (
+            <div className="grid grid-cols-2 gap-1">
+              {DRAW_TOOLS.map(({ id, label, icon: Icon }) => (
                 <Button
                   key={id}
                   variant={isDrawing && activeTool === id ? 'default' : 'outline'}
@@ -61,11 +62,8 @@ export function RoiCommandPanel({ engine }: RoiCommandPanelProps) {
                   onClick={() => plugin?.startDrawingTool(id)}
                   disabled={(isDrawing && activeTool !== id) || (isEditing && shapeCount > 0)}
                 >
-                  <Icon className="h-3 w-3" />
+                  <Icon className="h-3 w-3 shrink-0" />
                   {label}
-                  <kbd className="ml-auto rounded bg-muted px-1 py-0.5 text-[9px] text-muted-foreground">
-                    {key}
-                  </kbd>
                 </Button>
               ))}
             </div>

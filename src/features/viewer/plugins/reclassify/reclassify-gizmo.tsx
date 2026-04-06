@@ -9,6 +9,8 @@ export function ReclassifyGizmo() {
   const gizmoScreenPos = useReclassifyStore((s) => s.gizmoScreenPos);
   const selectedCount = useReclassifyStore((s) => s.selectedCount);
   const applyFn = useReclassifyStore((s) => s._applyReclassification);
+  const recentClassIds = useReclassifyStore((s) => s.recentClassIds);
+  const addRecentClass = useReclassifyStore((s) => s.addRecentClass);
 
   const [search, setSearch] = useState('');
   const [activeIdx, setActiveIdx] = useState(0);
@@ -31,16 +33,30 @@ export function ReclassifyGizmo() {
     el?.scrollIntoView({ block: 'nearest' });
   }, [activeIdx]);
 
-  const filtered = CLASSIFICATION_CLASSES.filter((cls) => {
-    const q = search.toLowerCase().trim();
-    if (!q) return true;
-    return cls.name.toLowerCase().includes(q) || String(cls.id).includes(q);
-  });
+  const isSearching = search.trim().length > 0;
+  const recentClasses = recentClassIds
+    .map((id) => CLASSIFICATION_CLASSES.find((c) => c.id === id))
+    .filter((c): c is (typeof CLASSIFICATION_CLASSES)[number] => c !== undefined);
+  const remainingClasses = CLASSIFICATION_CLASSES.filter((c) => !recentClassIds.includes(c.id));
+
+  const filtered = isSearching
+    ? CLASSIFICATION_CLASSES.filter((cls) => {
+        const q = search.toLowerCase().trim();
+        return cls.name.toLowerCase().includes(q) || String(cls.id).includes(q);
+      })
+    : [...recentClasses, ...remainingClasses];
+
+  const recentCount = isSearching ? 0 : recentClasses.length;
+
+  function handleApply(id: number) {
+    addRecentClass(id);
+    applyFn?.(id);
+  }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      if (filtered[activeIdx]) applyFn?.(filtered[activeIdx].id);
+      if (filtered[activeIdx]) handleApply(filtered[activeIdx].id);
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
       setActiveIdx((i) => Math.min(i + 1, filtered.length - 1));
@@ -104,43 +120,58 @@ export function ReclassifyGizmo() {
 
       {/* Class list */}
       <ScrollArea className="max-h-52">
-        <div ref={listRef} className="space-y-px p-1">
+        <div className="p-1">
+          {recentCount > 0 && (
+            <p className="px-2 pb-0.5 pt-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+              Recent
+            </p>
+          )}
+          <div ref={listRef} className="space-y-px">
           {filtered.length === 0 ? (
             <p className="px-2 py-3 text-center text-xs text-muted-foreground">No results</p>
           ) : (
-            filtered.map((cls, i) => {
-              const [r, g, b] = cls.color;
-              const isActive = i === activeIdx;
-              return (
-                <button
-                  key={cls.id}
-                  type="button"
-                  onMouseEnter={() => setActiveIdx(i)}
-                  onClick={() => applyFn?.(cls.id)}
-                  className={`flex w-full min-w-0 items-center gap-2 rounded px-2 py-1.5 text-xs transition-colors ${
-                    isActive
-                      ? 'bg-primary text-primary-foreground'
-                      : 'hover:bg-muted'
-                  }`}
-                >
-                  <span
-                    className="h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-black/10"
-                    style={{
-                      backgroundColor: `rgb(${Math.round(r * 255)},${Math.round(g * 255)},${Math.round(b * 255)})`,
-                    }}
-                  />
-                  <span className="min-w-0 flex-1 truncate text-left">{cls.name}</span>
-                  <span
-                    className={`shrink-0 font-mono text-[10px] tabular-nums ${
-                      isActive ? 'text-primary-foreground/70' : 'text-muted-foreground'
-                    }`}
-                  >
-                    {cls.id}
-                  </span>
-                </button>
-              );
-            })
+            <>
+              {filtered.map((cls, i) => {
+                const [r, g, b] = cls.color;
+                const isActive = i === activeIdx;
+                return (
+                  <div key={cls.id}>
+                    {i === recentCount && recentCount > 0 && (
+                      <div className="-mx-1 my-1">
+                        <Separator />
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onMouseEnter={() => setActiveIdx(i)}
+                      onClick={() => handleApply(cls.id)}
+                      className={`flex w-full min-w-0 items-center gap-2 rounded px-2 py-1.5 text-xs transition-colors ${
+                        isActive
+                          ? 'bg-primary text-primary-foreground'
+                          : 'hover:bg-muted'
+                      }`}
+                    >
+                      <span
+                        className="h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-black/10"
+                        style={{
+                          backgroundColor: `rgb(${Math.round(r * 255)},${Math.round(g * 255)},${Math.round(b * 255)})`,
+                        }}
+                      />
+                      <span className="min-w-0 flex-1 truncate text-left">{cls.name}</span>
+                      <span
+                        className={`shrink-0 font-mono text-[10px] tabular-nums ${
+                          isActive ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                        }`}
+                      >
+                        {cls.id}
+                      </span>
+                    </button>
+                  </div>
+                );
+              })}
+            </>
           )}
+          </div>
         </div>
       </ScrollArea>
 

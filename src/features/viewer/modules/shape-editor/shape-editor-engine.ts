@@ -20,6 +20,7 @@ import { RENDER_ORDER_SHAPE } from './visuals/visual-constants';
 import { clearGroup } from './utils/dispose-utils';
 import { shapeCentroid } from './utils/geometry-utils';
 import { BoxDrawController } from './drawing/box-draw-controller';
+import { FlatBoxDrawController } from './drawing/flat-box-draw-controller';
 import { PolygonDrawController } from './drawing/polygon-draw-controller';
 import { PolylineDrawController } from './drawing/polyline-draw-controller';
 import { SelectionController } from './editing/selection-controller';
@@ -80,6 +81,7 @@ export class ShapeEditorEngine {
 
   // Sub-controllers
   private boxDraw: BoxDrawController;
+  private flatBoxDraw: FlatBoxDrawController;
   private polyDraw: PolygonDrawController;
   private polylineDraw: PolylineDrawController;
   private selCtrl: SelectionController;
@@ -107,6 +109,7 @@ export class ShapeEditorEngine {
     const iCtx = this.buildInternalContext();
 
     this.boxDraw      = new BoxDrawController(iCtx);
+    this.flatBoxDraw  = new FlatBoxDrawController(iCtx);
     this.polyDraw     = new PolygonDrawController(iCtx);
     this.polylineDraw = new PolylineDrawController(iCtx);
     this.selCtrl      = new SelectionController(iCtx);
@@ -168,6 +171,11 @@ export class ShapeEditorEngine {
   /** Enter box-drawing mode. */
   startDrawBox(): void {
     this.setMode('draw-box');
+  }
+
+  /** Enter flat-box drawing mode (footprint only, full Y extent). */
+  startDrawFlatBox(): void {
+    this.setMode('draw-flat-box');
   }
 
   /** Enter polygon-drawing mode. */
@@ -343,6 +351,7 @@ export class ShapeEditorEngine {
   private deactivateCurrentMode(): void {
     switch (this._mode) {
       case 'draw-box':      this.boxDraw.deactivate(); break;
+      case 'draw-flat-box': this.flatBoxDraw.deactivate(); break;
       case 'draw-polygon':  this.polyDraw.deactivate(); break;
       case 'draw-polyline': this.polylineDraw.deactivate(); break;
       case 'select':
@@ -358,6 +367,7 @@ export class ShapeEditorEngine {
   private activateMode(mode: EditMode): void {
     switch (mode) {
       case 'draw-box':      this.boxDraw.activate(); break;
+      case 'draw-flat-box': this.flatBoxDraw.activate(); break;
       case 'draw-polygon':  this.polyDraw.activate(); break;
       case 'draw-polyline': this.polylineDraw.activate(); break;
       case 'select':

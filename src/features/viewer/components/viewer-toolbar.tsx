@@ -13,6 +13,7 @@ import {
   PenLine,
   Route,
   ScanSearch,
+  BoxSelect,
 } from 'lucide-react';
 import {
   Button,
@@ -32,6 +33,7 @@ import { usePointSelectStore, PointSelectPlugin } from '../plugins/point-select'
 import { useScanFilterStore } from '../plugins/scan-filter';
 import { usePointInfoStore } from '../plugins/point-info';
 import { useBaseMapStore } from '../plugins/base-map';
+import { useRoiStore } from '../plugins/roi-selection';
 import type { ViewerEngine } from '../services/viewer-engine';
 import { useEditorState } from '../hooks/use-editor-state';
 
@@ -43,12 +45,16 @@ export function ViewerToolbar({ engine }: ViewerToolbarProps) {
   const { canUndo, canRedo, dirty, saving, undo, redo, save } =
     useEditorState(engine);
 
-  const { mode, transformSubMode, enterTransformMode, enterPoiMode, enterPointSelectMode, enterAnnotateMode, enterReclassifyMode, enterScanFilterMode, enterPointInfoMode, exitMode } =
+  const { mode, transformSubMode, enterTransformMode, enterPoiMode, enterPointSelectMode, enterAnnotateMode, enterReclassifyMode, enterRoiSelectionMode, enterScanFilterMode, enterPointInfoMode, exitMode } =
     useViewerModeStore();
 
   const poiPosition = usePoiStore((s) => s.position);
   const clearPoi = usePoiStore((s) => s.clearPosition);
   const selectedCount = usePointSelectStore((s) => s.selectedCount);
+
+  const isRoi = mode === 'roi-selection';
+  const roiPhase = useRoiStore((s) => s.phase);
+  const roiActive = isRoi || roiPhase === 'applied';
 
   const isGrab = mode === 'idle';
   const isPointSelect = mode === 'point-select';
@@ -304,6 +310,24 @@ export function ViewerToolbar({ engine }: ViewerToolbarProps) {
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">Reclassify Points</TooltipContent>
+          </Tooltip>
+
+          {/* ROI Selection */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={roiActive ? 'default' : 'ghost'}
+                size="icon"
+                className="h-7 w-7"
+                disabled={baseMapEditing}
+                onClick={() => isRoi ? exitMode() : enterRoiSelectionMode()}
+              >
+                <BoxSelect className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              {roiPhase === 'applied' ? 'Edit ROI (active)' : 'Edit ROI'}
+            </TooltipContent>
           </Tooltip>
 
           <Separator orientation="vertical" className="mx-0.5 h-4" />

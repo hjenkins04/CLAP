@@ -21,7 +21,7 @@ import type { SelectSubMode, TransformMode } from '../../modules/shape-editor';
  */
 export type RoiPhase = 'idle' | 'editing' | 'drawing' | 'applied';
 
-export type RoiDrawTool = 'box' | 'polygon' | 'polyline';
+export type RoiDrawTool = 'box' | 'flat-box' | 'polygon' | 'polyline';
 
 /** Which sub-mode is active while in the editing phase. */
 export type RoiEditSubMode = SelectSubMode | TransformMode;

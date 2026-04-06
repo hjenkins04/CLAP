@@ -79,6 +79,7 @@ export type EditMode =
   | 'idle'
   | 'select'
   | 'draw-box'
+  | 'draw-flat-box'
   | 'draw-polygon'
   | 'draw-polyline';
 

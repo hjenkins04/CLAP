@@ -214,6 +214,7 @@ export class RoiSelectionPlugin implements ViewerPlugin {
     store.setPhase('drawing');
     switch (tool) {
       case 'box':      this.engine.startDrawBox();      break;
+      case 'flat-box': this.engine.startDrawFlatBox();  break;
       case 'polygon':  this.engine.startDrawPolygon();  break;
       case 'polyline': this.engine.startDrawPolyline(); break;
     }

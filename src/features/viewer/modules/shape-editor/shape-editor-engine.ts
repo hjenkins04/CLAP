@@ -303,6 +303,15 @@ export class ShapeEditorEngine {
     this.snap.setVertexSnapRadius(radius);
   }
 
+  /**
+   * Provide extra world-space vertex positions for snapping (e.g. vertices from
+   * other annotation layers not loaded as engine shapes).
+   * Pass an empty array to clear.
+   */
+  setSnapExtraVertices(verts: Array<{ x: number; y: number; z: number }>): void {
+    this.snap.setExtraVertices(verts);
+  }
+
   // ── Events ─────────────────────────────────────────────────────────────────
 
   on<K extends keyof ShapeEditorEventMap>(

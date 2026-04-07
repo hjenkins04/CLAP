@@ -18,6 +18,7 @@ import { AnnotatePanel } from '../plugins/annotate';
 import { WorldFrameOverlay } from './world-frame-overlay';
 import { WorldFrameMapModal } from './world-frame-map-modal';
 import { StaticObstacleOverlay } from '../plugins/static-obstacle';
+import { PolygonAnnotationOverlay } from '../plugins/polygon-annotation';
 import { ReclassifyGizmo, ReclassifyOverlay } from '../plugins/reclassify';
 import { RoadExtractionOverlay } from '../plugins/road-extraction';
 import { ScanTimeline } from './scan-timeline';
@@ -70,6 +71,7 @@ export function ViewerPage() {
         <WorldFrameOverlay engine={engine} />
         <WorldFrameMapModal engine={engine} />
         <StaticObstacleOverlay engine={engine} />
+        <PolygonAnnotationOverlay engine={engine} />
         <ReclassifyOverlay engine={engine} />
         <RoadExtractionOverlay engine={engine} />
         <ScanTimeline />

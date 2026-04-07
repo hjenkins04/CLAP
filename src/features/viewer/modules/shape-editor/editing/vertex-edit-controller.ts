@@ -94,10 +94,16 @@ export class VertexEditController {
     const hit = raycastHorizontalPlane(ndc, camera, this.groundY);
     if (!hit) return;
 
-    // Apply snap
-    const s = this.ctx.snap.snapXZ(hit.x, hit.z);
-    hit.x = s.x; hit.z = s.z;
-    hit.y = this.ctx.getElevation(hit.x, hit.z);
+    // Apply snap — vertex snap takes priority over grid snap.
+    // Exclude the shape being dragged so it doesn't snap to its own vertices.
+    const snapResult = this.ctx.snap.snap(
+      { x: hit.x, y: hit.y, z: hit.z },
+      this.ctx.shapes,
+      this.activeHandle ? [this.activeHandle.shapeId] : [],
+    );
+    hit.x = snapResult.snapped.x;
+    hit.z = snapResult.snapped.z;
+    hit.y = snapResult.didSnap ? snapResult.snapped.y : this.ctx.getElevation(hit.x, hit.z);
 
     const sel = this.ctx.getSelection();
     const selectedIndices = sel.elements

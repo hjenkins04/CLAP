@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 
 // --- Mode definitions ---
 
-export type ViewerMode = 'idle' | 'transform' | 'poi' | 'virtual-tiles' | 'roi-selection' | 'point-select' | 'annotate' | 'reclassify' | 'world-frame' | 'static-obstacle' | 'road-extraction' | 'scan-filter' | 'point-info';
+export type ViewerMode = 'idle' | 'transform' | 'poi' | 'virtual-tiles' | 'roi-selection' | 'point-select' | 'annotate' | 'reclassify' | 'world-frame' | 'static-obstacle' | 'road-extraction' | 'scan-filter' | 'point-info' | 'polygon-annotation';
 export type TransformSubMode = 'translate' | 'rotate';
 
 // --- State ---
@@ -35,6 +35,7 @@ interface ViewerModeState {
   enterRoadExtractionMode: () => void;
   enterScanFilterMode: () => void;
   enterPointInfoMode: () => void;
+  enterPolygonAnnotationMode: () => void;
   exitMode: () => void;
   setCameraLocked: (locked: boolean) => void;
   toggleCameraLocked: () => void;
@@ -80,6 +81,8 @@ export const useViewerModeStore = create<ViewerModeState>()(
       enterScanFilterMode: () => set({ mode: 'scan-filter' }),
 
       enterPointInfoMode: () => set({ mode: 'point-info' }),
+
+      enterPolygonAnnotationMode: () => set({ mode: 'polygon-annotation' }),
 
       exitMode: () => set({ mode: 'idle', cameraLocked: false }),
 

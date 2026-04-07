@@ -87,6 +87,11 @@ export class SelectionController {
       const dx = e.clientX - this.mouseDownPos.x;
       const dy = e.clientY - this.mouseDownPos.y;
       if (!this.isDragSelecting && Math.sqrt(dx * dx + dy * dy) > 8) {
+        // Don't start drag-select if orbit is already disabled (gizmo hover/drag or vertex drag)
+        if (!this.ctx.orbitControls.enabled) {
+          this.isPointerDown = false;
+          return;
+        }
         this.isDragSelecting = true;
         this.ctx.orbitControls.enabled = false;
         this.showSelRect(this.mouseDownPos.x, this.mouseDownPos.y, e.clientX, e.clientY);

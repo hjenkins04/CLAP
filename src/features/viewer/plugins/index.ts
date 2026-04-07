@@ -16,3 +16,4 @@ export { ReclassifyPlugin } from './reclassify';
 export { RoadExtractionPlugin } from './road-extraction';
 export { ScanFilterPlugin, useScanFilterStore } from './scan-filter';
 export { PointInfoPlugin, usePointInfoStore } from './point-info';
+export { PolygonAnnotationPlugin } from './polygon-annotation';

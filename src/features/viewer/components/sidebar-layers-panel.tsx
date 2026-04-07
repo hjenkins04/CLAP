@@ -24,6 +24,8 @@ import { usePoiStore } from '../plugins/poi/poi-store';
 import { useWorldFrameStore } from '../plugins/world-frame';
 import { useOsmFeaturesStore, OSM_LAYER_KEYS, type OsmLayerKey } from '../plugins/osm-features/osm-features-store';
 import { useStaticObstacleStore } from '../plugins/static-obstacle';
+import { usePolyAnnotStore } from '../plugins/polygon-annotation';
+import { Pentagon } from 'lucide-react';
 
 // ── Shared row components ────────────────────────────────────────────
 
@@ -138,6 +140,12 @@ export function SidebarLayersPanel() {
   const setAnnotationLayerVisible = useStaticObstacleStore((s) => s.setLayerVisible);
   const setAnnotationVisible = useStaticObstacleStore((s) => s.setAnnotationVisible);
 
+  // Polygon annotation layers
+  const polyLayers = usePolyAnnotStore((s) => s.layers);
+  const polyAnnotations = usePolyAnnotStore((s) => s.annotations);
+  const setPolyLayerVisible = usePolyAnnotStore((s) => s.setLayerVisible);
+  const setPolyAnnotVisible = usePolyAnnotStore((s) => s.setAnnotationVisible);
+
   // OSM features
   const osmVisible = useOsmFeaturesStore((s) => s.visible);
   const setOsmVisible = useOsmFeaturesStore((s) => s.setVisible);
@@ -210,7 +218,7 @@ export function SidebarLayersPanel() {
         disabled={!wfAnchor1}
       />
 
-      {/* Annotation layers */}
+      {/* Static obstacle annotation layers */}
       {annotationLayers.length > 0 && (
         <>
           <h3 className="mt-3 mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -238,6 +246,44 @@ export function SidebarLayersPanel() {
                     name={ann.label}
                     visible={ann.visible}
                     onToggle={() => setAnnotationVisible(ann.id, !ann.visible)}
+                    disabled={!layer.visible}
+                    indent
+                  />
+                ))}
+              </LayerGroup>
+            );
+          })}
+        </>
+      )}
+
+      {/* Polygon annotation layers */}
+      {polyLayers.length > 0 && (
+        <>
+          <h3 className="mt-3 mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Polygons
+          </h3>
+          {polyLayers.map((layer) => {
+            const layerPolys = polyAnnotations.filter((a) => a.layerId === layer.id);
+            return (
+              <LayerGroup
+                key={layer.id}
+                icon={
+                  <span
+                    className="inline-block h-3 w-3 rounded-sm border border-border flex-shrink-0"
+                    style={{ backgroundColor: layer.color }}
+                  />
+                }
+                name={`${layer.name} (${layerPolys.length})`}
+                visible={layer.visible}
+                onToggle={() => setPolyLayerVisible(layer.id, !layer.visible)}
+              >
+                {layerPolys.map((ann) => (
+                  <LayerRow
+                    key={ann.id}
+                    icon={<Pentagon className="h-3.5 w-3.5" />}
+                    name={ann.label}
+                    visible={ann.visible}
+                    onToggle={() => setPolyAnnotVisible(ann.id, !ann.visible)}
                     disabled={!layer.visible}
                     indent
                   />

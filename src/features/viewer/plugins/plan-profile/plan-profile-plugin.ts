@@ -21,6 +21,7 @@ import {
   type PlaneSlab,
 } from '../../modules/plan-profile';
 import { usePlanProfileStore } from './plan-profile-store';
+import { filterSceneForSlabRender } from './slab-scene-filter';
 
 export class PlanProfilePlugin implements ViewerPlugin {
   readonly id = 'plan-profile';
@@ -411,8 +412,9 @@ export class PlanProfilePlugin implements ViewerPlugin {
     const pcos = this.ctx.getPointClouds();
     const clipBox = slabToClipBox(this.slab);
 
-    // Hide 3D-only overlays from the secondary render.
+    // Hide 3D-only overlays and filter annotations for the secondary render.
     if (this.directionArrow) this.directionArrow.visible = false;
+    const restoreScene = filterSceneForSlabRender(this.ctx.scene, clipBox, this.slab.halfDepth);
 
     if (pcos.length === 0) {
       this.secondaryVp.render(this.ctx.scene);
@@ -448,6 +450,7 @@ export class PlanProfilePlugin implements ViewerPlugin {
       }
     }
 
+    restoreScene();
     if (this.directionArrow) this.directionArrow.visible = true;
   }
 

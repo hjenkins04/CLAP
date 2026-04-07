@@ -149,11 +149,13 @@ export class SelectionController {
     const hit = raycastObjects(ndc, camera, pickMeshes);
     const newHovered = hit ? getHandleData(hit.object.userData) : null;
     if (!hoveredHandleEqual(newHovered, this.hoveredHandle)) {
+      const prevHovered = this.hoveredHandle;
       this.hoveredHandle = newHovered;
       if (this.subMode === 'shape') {
         this.ctx.rebuildVisuals(); // shape body hover — must rebuild wireframe too
       } else {
-        this.ctx.rebuildHandles(); // handle hover — only handle group needs updating
+        // In-place color update: no geometry creation, no pick-list sync needed
+        this.ctx.applyHover(prevHovered, newHovered);
       }
     }
   };

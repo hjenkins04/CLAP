@@ -187,6 +187,9 @@ export class ViewerEngine implements PluginHost {
       container: this.container,
       host: this,
       getBaseUrl: () => this.pcBaseUrl,
+      updatePointCloudsForCamera: (camera: Camera) => {
+        this.potree.updatePointClouds(this.pointClouds, camera, this.renderer);
+      },
     };
 
     // Register plugins

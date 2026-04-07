@@ -149,6 +149,12 @@ export interface ShapeEditorInternalContext {
   rebuildVisuals(id?: ShapeId): void;
   /** Rebuild only handles + element highlights (cheaper than rebuildVisuals). */
   rebuildHandles(id?: ShapeId): void;
+  /**
+   * Update hover-highlight colors in-place without recreating any geometry.
+   * Much cheaper than rebuildHandles — only mutates material colors/opacities.
+   * For edge/face sub-modes also rebuilds element-highlight overlays (lines/quads).
+   */
+  applyHover(prev: HandleUserData | null, next: HandleUserData | null): void;
   /** Called by a draw controller when a new shape is finished. */
   finishDraw(shape: EditorShape): void;
   /** Called by a draw controller to abort without creating a shape. */

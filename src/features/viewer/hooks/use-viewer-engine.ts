@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useMemo, type RefObject } from 'react';
 import { ViewerEngine } from '../services/viewer-engine';
 import { DEFAULT_VIEWER_CONFIG } from '../types';
-import { AxisPlugin, GridPlugin, PoiPlugin, TransformPlugin, ViewCubePlugin, VirtualTilesPlugin, RoiSelectionPlugin, PointSelectPlugin, AnnotatePlugin, ReclassifyPlugin, WorldFramePlugin, BaseMapPlugin, OsmFeaturesPlugin, CustomMapPlugin, StaticObstaclePlugin, RoadExtractionPlugin, ScanFilterPlugin, PointInfoPlugin, PolygonAnnotationPlugin } from '../plugins';
+import { AxisPlugin, GridPlugin, PoiPlugin, TransformPlugin, ViewCubePlugin, VirtualTilesPlugin, RoiSelectionPlugin, PointSelectPlugin, AnnotatePlugin, ReclassifyPlugin, WorldFramePlugin, BaseMapPlugin, OsmFeaturesPlugin, CustomMapPlugin, StaticObstaclePlugin, RoadExtractionPlugin, ScanFilterPlugin, PointInfoPlugin, PolygonAnnotationPlugin, PlanProfilePlugin } from '../plugins';
 
 export function useViewerEngine(
   containerRef: RefObject<HTMLDivElement | null>
@@ -10,7 +10,7 @@ export function useViewerEngine(
   const engineRef = useRef<ViewerEngine | null>(null);
 
   const plugins = useMemo(
-    () => [new TransformPlugin(), new PoiPlugin(), new PointInfoPlugin(), new VirtualTilesPlugin(), new RoiSelectionPlugin(), new PointSelectPlugin(), new AnnotatePlugin(), new ReclassifyPlugin(), new BaseMapPlugin(), new OsmFeaturesPlugin(), new CustomMapPlugin(), new StaticObstaclePlugin(), new PolygonAnnotationPlugin(), new RoadExtractionPlugin(), new ScanFilterPlugin(), new WorldFramePlugin(), new GridPlugin(), new AxisPlugin(), new ViewCubePlugin()],
+    () => [new TransformPlugin(), new PoiPlugin(), new PointInfoPlugin(), new VirtualTilesPlugin(), new RoiSelectionPlugin(), new PointSelectPlugin(), new AnnotatePlugin(), new ReclassifyPlugin(), new BaseMapPlugin(), new OsmFeaturesPlugin(), new CustomMapPlugin(), new StaticObstaclePlugin(), new PolygonAnnotationPlugin(), new PlanProfilePlugin(), new RoadExtractionPlugin(), new ScanFilterPlugin(), new WorldFramePlugin(), new GridPlugin(), new AxisPlugin(), new ViewCubePlugin()],
     []
   );
 

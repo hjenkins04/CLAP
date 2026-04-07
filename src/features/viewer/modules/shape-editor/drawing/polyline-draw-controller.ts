@@ -66,6 +66,11 @@ export class PolylineDrawController {
     this.points.push({ x: hit.x, y: hit.y, z: hit.z });
     this.groundY = hit.y;
     this.rebuildPreview(null);
+
+    const max = this.ctx.config.maxPolylinePoints;
+    if (max > 0 && this.points.length >= max) {
+      this.commit();
+    }
   };
 
   private readonly onPointerMove = (e: PointerEvent): void => {

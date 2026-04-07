@@ -12,12 +12,21 @@ import type {
   SelectionState,
   ShapeEditorEventMap,
   ShapeEditorInternalContext,
+  HandleUserData,
 } from './shape-editor-types';
 import { resolveConfig, type ShapeEditorConfig } from './shape-editor-config';
 import { SnapEngine } from './snapping/snap-engine';
 import { buildShapeVisual, buildElementHighlights } from './visuals/shape-visual-builder';
-import { buildHandles } from './visuals/handle-visual-builder';
-import { RENDER_ORDER_SHAPE } from './visuals/visual-constants';
+import { buildHandles, getHandleData } from './visuals/handle-visual-builder';
+import {
+  RENDER_ORDER_SHAPE,
+  HANDLE_COLOR_SELECTED,
+  HANDLE_COLOR_HOVER,
+  HANDLE_COLOR_VERTEX,
+  HANDLE_COLOR_INSERT,
+  HANDLE_OPACITY,
+  HANDLE_OPACITY_INSERT,
+} from './visuals/visual-constants';
 import { clearGroup } from './utils/dispose-utils';
 import { shapeCentroid } from './utils/geometry-utils';
 import { BoxDrawController } from './drawing/box-draw-controller';
@@ -458,6 +467,9 @@ export class ShapeEditorEngine {
           this.rebuildAllHandles(); // includes syncPickLists
         }
       },
+      applyHover: (prev: HandleUserData | null, next: HandleUserData | null) => {
+        this.applyHoverInPlace(prev, next);
+      },
       finishDraw: (shape: EditorShape) => {
         this._shapes.set(shape.id, shape);
         this.deactivateCurrentMode();
@@ -632,6 +644,47 @@ export class ShapeEditorEngine {
     this.vertexCtrl.handleMeshes = allHandleMeshes;
     this.edgeCtrl.handleMeshes   = allHandleMeshes;
     this.faceCtrl.handleMeshes   = allHandleMeshes;
+  }
+
+  /**
+   * Update handle hover colors in-place without recreating any geometry.
+   * Traverses only the handle groups of affected shapes (prev/next shapeIds).
+   * For edge/face sub-modes also rebuilds element-highlight overlays (lines/quads).
+   */
+  private applyHoverInPlace(prev: HandleUserData | null, next: HandleUserData | null): void {
+    const affectedIds = new Set<ShapeId>();
+    if (prev) affectedIds.add(prev.shapeId);
+    if (next) affectedIds.add(next.shapeId);
+
+    for (const id of affectedIds) {
+      const handleGroup = this.shapeHandles.get(id);
+      if (handleGroup) {
+        handleGroup.traverse((obj) => {
+          if (!(obj instanceof Mesh)) return;
+          const data = getHandleData(obj.userData as Record<string, unknown>);
+          if (!data || data.pickOnly) return;
+          const isNowHovered = !!(next && next.shapeId === id && next.kind === data.kind && next.index === data.index);
+          const mat = obj.material as MeshBasicMaterial;
+          if (data.kind === 'vertex') {
+            const isSelected = this._selection.elements.some(
+              (e) => e.shapeId === id && e.elementType === 'vertex' && e.index === data.index,
+            );
+            mat.color.setHex(isSelected ? HANDLE_COLOR_SELECTED : isNowHovered ? HANDLE_COLOR_HOVER : HANDLE_COLOR_VERTEX);
+          } else if (data.kind === 'edge-mid') {
+            mat.color.setHex(isNowHovered ? HANDLE_COLOR_HOVER : HANDLE_COLOR_INSERT);
+            mat.opacity = isNowHovered ? HANDLE_OPACITY : HANDLE_OPACITY_INSERT;
+          }
+        });
+      }
+
+      // Edge/face sub-modes: rebuild element-highlight overlays (lightweight lines/quads).
+      // Vertex sub-mode doesn't use element highlights for hover, so skip it.
+      const subMode = this._subMode;
+      if (subMode === 'edge' || subMode === 'face') {
+        const shape = this._shapes.get(id);
+        if (shape) this.rebuildElementHighlightsForShape(id, shape);
+      }
+    }
   }
 
   /**

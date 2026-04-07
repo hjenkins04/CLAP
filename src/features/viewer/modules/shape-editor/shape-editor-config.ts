@@ -26,6 +26,12 @@ export interface ShapeEditorConfig {
   escapeHandled: boolean;
   /** Whether Delete / Backspace key deletes selected shapes. Default true. */
   deleteHandled: boolean;
+  /**
+   * Maximum number of points allowed in a polyline draw session.
+   * When this many points are placed the polyline is committed automatically.
+   * 0 means unlimited (commit on double-click / Enter). Default 0.
+   */
+  maxPolylinePoints: number;
 }
 
 const DEFAULTS: ShapeEditorConfig = {
@@ -42,6 +48,7 @@ const DEFAULTS: ShapeEditorConfig = {
   minExtrudeHeight: 0.05,
   escapeHandled: true,
   deleteHandled: true,
+  maxPolylinePoints: 0,
 };
 
 export function resolveConfig(partial?: Partial<ShapeEditorConfig>): ShapeEditorConfig {

@@ -27,6 +27,13 @@ export interface ViewerPluginContext {
   /** Base URL of the currently loaded point cloud (e.g. "/pointclouds/my_scan/").
    *  Null until a point cloud has been loaded. */
   getBaseUrl: () => string | null;
+  /**
+   * Run a Potree LOD update pass with a custom camera. Call this from
+   * `onAfterRender` to drive async node loading for secondary viewports.
+   * The result only affects which geometry nodes get queued for download;
+   * it does not change what the primary viewport renders on this frame.
+   */
+  updatePointCloudsForCamera: (camera: Camera) => void;
 }
 
 export interface ViewerPlugin {

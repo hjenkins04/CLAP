@@ -4,6 +4,7 @@ import { ClipMode } from 'potree-core';
 import type { ViewerPlugin, ViewerPluginContext } from '../../types';
 import { useRoiStore, type RoiPhase, type RoiDrawTool, type RoiEditSubMode } from './roi-store';
 import { useViewerModeStore } from '@/app/stores';
+import { useSnapStore } from '../../modules/snap/snap-store';
 import { editorShapesToClipRegions } from './roi-clip-adapter';
 import { RoiPanel } from './roi-panel';
 import { setRoiPluginRef } from './roi-plugin-ref';
@@ -131,6 +132,11 @@ export class RoiSelectionPlugin implements ViewerPlugin {
    * Always brings the engine and store to a clean, known editing state.
    */
   private enterMode(): void {
+    // ROI always snaps to terrain — enable DEM, disable scene-surface raycast
+    const snapState = useSnapStore.getState();
+    snapState.setMode('dem', true);
+    snapState.setMode('surface', false);
+
     this.computeLocalBBox();
     this.updateElevationFn();
 

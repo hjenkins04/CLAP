@@ -23,6 +23,7 @@ import {
   type EditorShape,
 } from '../../modules/shape-editor';
 import { geoAnnotHistory } from '../../services/geometry-annotations-history';
+import { useSnapStore } from '../../modules/snap/snap-store';
 
 /** Screen-space px radius for snapping to an existing vertex while drawing. */
 const SNAP_PX = 18;
@@ -59,7 +60,6 @@ export class PolygonAnnotationPlugin implements ViewerPlugin {
 
   private unsubMode: (() => void) | null = null;
   private unsubStore: (() => void) | null = null;
-  private unsubSnap: (() => void) | null = null;
 
   /**
    * Guard flag: suppresses the engine↔store sync loop.
@@ -202,6 +202,11 @@ export class PolygonAnnotationPlugin implements ViewerPlugin {
   // ── Mode entry / exit ──────────────────────────────────────────────────────
 
   private enterMode(): void {
+    // Polygon annotation snaps to terrain — enable DEM, disable scene-surface raycast
+    const snapState = useSnapStore.getState();
+    snapState.setMode('dem', true);
+    snapState.setMode('surface', false);
+
     const store = usePolyAnnotStore.getState();
     if (store.phase === 'editing' && store.editingAnnotationId) {
       const ann = store.annotations.find((a) => a.id === store.editingAnnotationId);
@@ -268,19 +273,10 @@ export class PolygonAnnotationPlugin implements ViewerPlugin {
     store.setPhase('editing');
     this.loadAnnotationIntoEngine(ann);
     this.attachEditKeyListener();
-
-    // React to snap toggle changes while in edit mode
-    this.unsubSnap = usePolyAnnotStore.subscribe((state, prev) => {
-      if (state.snapEnabled !== prev.snapEnabled) {
-        this.applySnapSettings(state.snapEnabled);
-      }
-    });
   }
 
   /** Finish vertex editing and return to draw mode. */
   stopEditing(): void {
-    this.unsubSnap?.();
-    this.unsubSnap = null;
     this.detachEditKeyListener();
     this.unloadAnnotationFromEngine();
     const store = usePolyAnnotStore.getState();
@@ -306,10 +302,9 @@ export class PolygonAnnotationPlugin implements ViewerPlugin {
     };
 
     // Supply snap targets: all annotation vertices (own + others = vertex-to-vertex snap)
-    const { annotations, snapEnabled } = usePolyAnnotStore.getState();
+    const { annotations } = usePolyAnnotStore.getState();
     const extraVerts = annotations.flatMap((a) => a.vertices.map((v) => ({ ...v })));
     this.editEngine.setSnapExtraVertices(extraVerts);
-    this.editEngine.setVertexSnapRadius(snapEnabled ? 0.4 : 0);
 
     this.editingShapeId = ann.id;
     this.editEngine.addShape(shape);
@@ -320,15 +315,9 @@ export class PolygonAnnotationPlugin implements ViewerPlugin {
   private unloadAnnotationFromEngine(): void {
     if (!this.editEngine || !this.editingShapeId) return;
     this.editEngine.setSnapExtraVertices([]);
-    this.editEngine.setVertexSnapRadius(0);
     this.editEngine.clearShapes();
     this.editEngine.setModeIdle();
     this.editingShapeId = null;
-  }
-
-  private applySnapSettings(enabled: boolean): void {
-    if (!this.editEngine) return;
-    this.editEngine.setVertexSnapRadius(enabled ? 0.4 : 0);
   }
 
   /** Delete the currently selected vertices (min 3 must remain). */

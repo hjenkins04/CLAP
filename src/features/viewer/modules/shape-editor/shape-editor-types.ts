@@ -1,4 +1,4 @@
-import type { Camera, Scene, WebGLRenderer } from 'three';
+import type { Camera, Mesh, Raycaster, Scene, WebGLRenderer } from 'three';
 import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import type { SnapEngine } from './snapping/snap-engine';
 
@@ -91,7 +91,7 @@ export type TransformMode = 'translate' | 'rotate' | 'scale';
 
 // ── Draw phases ───────────────────────────────────────────────────────────────
 
-export type BoxDrawPhase = 'footprint' | 'extrude';
+export type BoxDrawPhase = 'hover' | 'footprint' | 'extrude';
 export type PolyDrawPhase = 'placing';
 
 // ── Handle metadata (stored in mesh.userData) ─────────────────────────────────
@@ -138,6 +138,8 @@ export interface ShapeEditorInternalContext {
   /** Live map of all shapes — mutate in place, then call rebuildVisuals. */
   shapes: Map<ShapeId, EditorShape>;
   getElevation: ElevationFn;
+  /** Returns the DEM mesh for raycasting, or null if no DEM is loaded. */
+  getDemMesh: () => Mesh | null;
   snap: SnapEngine;
   config: import('./shape-editor-config').ShapeEditorConfig;
   emit<K extends keyof ShapeEditorEventMap>(event: K, data: ShapeEditorEventMap[K]): void;

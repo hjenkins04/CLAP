@@ -1,4 +1,4 @@
-import { Group, Vector2, Vector3, PerspectiveCamera } from 'three';
+import { BufferGeometry, Float32BufferAttribute, Group, Points, PointsMaterial, Raycaster, Vector2, Vector3 } from 'three';
 import type { ShapeEditorInternalContext, ObbShape, BoxDrawPhase } from '../shape-editor-types';
 import { clientToNdc, raycastHorizontalPlane, metersPerPixel } from '../utils/raycast-utils';
 import { buildObbWireframe } from '../visuals/shape-visual-builder';
@@ -6,20 +6,23 @@ import { SHAPE_COLOR_PREVIEW } from '../visuals/visual-constants';
 import { clearGroup } from '../utils/dispose-utils';
 
 /**
- * Handles the two-phase box drawing interaction:
- *   1. `footprint` — mouse-down to anchor, drag to set XZ extents
- *   2. `extrude`   — mouse-move vertically to set Y (height), click to confirm
+ * Handles three-click box drawing:
+ *   1. `hover`    — move to preview nearest PCO point; click to set anchor
+ *   2. `footprint`— move to extend XZ footprint on locked plane; click to confirm
+ *   3. `extrude`  — move vertically to set height; click to commit
  */
 export class BoxDrawController {
   private ctx: ShapeEditorInternalContext;
-  private phase: BoxDrawPhase = 'footprint';
+  private phase: BoxDrawPhase = 'hover';
   private previewGroup: Group | null = null;
+  private hoverMarker: Points | null = null;
 
   // Footprint state
   private anchorWorld: Vector3 | null = null;
   private groundY = 0;
   private mouseDownClient = new Vector2();
-  private dragging = false;
+  /** True while the pointer is held down (drag mode). False after first click releases. */
+  private pointerHeld = false;
 
   // Current pending shape values
   private centerX = 0;
@@ -38,10 +41,20 @@ export class BoxDrawController {
 
   /** Attach DOM listeners and show preview group. */
   activate(): void {
-    this.phase = 'footprint';
+    this.phase = 'hover';
     this.previewGroup = new Group();
     this.previewGroup.renderOrder = 900;
     this.ctx.scene.add(this.previewGroup);
+
+    // Hover indicator — pixel-size point marker, same approach as PointInfoPlugin
+    const hoverGeo = new BufferGeometry();
+    hoverGeo.setAttribute('position', new Float32BufferAttribute([0, 0, 0], 3));
+    const hoverMat = new PointsMaterial({ color: 0x00e5ff, size: 8, sizeAttenuation: false, depthTest: false, transparent: true, opacity: 0.9 });
+    this.hoverMarker = new Points(hoverGeo, hoverMat);
+    this.hoverMarker.renderOrder = 999;
+    this.hoverMarker.visible = false;
+    this.ctx.scene.add(this.hoverMarker);
+
     this.ctx.domElement.style.cursor = 'crosshair';
     this.ctx.domElement.addEventListener('pointerdown', this.onPointerDown);
     this.ctx.domElement.addEventListener('pointermove', this.onPointerMove);
@@ -60,27 +73,42 @@ export class BoxDrawController {
       this.ctx.scene.remove(this.previewGroup);
       this.previewGroup = null;
     }
+    if (this.hoverMarker) {
+      this.hoverMarker.geometry.dispose();
+      (this.hoverMarker.material as PointsMaterial).dispose();
+      this.ctx.scene.remove(this.hoverMarker);
+      this.hoverMarker = null;
+    }
+    this.ctx.orbitControls.enabled = true;
     this.anchorWorld = null;
-    this.dragging = false;
+    this.pointerHeld = false;
+    this.phase = 'hover';
   }
 
   // ── Event handlers ─────────────────────────────────────────────────────────
 
   private readonly onPointerDown = (e: PointerEvent): void => {
     if (e.button !== 0) return;
-    if (this.phase === 'footprint') {
+    this.mouseDownClient.set(e.clientX, e.clientY);
+
+    if (this.phase === 'hover') {
+      // Immediately set anchor so drag mode works (pointer held down = footprint drag)
       const hit = this.groundHit(e.clientX, e.clientY);
       if (!hit) return;
+      if (this.hoverMarker) this.hoverMarker.visible = false;
       this.anchorWorld = hit.clone();
       this.groundY = hit.y;
-      this.mouseDownClient.set(e.clientX, e.clientY);
-      this.dragging = true;
+      this.pointerHeld = true;
+      this.phase = 'footprint';
       this.ctx.orbitControls.enabled = false;
     }
+    // In 'footprint' (free) or 'extrude': just record position for click-detection on up
   };
 
   private readonly onPointerMove = (e: PointerEvent): void => {
-    if (this.phase === 'footprint' && this.dragging && this.anchorWorld) {
+    if (this.phase === 'hover') {
+      this.updateHoverIndicator(e.clientX, e.clientY);
+    } else if (this.phase === 'footprint') {
       const hit = this.groundHit(e.clientX, e.clientY);
       if (!hit) return;
       this.updateFootprintFromHit(hit);
@@ -93,25 +121,34 @@ export class BoxDrawController {
 
   private readonly onPointerUp = (e: PointerEvent): void => {
     if (e.button !== 0) return;
-    this.ctx.orbitControls.enabled = true;
+    const dx = e.clientX - this.mouseDownClient.x;
+    const dy = e.clientY - this.mouseDownClient.y;
+    const wasClick = dx * dx + dy * dy <= 25; // ≤5 px = click
 
-    if (this.phase === 'footprint') {
-      if (!this.dragging || !this.anchorWorld) return;
-      const hit = this.groundHit(e.clientX, e.clientY);
-      if (hit) this.updateFootprintFromHit(hit);
-
-      if (this.halfX < this.ctx.config.minHalfExtent && this.halfZ < this.ctx.config.minHalfExtent) {
-        // Too small — treat as a click, abort
-        this.dragging = false;
-        this.anchorWorld = null;
-        return;
+    if (this.phase === 'footprint' && this.pointerHeld) {
+      this.pointerHeld = false;
+      if (wasClick) {
+        // Click mode: anchor set, now free-move to size footprint; wait for second click
+      } else {
+        // Drag mode: footprint sized by drag — if big enough go straight to extrude
+        if (this.halfX < this.ctx.config.minHalfExtent && this.halfZ < this.ctx.config.minHalfExtent) {
+          // Too small — abandon and return to hover
+          this.ctx.orbitControls.enabled = true;
+          this.anchorWorld = null;
+          this.phase = 'hover';
+          return;
+        }
+        this.extrudeScreenY = e.clientY;
+        this.phase = 'extrude';
+        this.ctx.domElement.style.cursor = 'ns-resize';
       }
-
-      this.dragging = false;
-      this.phase = 'extrude';
+    } else if (this.phase === 'footprint' && !this.pointerHeld && wasClick) {
+      // Second click (free-move mode): confirm XZ, enter height phase
+      if (this.halfX < this.ctx.config.minHalfExtent && this.halfZ < this.ctx.config.minHalfExtent) return;
       this.extrudeScreenY = e.clientY;
+      this.phase = 'extrude';
       this.ctx.domElement.style.cursor = 'ns-resize';
-    } else if (this.phase === 'extrude') {
+    } else if (this.phase === 'extrude' && wasClick) {
       this.updateExtrusion(e.clientY);
       this.commit();
     }
@@ -130,25 +167,80 @@ export class BoxDrawController {
   private groundHit(clientX: number, clientY: number): Vector3 | null {
     const camera = this.ctx.getCamera();
     const ndc = clientToNdc(clientX, clientY, this.ctx.domElement);
-    const y = this.anchorWorld ? this.groundY : this.ctx.getElevation(0, 0);
 
-    let hit = raycastHorizontalPlane(ndc, camera, y);
-    if (!hit) return null;
+    // ── Initial anchor placement — determine drawing plane Y ──────────────────
+    if (!this.anchorWorld) {
+      // 1. PCO surface: ray vs loaded point cloud geometry (also used by point cloud snap mode)
+      if (this.ctx.snap.isSurfaceModeActive() || this.ctx.snap.isPointCloudPickActive()) {
+        const sp = this.pickSurfacePoint(clientX, clientY);
+        if (sp) {
+          this.groundY = sp.y;
+          const snapped = this.ctx.snap.snapXZ(sp.x, sp.z);
+          return new Vector3(snapped.x, sp.y, snapped.z);
+        }
+      }
 
-    // Refine with DEM at the hit position
-    const demY = this.ctx.getElevation(hit.x, hit.z);
-    if (Math.abs(demY - y) > 0.05) {
-      hit = raycastHorizontalPlane(ndc, camera, demY) ?? hit;
-      hit.y = demY;
-    } else {
-      hit.y = y;
+      // 2. DEM — raycast against terrain elevation
+      if (this.ctx.snap.isDemModeActive()) {
+        const y0 = this.ctx.getElevation(0, 0);
+        let hit = raycastHorizontalPlane(ndc, camera, y0);
+        if (!hit) return null;
+        const demY = this.ctx.getElevation(hit.x, hit.z);
+        if (Math.abs(demY - y0) > 0.05) {
+          hit = raycastHorizontalPlane(ndc, camera, demY) ?? hit;
+        }
+        hit.y = demY;
+        this.groundY = demY;
+        const snapped = this.ctx.snap.snapXZ(hit.x, hit.z);
+        hit.x = snapped.x; hit.z = snapped.z;
+        return hit;
+      }
+
+      // 3. Flat plane fallback — use DEM at the actual cursor XZ position
+      const y0 = this.ctx.getElevation(0, 0);
+      const hit = raycastHorizontalPlane(ndc, camera, y0);
+      if (!hit) return null;
+      const groundY = this.ctx.getElevation(hit.x, hit.z);
+      this.groundY = groundY;
+      hit.y = groundY;
+      const snapped = this.ctx.snap.snapXZ(hit.x, hit.z);
+      hit.x = snapped.x; hit.z = snapped.z;
+      return hit;
     }
 
-    // Apply snapping
+    // ── Dragging — keep the locked ground Y ───────────────────────────────────
+    const hit = raycastHorizontalPlane(ndc, camera, this.groundY);
+    if (!hit) return null;
+    hit.y = this.groundY;
     const snapped = this.ctx.snap.snapXZ(hit.x, hit.z);
-    hit.x = snapped.x;
-    hit.z = snapped.z;
+    hit.x = snapped.x; hit.z = snapped.z;
     return hit;
+  }
+
+  /** Update the hover marker during the pre-anchor hover phase. */
+  private updateHoverIndicator(clientX: number, clientY: number): void {
+    if (!this.hoverMarker || !this.ctx.snap.isPointCloudPickActive()) {
+      if (this.hoverMarker) this.hoverMarker.visible = false;
+      return;
+    }
+    const sp = this.pickSurfacePoint(clientX, clientY);
+    if (sp) {
+      this.hoverMarker.position.copy(sp);
+      this.hoverMarker.visible = true;
+    } else {
+      this.hoverMarker.visible = false;
+    }
+  }
+
+  /** Cast a ray into visible PCO geometry and return the nearest hit point. */
+  private pickSurfacePoint(clientX: number, clientY: number): Vector3 | null {
+    const camera = this.ctx.getCamera();
+    const rect = this.ctx.domElement.getBoundingClientRect();
+    const ndcX = ((clientX - rect.left) / rect.width)  * 2 - 1;
+    const ndcY = -((clientY - rect.top)  / rect.height) * 2 + 1;
+    const raycaster = new Raycaster();
+    raycaster.setFromCamera(new Vector2(ndcX, ndcY), camera);
+    return this.ctx.snap.pickSurfacePoint(raycaster.ray);
   }
 
   private updateFootprintFromHit(hit: Vector3): void {

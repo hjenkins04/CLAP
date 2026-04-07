@@ -1,6 +1,7 @@
 import { Group, Mesh, Vector2, Vector3, Raycaster, Matrix4 } from 'three';
 import type { PointCloudOctree } from 'potree-core';
 import type { ViewerPlugin, ViewerPluginContext } from '../../types';
+import { useSnapStore } from '../../modules/snap/snap-store';
 import { useStaticObstacleStore } from './static-obstacle-store';
 import type { ObstacleEditSubMode } from './static-obstacle-store';
 import { useViewerModeStore } from '@/app/stores';
@@ -129,6 +130,12 @@ export class StaticObstaclePlugin implements ViewerPlugin {
   // ── Mode lifecycle ─────────────────────────────────────────────────────────
 
   private enterMode(): void {
+    // Use point cloud snap for anchor placement — snap to actual PCO points (buildings, walls, etc.)
+    const snapState = useSnapStore.getState();
+    snapState.setMode('dem', false);
+    snapState.setMode('surface', false);
+    snapState.setMode('pointcloud', true);
+
     this.computeFallbackElevY();
     this.updateElevationFn();
     const store = useStaticObstacleStore.getState();

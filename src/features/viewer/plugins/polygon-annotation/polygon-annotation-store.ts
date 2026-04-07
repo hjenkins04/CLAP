@@ -42,10 +42,6 @@ interface PolyAnnotState {
   editingAnnotationId: string | null;
   setEditingAnnotationId: (id: string | null) => void;
 
-  // ── Edit options ──────────────────────────────────────────────────────────
-  snapEnabled: boolean;
-  setSnapEnabled: (enabled: boolean) => void;
-
   // ── Phase ──────────────────────────────────────────────────────────────────
   phase: PolyAnnotPhase;
   setPhase: (p: PolyAnnotPhase) => void;
@@ -194,10 +190,6 @@ export const usePolyAnnotStore = create<PolyAnnotState>()(
 
       editingAnnotationId: null,
       setEditingAnnotationId: (editingAnnotationId) => set({ editingAnnotationId }),
-
-      // ── Edit options ──────────────────────────────────────────────────────────
-      snapEnabled: true,
-      setSnapEnabled: (snapEnabled) => set({ snapEnabled }),
 
       // ── Phase ────────────────────────────────────────────────────────────────
       phase: 'idle',

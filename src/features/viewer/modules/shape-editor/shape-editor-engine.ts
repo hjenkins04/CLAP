@@ -1,6 +1,7 @@
 import { Group, Mesh, MeshBasicMaterial, SphereGeometry, BufferGeometry, Float32BufferAttribute, DoubleSide } from 'three';
 import type { Camera } from 'three';
 import type { ViewerPluginContext } from '../../types';
+import { useSnapStore } from '../../modules/snap/snap-store';
 import type {
   EditorShape,
   ShapeId,
@@ -93,12 +94,24 @@ export class ShapeEditorEngine {
   // Event handlers
   private handlers: Partial<{ [K in keyof ShapeEditorEventMap]: Array<EventCallback<ShapeEditorEventMap[K]>> }> = {};
 
+  // Snap store subscription
+  private unsubSnap: (() => void) | null = null;
+
   constructor(pluginCtx: ViewerPluginContext, config?: Partial<ShapeEditorConfig>) {
     this.pluginCtx = pluginCtx;
     this.config = resolveConfig(config);
     this.snap = new SnapEngine();
     this.snap.setGrid(this.config.snapToGrid, this.config.snapGridSize);
     this.snap.setVertexSnapRadius(this.config.snapToVertexRadius);
+    this.snap.setPointCloudProvider(() => pluginCtx.getPointClouds());
+
+    // Subscribe to the shared snap store so all engine instances react to global snap settings
+    const applySnapStore = () => {
+      const { enabled, modes } = useSnapStore.getState();
+      this.snap.setEnabledModes(enabled, modes);
+    };
+    applySnapStore();
+    this.unsubSnap = useSnapStore.subscribe(applySnapStore);
 
     // Root group at scene level (never inside worldRoot)
     this.rootGroup = new Group();
@@ -302,6 +315,7 @@ export class ShapeEditorEngine {
 
   setElevationFn(fn: ElevationFn): void {
     this._elevationFn = fn;
+    this.snap.setElevationFn(fn);
   }
 
   // ── Snapping ───────────────────────────────────────────────────────────────
@@ -349,6 +363,8 @@ export class ShapeEditorEngine {
   // ── Lifecycle ──────────────────────────────────────────────────────────────
 
   dispose(): void {
+    this.unsubSnap?.();
+    this.unsubSnap = null;
     this.setMode('idle');
     this.transformCtrl.dispose();
     clearGroup(this.rootGroup);

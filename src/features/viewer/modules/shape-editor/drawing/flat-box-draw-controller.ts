@@ -1,4 +1,4 @@
-import { Group, Vector2, Vector3 } from 'three';
+import { BufferGeometry, Float32BufferAttribute, Group, Points, PointsMaterial, Raycaster, Vector2, Vector3 } from 'three';
 import type { ShapeEditorInternalContext, ObbShape } from '../shape-editor-types';
 import { clientToNdc, raycastHorizontalPlane } from '../utils/raycast-utils';
 import { buildObbWireframe } from '../visuals/shape-visual-builder';
@@ -19,6 +19,7 @@ const FLAT_BOX_HALF_Y = 5_000;
 export class FlatBoxDrawController {
   private ctx: ShapeEditorInternalContext;
   private previewGroup: Group | null = null;
+  private hoverMarker: Points | null = null;
 
   private anchorWorld: Vector3 | null = null;
   private groundY = 0;
@@ -38,6 +39,15 @@ export class FlatBoxDrawController {
     this.previewGroup = new Group();
     this.previewGroup.renderOrder = 900;
     this.ctx.scene.add(this.previewGroup);
+
+    const hoverGeo = new BufferGeometry();
+    hoverGeo.setAttribute('position', new Float32BufferAttribute([0, 0, 0], 3));
+    const hoverMat = new PointsMaterial({ color: 0x00e5ff, size: 8, sizeAttenuation: false, depthTest: false, transparent: true, opacity: 0.9 });
+    this.hoverMarker = new Points(hoverGeo, hoverMat);
+    this.hoverMarker.renderOrder = 999;
+    this.hoverMarker.visible = false;
+    this.ctx.scene.add(this.hoverMarker);
+
     this.ctx.domElement.style.cursor = 'crosshair';
     this.ctx.domElement.addEventListener('pointerdown', this.onPointerDown);
     this.ctx.domElement.addEventListener('pointermove', this.onPointerMove);
@@ -56,6 +66,12 @@ export class FlatBoxDrawController {
       this.ctx.scene.remove(this.previewGroup);
       this.previewGroup = null;
     }
+    if (this.hoverMarker) {
+      this.hoverMarker.geometry.dispose();
+      (this.hoverMarker.material as PointsMaterial).dispose();
+      this.ctx.scene.remove(this.hoverMarker);
+      this.hoverMarker = null;
+    }
     this.anchorWorld = null;
     this.dragging = false;
   }
@@ -66,6 +82,7 @@ export class FlatBoxDrawController {
     if (e.button !== 0) return;
     const hit = this.groundHit(e.clientX, e.clientY);
     if (!hit) return;
+    if (this.hoverMarker) this.hoverMarker.visible = false;
     this.anchorWorld = hit.clone();
     this.groundY = hit.y;
     this.mouseDownClient.set(e.clientX, e.clientY);
@@ -74,11 +91,14 @@ export class FlatBoxDrawController {
   };
 
   private readonly onPointerMove = (e: PointerEvent): void => {
-    if (!this.dragging || !this.anchorWorld) return;
-    const hit = this.groundHit(e.clientX, e.clientY);
-    if (!hit) return;
-    this.updateFootprintFromHit(hit);
-    this.rebuildPreview();
+    if (this.dragging && this.anchorWorld) {
+      const hit = this.groundHit(e.clientX, e.clientY);
+      if (!hit) return;
+      this.updateFootprintFromHit(hit);
+      this.rebuildPreview();
+    } else if (!this.anchorWorld) {
+      this.updateHoverIndicator(e.clientX, e.clientY);
+    }
   };
 
   private readonly onPointerUp = (e: PointerEvent): void => {
@@ -108,20 +128,78 @@ export class FlatBoxDrawController {
   private groundHit(clientX: number, clientY: number): Vector3 | null {
     const camera = this.ctx.getCamera();
     const ndc = clientToNdc(clientX, clientY, this.ctx.domElement);
-    const y = this.anchorWorld ? this.groundY : this.ctx.getElevation(0, 0);
-    let hit = raycastHorizontalPlane(ndc, camera, y);
-    if (!hit) return null;
-    const demY = this.ctx.getElevation(hit.x, hit.z);
-    if (Math.abs(demY - y) > 0.05) {
-      hit = raycastHorizontalPlane(ndc, camera, demY) ?? hit;
-      hit.y = demY;
-    } else {
-      hit.y = y;
+
+    if (!this.anchorWorld) {
+      // PCO surface: ray vs loaded point cloud geometry (also used by point cloud snap mode)
+      if (this.ctx.snap.isSurfaceModeActive() || this.ctx.snap.isPointCloudPickActive()) {
+        const sp = this.pickSurfacePoint(clientX, clientY);
+        if (sp) {
+          this.groundY = sp.y;
+          const snapped = this.ctx.snap.snapXZ(sp.x, sp.z);
+          return new Vector3(snapped.x, sp.y, snapped.z);
+        }
+      }
+
+      // DEM
+      if (this.ctx.snap.isDemModeActive()) {
+        const y0 = this.ctx.getElevation(0, 0);
+        let hit = raycastHorizontalPlane(ndc, camera, y0);
+        if (!hit) return null;
+        const demY = this.ctx.getElevation(hit.x, hit.z);
+        if (Math.abs(demY - y0) > 0.05) {
+          hit = raycastHorizontalPlane(ndc, camera, demY) ?? hit;
+        }
+        hit.y = demY;
+        this.groundY = demY;
+        const snapped = this.ctx.snap.snapXZ(hit.x, hit.z);
+        hit.x = snapped.x; hit.z = snapped.z;
+        return hit;
+      }
+
+      // Flat fallback — use DEM at the actual cursor XZ position
+      const y0 = this.ctx.getElevation(0, 0);
+      const hit = raycastHorizontalPlane(ndc, camera, y0);
+      if (!hit) return null;
+      const groundY = this.ctx.getElevation(hit.x, hit.z);
+      this.groundY = groundY;
+      hit.y = groundY;
+      const snapped = this.ctx.snap.snapXZ(hit.x, hit.z);
+      hit.x = snapped.x; hit.z = snapped.z;
+      return hit;
     }
+
+    // Dragging — stay on locked plane
+    const hit = raycastHorizontalPlane(ndc, camera, this.groundY);
+    if (!hit) return null;
+    hit.y = this.groundY;
     const snapped = this.ctx.snap.snapXZ(hit.x, hit.z);
-    hit.x = snapped.x;
-    hit.z = snapped.z;
+    hit.x = snapped.x; hit.z = snapped.z;
     return hit;
+  }
+
+  private updateHoverIndicator(clientX: number, clientY: number): void {
+    if (!this.hoverMarker || !this.ctx.snap.isPointCloudPickActive()) {
+      if (this.hoverMarker) this.hoverMarker.visible = false;
+      return;
+    }
+    const sp = this.pickSurfacePoint(clientX, clientY);
+    if (sp) {
+      this.hoverMarker.position.copy(sp);
+      this.hoverMarker.visible = true;
+    } else {
+      this.hoverMarker.visible = false;
+    }
+  }
+
+  /** Cast a ray into visible PCO geometry and return the nearest hit point. */
+  private pickSurfacePoint(clientX: number, clientY: number): Vector3 | null {
+    const camera = this.ctx.getCamera();
+    const rect = this.ctx.domElement.getBoundingClientRect();
+    const ndcX = ((clientX - rect.left) / rect.width)  * 2 - 1;
+    const ndcY = -((clientY - rect.top)  / rect.height) * 2 + 1;
+    const raycaster = new Raycaster();
+    raycaster.setFromCamera(new Vector2(ndcX, ndcY), camera);
+    return this.ctx.snap.pickSurfacePoint(raycaster.ray);
   }
 
   private updateFootprintFromHit(hit: Vector3): void {

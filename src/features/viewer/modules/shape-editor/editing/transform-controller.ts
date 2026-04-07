@@ -303,7 +303,7 @@ export class TransformController {
    */
   private findAxisSnap(proposedPos: { x: number; y: number; z: number }, axes: ReadonlySet<SnapAxis>): { snapped: { x: number; y: number; z: number }; guides: AxisSnapGuide[] } {
     const extraVerts = this.ctx.snap.getExtraVertices();
-    if (extraVerts.length === 0 || axes.size === 0 || this.ctx.config.snapToVertexRadius <= 0) {
+    if (extraVerts.length === 0 || axes.size === 0 || !this.ctx.snap.isSnapActive()) {
       return { snapped: { ...proposedPos }, guides: [] };
     }
 

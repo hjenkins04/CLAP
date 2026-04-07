@@ -10,13 +10,15 @@ import type {
 } from '../shape-editor-types';
 import { clientToNdc, raycastObjects } from '../utils/raycast-utils';
 import { getHandleData } from '../visuals/handle-visual-builder';
+import { DragSelectController, isWorldPointInFrustum } from '../../drag-select';
+import type { SelectionFrustum, DragSelectMode } from '../../drag-select';
 
 /**
  * Manages click-based shape and sub-element selection, plus drag-box selection.
  *
  * Shape mode:  click shape body → select whole shape.
  * Vertex/Edge/Face mode: click handle → select element; drag → box-select elements.
- * Ctrl+click toggles individual items.
+ * Ctrl+click / Ctrl+drag adds to selection, Alt+drag subtracts.
  */
 export class SelectionController {
   private ctx: ShapeEditorInternalContext;
@@ -25,7 +27,8 @@ export class SelectionController {
   private mouseDownPos = new Vector2();
   private isPointerDown = false;
   private isDragSelecting = false;
-  private selRectEl: HTMLDivElement | null = null;
+
+  private dragSelect: DragSelectController;
 
   handleMeshes: Mesh[] = [];
   shapeMeshes: Mesh[] = [];
@@ -33,13 +36,18 @@ export class SelectionController {
 
   constructor(ctx: ShapeEditorInternalContext) {
     this.ctx = ctx;
+    this.dragSelect = new DragSelectController({
+      domElement: ctx.domElement,
+      getCamera: () => ctx.getCamera(),
+      onSelect: (frustum, mode) => this.applyDragSelect(frustum, mode),
+      // onClickEmpty is intentionally absent — click-to-clear is handled in onPointerUp
+    });
   }
 
   activate(subMode: SelectSubMode = 'shape'): void {
     this.subMode = subMode;
     if (!this.listening) {
       this.listening = true;
-      // Capture-phase: update mouseDownPos BEFORE TransformControls stopPropagation
       this.ctx.domElement.addEventListener('pointerdown', this.onPointerDownCapture, { capture: true });
       this.ctx.domElement.addEventListener('pointerdown', this.onPointerDown);
       this.ctx.domElement.addEventListener('pointerup', this.onPointerUp);
@@ -56,7 +64,6 @@ export class SelectionController {
     this.ctx.domElement.removeEventListener('pointerup', this.onPointerUp);
     this.ctx.domElement.removeEventListener('pointermove', this.onPointerMove);
     this.ctx.domElement.removeEventListener('keydown', this.onKeyDown);
-    this.removeSelRect();
     this.isDragSelecting = false;
     this.isPointerDown = false;
     this.hoveredHandle = null;
@@ -79,26 +86,25 @@ export class SelectionController {
     if (e.button !== 0) return;
     this.isPointerDown = true;
     this.isDragSelecting = false;
+    this.dragSelect.handlePointerDown(e);
   };
 
   private readonly onPointerMove = (e: PointerEvent): void => {
-    // Drag-select: only in select mode and only when pointer is down (not from gizmo)
+    // Drag-select: only in vertex/edge/face sub-modes
     if (this.isPointerDown && this.subMode !== 'shape' && this.ctx.getMode() === 'select') {
-      const dx = e.clientX - this.mouseDownPos.x;
-      const dy = e.clientY - this.mouseDownPos.y;
-      if (!this.isDragSelecting && Math.sqrt(dx * dx + dy * dy) > 8) {
-        // Don't start drag-select if orbit is already disabled (gizmo hover/drag or vertex drag)
+      this.dragSelect.handlePointerMove(e);
+
+      if (this.dragSelect.isDragging && !this.isDragSelecting) {
+        // Drag just started — abort if orbit/gizmo already has control
         if (!this.ctx.orbitControls.enabled) {
           this.isPointerDown = false;
           return;
         }
         this.isDragSelecting = true;
         this.ctx.orbitControls.enabled = false;
-        this.showSelRect(this.mouseDownPos.x, this.mouseDownPos.y, e.clientX, e.clientY);
-      } else if (this.isDragSelecting) {
-        this.updateSelRect(this.mouseDownPos.x, this.mouseDownPos.y, e.clientX, e.clientY);
-        return; // don't do hover while drag-selecting
       }
+
+      if (this.isDragSelecting) return; // skip hover while drag-selecting
     }
 
     if (this.isDragSelecting) return;
@@ -122,10 +128,8 @@ export class SelectionController {
     if (JSON.stringify(newHovered) !== JSON.stringify(this.hoveredHandle)) {
       this.hoveredHandle = newHovered;
       if (this.subMode === 'vertex' || this.subMode === 'shape') {
-        // Full visual rebuild: vertex sphere colors need re-building the handle geometry.
         this.ctx.rebuildVisuals();
-      } else if (this.subMode === 'edge' || this.subMode === 'face') {
-        // Cheap rebuild: only update highlight overlays (no sphere geometry changes).
+      } else {
         this.ctx.rebuildHandles();
       }
     }
@@ -137,10 +141,12 @@ export class SelectionController {
     if (this.isDragSelecting) {
       this.isDragSelecting = false;
       this.ctx.orbitControls.enabled = true;
-      this.finishDragSelect(e);
-      this.removeSelRect();
+      this.dragSelect.handlePointerUp(e); // → fires onSelect → applyDragSelect
       return;
     }
+
+    // Pass through to dragSelect so it can detect click-empty if needed
+    this.dragSelect.handlePointerUp(e);
 
     if (e.button !== 0) return;
     const dx = e.clientX - this.mouseDownPos.x;
@@ -172,8 +178,8 @@ export class SelectionController {
         const data = getHandleData(hit.object.userData);
         if (data) {
           const elementType: SubElementType =
-            data.kind === 'vertex' ? 'vertex' :
-            data.kind === 'edge-mid' ? 'edge' : 'face';
+            data.kind === 'vertex'   ? 'vertex' :
+            data.kind === 'edge-mid' ? 'edge'   : 'face';
           this.selectElement(
             { shapeId: data.shapeId, elementType, index: data.index, faceAxis: data.faceAxis },
             additive,
@@ -203,7 +209,73 @@ export class SelectionController {
     }
   };
 
-  // ── Selection manipulation ─────────────────────────────────────────────────
+  // ── Drag-select application ─────────────────────────────────────────────────
+
+  private applyDragSelect(frustum: SelectionFrustum, mode: DragSelectMode): void {
+    if (this.subMode === 'shape') {
+      this.boxSelectShapes(frustum, mode);
+    } else {
+      this.boxSelectElements(frustum, mode);
+    }
+  }
+
+  private boxSelectShapes(frustum: SelectionFrustum, mode: DragSelectMode): void {
+    const found = new Set<ShapeId>();
+    for (const mesh of this.shapeMeshes) {
+      const shapeId = mesh.userData.shapeId as ShapeId | undefined;
+      if (!shapeId) continue;
+      const pos = mesh.getWorldPosition(new Vector3());
+      if (isWorldPointInFrustum(pos.x, pos.y, pos.z, frustum)) found.add(shapeId);
+    }
+
+    const prev = this.ctx.getSelection();
+    if (mode === 'replace') {
+      if (found.size > 0) this.ctx.setSelection({ shapes: found, elements: [] });
+    } else if (mode === 'add') {
+      const merged = new Set([...prev.shapes, ...found]);
+      this.ctx.setSelection({ shapes: merged, elements: [] });
+    } else { // subtract
+      const remaining = new Set([...prev.shapes].filter((id) => !found.has(id)));
+      this.ctx.setSelection({ shapes: remaining, elements: [] });
+    }
+  }
+
+  private boxSelectElements(frustum: SelectionFrustum, mode: DragSelectMode): void {
+    const found: ElementRef[] = [];
+
+    for (const mesh of this.handleMeshes) {
+      const data = getHandleData(mesh.userData);
+      if (!data) continue;
+      if (this.subMode === 'vertex' && data.kind !== 'vertex')     continue;
+      if (this.subMode === 'edge'   && data.kind !== 'edge-mid')   continue;
+      if (this.subMode === 'face'   && data.kind !== 'face-extrude') continue;
+
+      const pos = mesh.getWorldPosition(new Vector3());
+      if (!isWorldPointInFrustum(pos.x, pos.y, pos.z, frustum)) continue;
+
+      const elementType: SubElementType =
+        data.kind === 'vertex'   ? 'vertex' :
+        data.kind === 'edge-mid' ? 'edge'   : 'face';
+      found.push({ shapeId: data.shapeId, elementType, index: data.index, faceAxis: data.faceAxis });
+    }
+
+    const elementKey = (e: ElementRef) => `${e.shapeId}:${e.elementType}:${e.index}`;
+    const prev = this.ctx.getSelection().elements;
+
+    if (mode === 'replace') {
+      if (found.length > 0) this.ctx.setSelection({ shapes: new Set(), elements: found });
+    } else if (mode === 'add') {
+      const map = new Map(prev.map((e) => [elementKey(e), e]));
+      for (const el of found) map.set(elementKey(el), el);
+      this.ctx.setSelection({ shapes: new Set(), elements: [...map.values()] });
+    } else { // subtract
+      const removeKeys = new Set(found.map(elementKey));
+      const remaining = prev.filter((e) => !removeKeys.has(elementKey(e)));
+      this.ctx.setSelection({ shapes: new Set(), elements: remaining });
+    }
+  }
+
+  // ── Selection manipulation ──────────────────────────────────────────────────
 
   selectShape(id: ShapeId, additive: boolean): void {
     const prev = this.ctx.getSelection();
@@ -237,96 +309,5 @@ export class SelectionController {
     const prev = this.ctx.getSelection();
     if (prev.shapes.size === 0 && prev.elements.length === 0) return;
     this.ctx.setSelection({ shapes: new Set(), elements: [] });
-  }
-
-  boxSelectShapes(screenRect: DOMRect): void {
-    const camera = this.ctx.getCamera();
-    const domRect = this.ctx.domElement.getBoundingClientRect();
-    const selected = new Set<ShapeId>();
-    for (const [id] of this.ctx.shapes) {
-      for (const mesh of this.shapeMeshes) {
-        if (mesh.userData.shapeId !== id) continue;
-        const pos = mesh.getWorldPosition(new Vector3());
-        const ndc = pos.project(camera);
-        const sx = ((ndc.x + 1) / 2) * domRect.width + domRect.left;
-        const sy = ((-ndc.y + 1) / 2) * domRect.height + domRect.top;
-        if (sx >= screenRect.left && sx <= screenRect.right && sy >= screenRect.top && sy <= screenRect.bottom) {
-          selected.add(id);
-        }
-      }
-    }
-    if (selected.size > 0) this.ctx.setSelection({ shapes: selected, elements: [] });
-  }
-
-  // ── Drag-select helpers ─────────────────────────────────────────────────────
-
-  private showSelRect(x1: number, y1: number, x2: number, y2: number): void {
-    if (!this.selRectEl) {
-      const div = document.createElement('div');
-      div.style.cssText =
-        'position:fixed;pointer-events:none;border:1px solid rgba(68,136,255,0.9);' +
-        'background:rgba(68,136,255,0.12);z-index:9999;box-sizing:border-box;';
-      document.body.appendChild(div);
-      this.selRectEl = div;
-    }
-    this.updateSelRect(x1, y1, x2, y2);
-  }
-
-  private updateSelRect(x1: number, y1: number, x2: number, y2: number): void {
-    if (!this.selRectEl) return;
-    const minX = Math.min(x1, x2), minY = Math.min(y1, y2);
-    const maxX = Math.max(x1, x2), maxY = Math.max(y1, y2);
-    Object.assign(this.selRectEl.style, {
-      left: `${minX}px`, top: `${minY}px`,
-      width: `${maxX - minX}px`, height: `${maxY - minY}px`,
-    });
-  }
-
-  private removeSelRect(): void {
-    if (this.selRectEl) {
-      document.body.removeChild(this.selRectEl);
-      this.selRectEl = null;
-    }
-  }
-
-  private finishDragSelect(e: PointerEvent): void {
-    const x1 = Math.min(this.mouseDownPos.x, e.clientX);
-    const y1 = Math.min(this.mouseDownPos.y, e.clientY);
-    const x2 = Math.max(this.mouseDownPos.x, e.clientX);
-    const y2 = Math.max(this.mouseDownPos.y, e.clientY);
-    this.boxSelectElements(new DOMRect(x1, y1, x2 - x1, y2 - y1));
-  }
-
-  private boxSelectElements(screenRect: DOMRect): void {
-    const camera = this.ctx.getCamera();
-    const domRect = this.ctx.domElement.getBoundingClientRect();
-    const selected: ElementRef[] = [];
-
-    for (const mesh of this.handleMeshes) {
-      const data = getHandleData(mesh.userData);
-      if (!data) continue;
-      if (this.subMode === 'vertex' && data.kind !== 'vertex') continue;
-      if (this.subMode === 'edge'   && data.kind !== 'edge-mid') continue;
-      if (this.subMode === 'face'   && data.kind !== 'face-extrude') continue;
-
-      const worldPos = mesh.getWorldPosition(new Vector3());
-      const projected = worldPos.clone().project(camera);
-      if (projected.z > 1) continue; // behind camera
-
-      const sx = ((projected.x + 1) / 2) * domRect.width + domRect.left;
-      const sy = ((-projected.y + 1) / 2) * domRect.height + domRect.top;
-
-      if (sx >= screenRect.left && sx <= screenRect.right &&
-          sy >= screenRect.top  && sy <= screenRect.bottom) {
-        const elementType: SubElementType =
-          data.kind === 'vertex' ? 'vertex' :
-          data.kind === 'edge-mid' ? 'edge' : 'face';
-        selected.push({ shapeId: data.shapeId, elementType, index: data.index, faceAxis: data.faceAxis });
-      }
-    }
-
-    if (selected.length > 0) {
-      this.ctx.setSelection({ shapes: new Set(), elements: selected });
-    }
   }
 }

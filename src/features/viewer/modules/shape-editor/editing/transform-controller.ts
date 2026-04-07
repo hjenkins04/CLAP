@@ -1,4 +1,4 @@
-import { Object3D, Vector3, Vector2, Quaternion, Euler, Group } from 'three';
+import { Object3D, Vector3, Vector2, Quaternion, Euler, Group, Mesh, MeshBasicMaterial } from 'three';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
@@ -58,12 +58,23 @@ export class TransformController {
       const camera = this.ctx.getCamera();
       this.gizmo = new TransformControls(camera, this.ctx.domElement);
       this.gizmo.renderOrder = 940;
+      this.gizmo.size = 0.6;
       this.ctx.scene.add(this.gizmo);
 
       this.anchor = new Object3D();
       this.ctx.scene.add(this.anchor);
 
       this.gizmo.attach(this.anchor);
+
+      // Make the center free-translate handle (octahedron) nearly invisible
+      this.gizmo.traverse((obj) => {
+        if (obj instanceof Mesh && obj.name === 'XYZ') {
+          const mat = obj.material as MeshBasicMaterial;
+          mat.opacity = 0.08;
+          mat.transparent = true;
+          mat.depthWrite = false;
+        }
+      });
 
       this.gizmo.addEventListener('dragging-changed', (event) => {
         const dragging = (event as unknown as { value: boolean }).value;

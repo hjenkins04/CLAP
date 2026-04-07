@@ -73,6 +73,8 @@ export class DragSelectController {
   handlePointerMove(e: PointerEvent): void { this.onPointerMove(e); }
   /** Call from your own pointerup handler. */
   handlePointerUp(e: PointerEvent): void   { this.onPointerUp(e); }
+  /** Cancel any in-progress drag and remove the overlay without firing onSelect. */
+  cancel(): void { this.cleanup(); }
 
   // ── Core ───────────────────────────────────────────────────────────────────
 

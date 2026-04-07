@@ -1,5 +1,5 @@
 import { Vector2, Vector3, Mesh } from 'three';
-import type { ShapeEditorInternalContext, HandleUserData, EditorShape, Vec3 } from '../shape-editor-types';
+import type { ShapeEditorInternalContext, HandleUserData, EditorShape, PolygonShape, PolylineShape, Vec3 } from '../shape-editor-types';
 import { clientToNdc, raycastHorizontalPlane, raycastObjects, metersPerPixel } from '../utils/raycast-utils';
 import { getHandleData } from '../visuals/handle-visual-builder';
 import {
@@ -7,6 +7,10 @@ import {
   obbMoveCorner,
   polygonMoveVertex,
   polylineMoveVertex,
+  polygonInsertVertex,
+  polylineInsertVertex,
+  polygonEdges,
+  polylineEdges,
 } from '../utils/geometry-utils';
 import { fromThreeVec3 } from '../utils/geometry-utils';
 
@@ -56,34 +60,40 @@ export class VertexEditController {
     const ndc = clientToNdc(e.clientX, e.clientY, this.ctx.domElement);
     const camera = this.ctx.getCamera();
 
-    const vertexMeshes = this.handleMeshes.filter((m) => {
-      const d = getHandleData(m.userData);
-      return d?.kind === 'vertex';
-    });
+    // ── Vertex drag ────────────────────────────────────────────────────────────
+    const vertexMeshes = this.handleMeshes.filter((m) => getHandleData(m.userData)?.kind === 'vertex');
     const hit = raycastObjects(ndc, camera, vertexMeshes);
-    if (!hit) return;
+    if (hit) {
+      const data = getHandleData(hit.object.userData);
+      if (!data) return;
 
-    const data = getHandleData(hit.object.userData);
-    if (!data) return;
+      const shape = this.ctx.shapes.get(data.shapeId);
+      if (!shape) return;
 
-    const shape = this.ctx.shapes.get(data.shapeId);
-    if (!shape) return;
+      const sel = this.ctx.getSelection();
+      const isSelected = sel.elements.some(
+        (el) => el.shapeId === data.shapeId && el.elementType === 'vertex' && el.index === data.index,
+      );
+      if (!isSelected) return;
 
-    // Check if this vertex is in the current selection
-    const sel = this.ctx.getSelection();
-    const isSelected = sel.elements.some(
-      (el) => el.shapeId === data.shapeId && el.elementType === 'vertex' && el.index === data.index,
-    );
-    if (!isSelected) return; // Only drag selected vertices
+      this.activeHandle = data;
+      this.originalShape = JSON.parse(JSON.stringify(shape));
+      this.mouseDownClient.set(e.clientX, e.clientY);
+      this.groundY = this.getVertexY(shape, data.index);
+      this.dragging = true;
+      this.ctx.orbitControls.enabled = false;
+      this.ctx.domElement.style.cursor = 'move';
+      e.stopPropagation();
+      return;
+    }
 
-    this.activeHandle = data;
-    this.originalShape = JSON.parse(JSON.stringify(shape));
-    this.mouseDownClient.set(e.clientX, e.clientY);
-    this.groundY = this.getVertexY(shape, data.index);
-    this.dragging = true;
-    this.ctx.orbitControls.enabled = false;
-    this.ctx.domElement.style.cursor = 'move';
-    e.stopPropagation();
+    // ── Edge-mid click → insert vertex ─────────────────────────────────────────
+    const edgeMidMeshes = this.handleMeshes.filter((m) => getHandleData(m.userData)?.kind === 'edge-mid');
+    const edgeHit = raycastObjects(ndc, camera, edgeMidMeshes);
+    if (edgeHit) {
+      const data = getHandleData(edgeHit.object.userData);
+      if (data) this.insertVertex(data, e);
+    }
   };
 
   private readonly onPointerMove = (e: PointerEvent): void => {
@@ -134,6 +144,52 @@ export class VertexEditController {
     if (e.button !== 0 || !this.dragging) return;
     this.finishDrag();
   };
+
+  // ── Insert vertex ───────────────────────────────────────────────────────────
+
+  private insertVertex(data: HandleUserData, e: PointerEvent): void {
+    const shape = this.ctx.shapes.get(data.shapeId);
+    if (!shape || (shape.type !== 'polygon' && shape.type !== 'polyline')) return;
+
+    // Compute midpoint of the clicked edge
+    let mid: Vec3;
+    let updated: EditorShape;
+    const newIdx = data.index + 1;
+
+    if (shape.type === 'polygon') {
+      const edges = polygonEdges(shape);
+      const edge = edges[data.index];
+      if (!edge) return;
+      const pa = shape.basePoints[edge[0]], pb = shape.basePoints[edge[1]];
+      mid = { x: (pa.x + pb.x) / 2, y: (pa.y + pb.y) / 2, z: (pa.z + pb.z) / 2 };
+      updated = polygonInsertVertex(shape as PolygonShape, data.index, mid);
+    } else {
+      const edges = polylineEdges(shape as PolylineShape);
+      const edge = edges[data.index];
+      if (!edge) return;
+      const pa = (shape as PolylineShape).points[edge[0]], pb = (shape as PolylineShape).points[edge[1]];
+      mid = { x: (pa.x + pb.x) / 2, y: (pa.y + pb.y) / 2, z: (pa.z + pb.z) / 2 };
+      updated = polylineInsertVertex(shape as PolylineShape, data.index, mid);
+    }
+
+    this.ctx.shapes.set(updated.id, updated);
+    this.ctx.emit('shape-updated', updated);
+
+    // Select the new vertex and begin dragging it
+    this.ctx.setSelection({ shapes: new Set(), elements: [
+      { shapeId: updated.id, elementType: 'vertex', index: newIdx },
+    ]});
+    this.ctx.rebuildVisuals(updated.id);
+
+    this.activeHandle = { _seHandle: true, kind: 'vertex', shapeId: updated.id, index: newIdx };
+    this.originalShape = JSON.parse(JSON.stringify(updated));
+    this.mouseDownClient.set(e.clientX, e.clientY);
+    this.groundY = mid.y;
+    this.dragging = true;
+    this.ctx.orbitControls.enabled = false;
+    this.ctx.domElement.style.cursor = 'move';
+    e.stopPropagation();
+  }
 
   // ── Private helpers ─────────────────────────────────────────────────────────
 

@@ -109,6 +109,8 @@ export interface HandleUserData {
   shapeId: ShapeId;
   index: number;
   faceAxis?: '+x' | '-x' | '+y' | '-y' | '+z' | '-z';
+  /** If true, this mesh is click-only (not included in hover detection). */
+  pickOnly?: boolean;
 }
 
 // ── Events ────────────────────────────────────────────────────────────────────

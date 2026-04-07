@@ -35,7 +35,9 @@ import {
   HANDLE_COLOR_SELECTED,
   HANDLE_COLOR_HOVER,
   HANDLE_COLOR_VERTEX,
+  HANDLE_COLOR_INSERT,
   HANDLE_OPACITY,
+  HANDLE_OPACITY_INSERT,
   RENDER_ORDER_HANDLE,
 } from './visual-constants';
 
@@ -93,6 +95,35 @@ function makeVertexSphere(
   const mesh = makeSphere(r, color, config.handleSegments);
   mesh.position.copy(pos);
   attachHandleData(mesh, { kind: 'vertex', shapeId, index });
+  return mesh;
+}
+
+// ── Edge-mid insert indicator (visible dot at midpoint, vertex sub-mode only) ─
+
+function makeEdgeMidInsertSphere(
+  pos: Vector3,
+  shapeId: ShapeId,
+  index: number,
+  config: ShapeEditorConfig,
+  hovered: HandleUserData | null,
+): Mesh {
+  const isHovered = hovered?._seHandle && hovered.shapeId === shapeId &&
+    hovered.kind === 'edge-mid' && hovered.index === index;
+  const color = isHovered ? HANDLE_COLOR_HOVER : HANDLE_COLOR_INSERT;
+  const opacity = isHovered ? HANDLE_OPACITY : HANDLE_OPACITY_INSERT;
+  const r = config.vertexHandleRadius * 0.55;
+  const geo = new SphereGeometry(r, config.handleSegments, config.handleSegments);
+  const mat = new MeshBasicMaterial({
+    color,
+    transparent: true,
+    opacity,
+    depthTest: false,
+    depthWrite: false,
+  });
+  const mesh = new Mesh(geo, mat);
+  mesh.renderOrder = RENDER_ORDER_HANDLE;
+  mesh.position.copy(pos);
+  attachHandleData(mesh, { kind: 'edge-mid', shapeId, index });
   return mesh;
 }
 
@@ -209,6 +240,21 @@ function buildPolygonHandles(
       const p = top[i];
       group.add(makeVertexSphere(new Vector3(p.x, p.y, p.z), shape.id, n + i, config, sel, hovered));
     }
+    // Edge-mid insert indicators: visible dot + invisible pick capsule for reliable clicks
+    if (config.showEdgeMidHandles) {
+      const edges = polygonEdges(shape);
+      for (let i = 0; i < edges.length; i++) {
+        const [a, b] = edges[i];
+        const pa = shape.basePoints[a], pb = shape.basePoints[b];
+        const va = new Vector3(pa.x, pa.y, pa.z), vb = new Vector3(pb.x, pb.y, pb.z);
+        const mid = new Vector3((pa.x + pb.x) / 2, (pa.y + pb.y) / 2, (pa.z + pb.z) / 2);
+        group.add(makeEdgeMidInsertSphere(mid, shape.id, i, config, hovered));
+        // Invisible pick capsule: wider click target, excluded from hover detection
+        const cap = makeEdgePickMesh(va, vb, shape.id, i, config.edgeHandleRadius);
+        (cap.userData as HandleUserData).pickOnly = true;
+        group.add(cap);
+      }
+    }
   } else if (subMode === 'edge') {
     const edges = polygonEdges(shape);
     for (let i = 0; i < edges.length; i++) {
@@ -243,6 +289,21 @@ function buildPolylineHandles(
     for (let i = 0; i < shape.points.length; i++) {
       const p = shape.points[i];
       group.add(makeVertexSphere(new Vector3(p.x, p.y, p.z), shape.id, i, config, sel, hovered));
+    }
+    // Edge-mid insert indicators: visible dot + invisible pick capsule for reliable clicks
+    if (config.showEdgeMidHandles) {
+      const edges = polylineEdges(shape);
+      for (let i = 0; i < edges.length; i++) {
+        const [a, b] = edges[i];
+        const pa = shape.points[a], pb = shape.points[b];
+        const va = new Vector3(pa.x, pa.y, pa.z), vb = new Vector3(pb.x, pb.y, pb.z);
+        const mid = new Vector3((pa.x + pb.x) / 2, (pa.y + pb.y) / 2, (pa.z + pb.z) / 2);
+        group.add(makeEdgeMidInsertSphere(mid, shape.id, i, config, hovered));
+        // Invisible pick capsule: wider click target, excluded from hover detection
+        const cap = makeEdgePickMesh(va, vb, shape.id, i, config.edgeHandleRadius);
+        (cap.userData as HandleUserData).pickOnly = true;
+        group.add(cap);
+      }
     }
   } else if (subMode === 'edge') {
     const edges = polylineEdges(shape);

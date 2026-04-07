@@ -302,6 +302,17 @@ export function polygonMoveVertex(shape: PolygonShape, idx: number, newPos: Vec3
   return { ...shape, basePoints: pts };
 }
 
+/**
+ * Insert a new vertex into the polygon after edge `edgeIdx`.
+ * The new vertex is spliced at index `edgeIdx + 1` in basePoints.
+ * Returns the updated shape; the new vertex is at `basePoints[edgeIdx + 1]`.
+ */
+export function polygonInsertVertex(shape: PolygonShape, edgeIdx: number, pos: Vec3): PolygonShape {
+  const pts = [...shape.basePoints];
+  pts.splice(edgeIdx + 1, 0, { ...pos });
+  return { ...shape, basePoints: pts };
+}
+
 export function polygonMoveEdgeMid(shape: PolygonShape, edgeIdx: number, newMid: Vec3): PolygonShape {
   const n = shape.basePoints.length;
   const a = edgeIdx;
@@ -325,6 +336,17 @@ export function polygonMoveEdgeMid(shape: PolygonShape, edgeIdx: number, newMid:
 export function polylineMoveVertex(shape: PolylineShape, idx: number, newPos: Vec3): PolylineShape {
   const pts = [...shape.points];
   pts[idx] = { ...newPos };
+  return { ...shape, points: pts };
+}
+
+/**
+ * Insert a new vertex into the polyline after edge `edgeIdx`.
+ * The new vertex is spliced at index `edgeIdx + 1` in points.
+ * Returns the updated shape; the new vertex is at `points[edgeIdx + 1]`.
+ */
+export function polylineInsertVertex(shape: PolylineShape, edgeIdx: number, pos: Vec3): PolylineShape {
+  const pts = [...shape.points];
+  pts.splice(edgeIdx + 1, 0, { ...pos });
   return { ...shape, points: pts };
 }
 

@@ -255,16 +255,20 @@ export class ShapeEditorEngine {
 
   setSubMode(mode: SelectSubMode): void {
     this._subMode = mode;
-    this.selCtrl.setSubMode(mode);
 
     if (this._mode === 'select') {
-      // Activate/deactivate sub-element edit controllers based on sub-mode
+      // Re-register in correct bubble priority order:
+      // sub-element controller first so stopPropagation() blocks selCtrl.
+      this.selCtrl.deactivate();
       this.vertexCtrl.deactivate();
       this.edgeCtrl.deactivate();
       this.faceCtrl.deactivate();
       if (mode === 'vertex') this.vertexCtrl.activate();
       else if (mode === 'edge') this.edgeCtrl.activate();
       else if (mode === 'face') this.faceCtrl.activate();
+      this.selCtrl.activate(mode);
+    } else {
+      this.selCtrl.setSubMode(mode);
     }
 
     this.rebuildAllHandles();
@@ -410,13 +414,16 @@ export class ShapeEditorEngine {
       case 'draw-polygon':  this.polyDraw.activate(); break;
       case 'draw-polyline': this.polylineDraw.activate(); break;
       case 'select':
+        // Sub-element controllers must register BEFORE selCtrl so their
+        // stopPropagation() on pointerdown actually blocks selCtrl from
+        // arming the drag-select. Listener registration order = bubble priority.
+        if (this._subMode === 'vertex') this.vertexCtrl.activate();
+        else if (this._subMode === 'edge') this.edgeCtrl.activate();
+        else if (this._subMode === 'face') this.faceCtrl.activate();
         this.selCtrl.activate(this._subMode);
         if (this._selection.shapes.size > 0) {
           this.transformCtrl.activate(this._transformMode);
         }
-        if (this._subMode === 'vertex') this.vertexCtrl.activate();
-        else if (this._subMode === 'edge') this.edgeCtrl.activate();
-        else if (this._subMode === 'face') this.faceCtrl.activate();
         this.rebuildAllHandles();
         break;
     }

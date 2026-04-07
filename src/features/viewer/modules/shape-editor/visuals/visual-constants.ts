@@ -19,8 +19,11 @@ export const HANDLE_COLOR_HOVER     = 0xffd080;
 export const HANDLE_COLOR_VERTEX    = 0x88ddff;
 export const HANDLE_COLOR_EDGE      = 0xffdd88;
 export const HANDLE_COLOR_FACE      = 0xff88aa;
+/** Faint green dot shown at edge midpoints in vertex sub-mode — click to insert a new vertex. */
+export const HANDLE_COLOR_INSERT    = 0x66eeaa;
 
 export const HANDLE_OPACITY         = 0.95;
+export const HANDLE_OPACITY_INSERT  = 0.40;
 
 // ── Render order ──────────────────────────────────────────────────────────────
 export const RENDER_ORDER_SHAPE     = 910;

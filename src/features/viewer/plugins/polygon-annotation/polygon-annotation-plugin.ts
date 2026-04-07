@@ -85,7 +85,6 @@ export class PolygonAnnotationPlugin implements ViewerPlugin {
       vertexHandleRadius:    0.08,
       edgeHandleRadius:      0.06,
       faceHandleRadius:      0.08,
-      showEdgeMidHandles:    false,
       showFaceExtrudeHandles: false,
       escapeHandled:         true,
       deleteHandled:         false,  // we handle Delete to remove selected vertices

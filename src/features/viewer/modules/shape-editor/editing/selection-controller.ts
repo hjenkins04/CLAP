@@ -13,6 +13,12 @@ import { getHandleData } from '../visuals/handle-visual-builder';
 import { DragSelectController, isWorldPointInFrustum } from '../../drag-select';
 import type { SelectionFrustum, DragSelectMode } from '../../drag-select';
 
+function hoveredHandleEqual(a: HandleUserData | null, b: HandleUserData | null): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return a.kind === b.kind && a.shapeId === b.shapeId && a.index === b.index;
+}
+
 /**
  * Manages click-based shape and sub-element selection, plus drag-box selection.
  *
@@ -30,8 +36,17 @@ export class SelectionController {
 
   private dragSelect: DragSelectController;
 
-  handleMeshes: Mesh[] = [];
-  shapeMeshes: Mesh[] = [];
+  /** All handle meshes — set by engine after each rebuild. Call invalidatePickCache() after mutating. */
+  private _handleMeshes: Mesh[] = [];
+  private _shapeMeshes: Mesh[] = [];
+  /** Cached filtered lists per sub-mode to avoid filtering on every pointermove. */
+  private _pickCache: Mesh[] = [];
+  private _pickCacheDirty = true;
+
+  get handleMeshes(): Mesh[] { return this._handleMeshes; }
+  set handleMeshes(v: Mesh[]) { this._handleMeshes = v; this._pickCacheDirty = true; }
+  get shapeMeshes(): Mesh[] { return this._shapeMeshes; }
+  set shapeMeshes(v: Mesh[]) { this._shapeMeshes = v; this._pickCacheDirty = true; }
   hoveredHandle: HandleUserData | null = null;
 
   constructor(ctx: ShapeEditorInternalContext) {
@@ -64,6 +79,7 @@ export class SelectionController {
     this.ctx.domElement.removeEventListener('pointerup', this.onPointerUp);
     this.ctx.domElement.removeEventListener('pointermove', this.onPointerMove);
     this.ctx.domElement.removeEventListener('keydown', this.onKeyDown);
+    if (this.isDragSelecting) this.ctx.orbitControls.enabled = true;
     this.isDragSelecting = false;
     this.isPointerDown = false;
     this.hoveredHandle = null;
@@ -71,6 +87,7 @@ export class SelectionController {
 
   setSubMode(mode: SelectSubMode): void {
     this.subMode = mode;
+    this._pickCacheDirty = true;
   }
 
   // ── Event handlers ─────────────────────────────────────────────────────────
@@ -84,6 +101,20 @@ export class SelectionController {
   /** Bubble-phase: blocked by TransformControls when gizmo is clicked — intentional. */
   private readonly onPointerDown = (e: PointerEvent): void => {
     if (e.button !== 0) return;
+
+    // In vertex sub-mode, edge-mid clicks trigger vertex insertion via VertexEditController.
+    // Detect them here so we never arm drag-select for those clicks, regardless of
+    // listener registration order or stopPropagation timing.
+    if (this.subMode === 'vertex') {
+      const ndc = clientToNdc(e.clientX, e.clientY, this.ctx.domElement);
+      const camera = this.ctx.getCamera();
+      const edgeMidMeshes = this._handleMeshes.filter((m) => getHandleData(m.userData)?.kind === 'edge-mid');
+      if (edgeMidMeshes.length > 0) {
+        const hit = raycastObjects(ndc, camera, edgeMidMeshes);
+        if (hit) return; // let VertexEditController handle it
+      }
+    }
+
     this.isPointerDown = true;
     this.isDragSelecting = false;
     this.dragSelect.handlePointerDown(e);
@@ -98,6 +129,7 @@ export class SelectionController {
         // Drag just started — abort if orbit/gizmo already has control
         if (!this.ctx.orbitControls.enabled) {
           this.isPointerDown = false;
+          this.dragSelect.cancel(); // remove rubber-band overlay
           return;
         }
         this.isDragSelecting = true;
@@ -112,25 +144,16 @@ export class SelectionController {
     // Hover highlight
     const ndc = clientToNdc(e.clientX, e.clientY, this.ctx.domElement);
     const camera = this.ctx.getCamera();
-    const pickMeshes = this.subMode === 'shape'
-      ? this.shapeMeshes
-      : this.handleMeshes.filter((m) => {
-          const d = getHandleData(m.userData);
-          if (!d) return false;
-          if (this.subMode === 'vertex') return d.kind === 'vertex';
-          if (this.subMode === 'edge')   return d.kind === 'edge-mid';
-          if (this.subMode === 'face')   return d.kind === 'face-extrude';
-          return false;
-        });
+    const pickMeshes = this.getPickCache();
 
     const hit = raycastObjects(ndc, camera, pickMeshes);
     const newHovered = hit ? getHandleData(hit.object.userData) : null;
-    if (JSON.stringify(newHovered) !== JSON.stringify(this.hoveredHandle)) {
+    if (!hoveredHandleEqual(newHovered, this.hoveredHandle)) {
       this.hoveredHandle = newHovered;
-      if (this.subMode === 'vertex' || this.subMode === 'shape') {
-        this.ctx.rebuildVisuals();
+      if (this.subMode === 'shape') {
+        this.ctx.rebuildVisuals(); // shape body hover — must rebuild wireframe too
       } else {
-        this.ctx.rebuildHandles();
+        this.ctx.rebuildHandles(); // handle hover — only handle group needs updating
       }
     }
   };
@@ -158,25 +181,20 @@ export class SelectionController {
     const additive = e.ctrlKey || e.metaKey;
 
     if (this.subMode === 'shape') {
-      const hit = raycastObjects(ndc, camera, this.shapeMeshes);
+      const hit = raycastObjects(ndc, camera, this._shapeMeshes);
       if (hit) {
         const shapeId = hit.object.userData.shapeId as ShapeId | undefined;
         if (shapeId) { this.selectShape(shapeId, additive); return; }
       }
       if (!additive) this.clearSelection();
     } else {
-      const pickMeshes = this.handleMeshes.filter((m) => {
-        const d = getHandleData(m.userData);
-        if (!d) return false;
-        if (this.subMode === 'vertex') return d.kind === 'vertex';
-        if (this.subMode === 'edge')   return d.kind === 'edge-mid';
-        if (this.subMode === 'face')   return d.kind === 'face-extrude';
-        return false;
-      });
+      const pickMeshes = this.getPickCache();
       const hit = raycastObjects(ndc, camera, pickMeshes);
       if (hit) {
         const data = getHandleData(hit.object.userData);
         if (data) {
+          // edge-mid click in vertex mode = insert vertex (handled by VertexEditController)
+          if (this.subMode === 'vertex' && data.kind === 'edge-mid') return;
           const elementType: SubElementType =
             data.kind === 'vertex'   ? 'vertex' :
             data.kind === 'edge-mid' ? 'edge'   : 'face';
@@ -273,6 +291,27 @@ export class SelectionController {
       const remaining = prev.filter((e) => !removeKeys.has(elementKey(e)));
       this.ctx.setSelection({ shapes: new Set(), elements: remaining });
     }
+  }
+
+  // ── Pick cache ─────────────────────────────────────────────────────────────
+
+  /** Returns a cached filtered pick-mesh list for the current sub-mode. Rebuilt only when meshes or sub-mode change. */
+  private getPickCache(): Mesh[] {
+    if (!this._pickCacheDirty) return this._pickCache;
+    this._pickCacheDirty = false;
+    if (this.subMode === 'shape') {
+      this._pickCache = this._shapeMeshes;
+    } else {
+      this._pickCache = this._handleMeshes.filter((m) => {
+        const d = getHandleData(m.userData);
+        if (!d || d.pickOnly) return false; // exclude click-only pick meshes from hover
+        if (this.subMode === 'vertex') return d.kind === 'vertex' || d.kind === 'edge-mid';
+        if (this.subMode === 'edge')   return d.kind === 'edge-mid';
+        if (this.subMode === 'face')   return d.kind === 'face-extrude';
+        return false;
+      });
+    }
+    return this._pickCache;
   }
 
   // ── Selection manipulation ──────────────────────────────────────────────────

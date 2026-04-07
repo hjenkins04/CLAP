@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { X, Minus, Plus, ArrowLeftRight } from 'lucide-react';
+import { X, Minus, Plus, ArrowLeftRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button, Separator } from '@clap/design-system';
 import { usePlanProfileStore } from './plan-profile-store';
+import { useScanFilterStore } from '../scan-filter/scan-filter-store';
 import type { PlanProfilePlugin } from './plan-profile-plugin';
 import type { ViewerEngine } from '../../services/viewer-engine';
 
@@ -10,26 +11,36 @@ interface SecondaryViewportPanelProps {
 }
 
 export function SecondaryViewportPanel({ engine }: SecondaryViewportPanelProps) {
-  const phase          = usePlanProfileStore((s) => s.phase);
-  const viewType       = usePlanProfileStore((s) => s.viewType);
-  const halfDepth      = usePlanProfileStore((s) => s.halfDepth);
-  const setHalfDepth   = usePlanProfileStore((s) => s.setHalfDepth);
-  const pointSize      = usePlanProfileStore((s) => s.pointSize);
-  const setPointSize   = usePlanProfileStore((s) => s.setPointSize);
-  const viewFlipped    = usePlanProfileStore((s) => s.viewFlipped);
-  const toggleViewFlip = usePlanProfileStore((s) => s.toggleViewFlip);
-  const close          = usePlanProfileStore((s) => s.close);
+  const phase            = usePlanProfileStore((s) => s.phase);
+  const trajectoryPhase  = usePlanProfileStore((s) => s.trajectoryPhase);
+  const viewType         = usePlanProfileStore((s) => s.viewType);
+  const halfDepth        = usePlanProfileStore((s) => s.halfDepth);
+  const setHalfDepth     = usePlanProfileStore((s) => s.setHalfDepth);
+  const pointSize        = usePlanProfileStore((s) => s.pointSize);
+  const setPointSize     = usePlanProfileStore((s) => s.setPointSize);
+  const viewFlipped      = usePlanProfileStore((s) => s.viewFlipped);
+  const toggleViewFlip   = usePlanProfileStore((s) => s.toggleViewFlip);
+  const close            = usePlanProfileStore((s) => s.close);
+  const followIndex = usePlanProfileStore((s) => s.followIndex);
+
+  const trajectoryData = useScanFilterStore((s) => s.trajectoryData);
 
   const containerRef  = useRef<HTMLDivElement>(null);
   const panelRef      = useRef<HTMLDivElement>(null);
   const inputRef      = useRef<HTMLInputElement>(null);
+  const scanInputRef  = useRef<HTMLInputElement>(null);
 
-  const [editing, setEditing]     = useState(false);
-  const [inputVal, setInputVal]   = useState('');
+  const [editing, setEditing]         = useState(false);
+  const [inputVal, setInputVal]       = useState('');
+  const [scanEditing, setScanEditing] = useState(false);
+  const [scanInputVal, setScanInputVal] = useState('');
   // null = use default CSS (h-1/2); number = explicit pixel height
   const [panelHeight, setPanelHeight] = useState<number | null>(null);
 
-  const isActive = phase === 'active' || phase === 'editing';
+  const isActive = phase !== 'idle';
+
+  const plugin = engine?.getPlugin<PlanProfilePlugin>('plan-profile');
+  const navigate = useCallback((delta: number) => plugin?.navigateFollow(delta), [plugin]);
 
   // Attach/detach the secondary renderer when the panel becomes active
   useEffect(() => {
@@ -68,6 +79,26 @@ export function SecondaryViewportPanel({ engine }: SecondaryViewportPanelProps) 
     if (e.key === 'Enter') commitInput();
     else if (e.key === 'Escape') setEditing(false);
   }, [commitInput]);
+
+  // Focus scan input when entering scan-id edit mode
+  useEffect(() => {
+    if (scanEditing && trajectoryData) {
+      const currentScanId = trajectoryData.points[followIndex]?.scanId;
+      setScanInputVal(currentScanId != null ? String(currentScanId) : '');
+      setTimeout(() => scanInputRef.current?.select(), 0);
+    }
+  }, [scanEditing, followIndex, trajectoryData]);
+
+  const commitScanInput = useCallback(() => {
+    const parsed = parseInt(scanInputVal, 10);
+    if (!isNaN(parsed)) plugin?.navigateToScanId(parsed);
+    setScanEditing(false);
+  }, [scanInputVal, plugin]);
+
+  const handleScanKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') commitScanInput();
+    else if (e.key === 'Escape') setScanEditing(false);
+  }, [commitScanInput]);
 
   // ── Vertical resize drag ───────────────────────────────────────────────────
   const onResizeMouseDown = useCallback((e: React.MouseEvent) => {
@@ -205,6 +236,67 @@ export function SecondaryViewportPanel({ engine }: SecondaryViewportPanelProps) 
           <X className="h-3 w-3" />
         </Button>
       </div>
+
+      {/* Trajectory follow navigation bar */}
+      {trajectoryPhase === 'active' && trajectoryData && (
+        <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/40 px-3 py-1">
+          {/* Prev / Next */}
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-5 w-5"
+            disabled={followIndex <= 0}
+            onClick={() => navigate(-1)}
+            title="Previous trajectory point"
+          >
+            <ChevronLeft className="h-3 w-3" />
+          </Button>
+
+          <span className="text-[10px] tabular-nums text-muted-foreground">
+            Scan&nbsp;
+            {scanEditing ? (
+              <input
+                ref={scanInputRef}
+                value={scanInputVal}
+                onChange={(e) => setScanInputVal(e.target.value)}
+                onBlur={commitScanInput}
+                onKeyDown={handleScanKeyDown}
+                className="w-[6ch] bg-transparent text-center text-[10px] font-medium tabular-nums outline-none ring-1 ring-primary/60 rounded-sm"
+              />
+            ) : (
+              <span
+                className="cursor-text font-medium text-foreground"
+                title="Double-click to jump to scan"
+                onDoubleClick={() => setScanEditing(true)}
+              >
+                {trajectoryData.points[followIndex]?.scanId ?? '—'}
+              </span>
+            )}
+            &nbsp;({followIndex + 1} / {trajectoryData.points.length})
+          </span>
+
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-5 w-5"
+            disabled={followIndex >= trajectoryData.points.length - 1}
+            onClick={() => navigate(+1)}
+            title="Next trajectory point"
+          >
+            <ChevronRight className="h-3 w-3" />
+          </Button>
+
+        </div>
+      )}
+
+      {/* Follow-centroid instruction overlay */}
+      {trajectoryPhase === 'centroid-picking' && (
+        <div className="flex shrink-0 items-center justify-center gap-2 border-b border-border bg-primary/10 px-3 py-1.5">
+          <span className="text-[11px] font-medium text-primary">
+            Click in the 3D view to set the starting trajectory position
+          </span>
+        </div>
+      )}
 
       {/* Canvas container — fills remaining height */}
       <div ref={containerRef} className="relative min-h-0 flex-1" />

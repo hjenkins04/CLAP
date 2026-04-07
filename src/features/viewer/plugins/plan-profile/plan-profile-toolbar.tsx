@@ -1,4 +1,4 @@
-import { Map, GitCommit, Pencil, RotateCcw, X, ArrowLeftRight, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Map, GitCommit, Pencil, RotateCcw, X, ArrowLeftRight, ArrowLeft, ArrowRight, Footprints } from 'lucide-react';
 import {
   Button,
   Tooltip,
@@ -23,8 +23,10 @@ export function PlanProfileToolbar() {
   const stopEdit  = usePlanProfileStore((s) => s.stopEdit);
   const close     = usePlanProfileStore((s) => s.close);
 
-  const viewFlipped    = usePlanProfileStore((s) => s.viewFlipped);
-  const setViewFlipped = usePlanProfileStore((s) => s.setViewFlipped);
+  const viewFlipped      = usePlanProfileStore((s) => s.viewFlipped);
+  const setViewFlipped   = usePlanProfileStore((s) => s.setViewFlipped);
+  const activateFollow   = usePlanProfileStore((s) => s.activateFollow);
+  const trajectoryPhase  = usePlanProfileStore((s) => s.trajectoryPhase);
 
   const isPlanActive    = phase !== 'idle' && viewType === 'plan';
   const isProfileActive = phase !== 'idle' && viewType === 'profile';
@@ -76,6 +78,11 @@ export function PlanProfileToolbar() {
             >
               <ArrowRight className="mr-2 h-3.5 w-3.5" />
               Side B
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={activateFollow}>
+              <Footprints className="mr-2 h-3.5 w-3.5" />
+              {trajectoryPhase !== 'idle' ? 'Reset Follow Position' : 'Follow Trajectory'}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => activate(type)}>

@@ -22,6 +22,9 @@ import {
 } from '../../modules/plan-profile';
 import { usePlanProfileStore } from './plan-profile-store';
 import { filterSceneForSlabRender } from './slab-scene-filter';
+import { useScanFilterStore } from '../scan-filter/scan-filter-store';
+import { ScanFilterPlugin } from '../scan-filter';
+import { useViewerModeStore } from '@/app/stores';
 
 export class PlanProfilePlugin implements ViewerPlugin {
   readonly id = 'plan-profile';
@@ -47,6 +50,12 @@ export class PlanProfilePlugin implements ViewerPlugin {
   // the slab region. Positioned close to the slab face so Potree loads
   // high-density octree nodes there, independent of the 3D camera distance.
   private lodCamera: PerspectiveCamera | null = null;
+
+  // Trajectory follow mode
+  private onCentroidClick: ((e: MouseEvent) => void) | null = null;
+  // True if we entered scan-filter mode on behalf of follow-centroid picking.
+  // Used to know whether to exit it after the centroid is committed.
+  private enteredScanFilterMode = false;
 
   onInit(ctx: ViewerPluginContext): void {
     this.ctx = ctx;
@@ -82,12 +91,38 @@ export class PlanProfilePlugin implements ViewerPlugin {
         this.slab.halfDepth = state.halfDepth;
         this.updateSlabVisuals();
       }
+
+      // Plan/profile phase transitions
       if (state.phase !== prev.phase) {
-        if (state.phase === 'drawing-first') this.startDrawing();
-        else if (state.phase === 'editing')  this.enterEditMode();
+        if (state.phase === 'drawing-first')              this.startDrawing();
+        else if (state.phase === 'editing')               this.enterEditMode();
         else if (state.phase === 'active' && prev.phase === 'editing') this.exitEditMode();
         else if (state.phase === 'idle' && prev.phase !== 'idle') this.deactivateAll();
       }
+
+      // Trajectory follow phase transitions (independent of plan/profile phase)
+      if (state.trajectoryPhase !== prev.trajectoryPhase) {
+        if (state.trajectoryPhase === 'centroid-picking') {
+          this.startFollowCentroid();
+        } else if (prev.trajectoryPhase === 'centroid-picking') {
+          // Centroid picked (→ 'active') or cancelled (→ 'idle').
+          this.cancelFollowCentroid();
+          if (state.trajectoryPhase === 'idle' && this.enteredScanFilterMode) {
+            // Cancelled without picking — close the scan-filter mode we opened.
+            useViewerModeStore.getState().exitMode();
+            this.enteredScanFilterMode = false;
+          }
+          // If → 'active': keep scan-filter mode open so user can manage the filter.
+        } else if (state.trajectoryPhase === 'idle' && prev.trajectoryPhase === 'active') {
+          // stopFollow() while active — exit scan-filter mode if we opened it.
+          if (this.enteredScanFilterMode) {
+            useViewerModeStore.getState().exitMode();
+            this.enteredScanFilterMode = false;
+          }
+          this.ctx?.host.getPlugin<ScanFilterPlugin>('scan-filter')?.setFollowHighlight(null);
+        }
+      }
+
       if (state.editSubMode !== prev.editSubMode && state.phase === 'editing') {
         this.applyEditSubMode(state.editSubMode);
       }
@@ -216,6 +251,140 @@ export class PlanProfilePlugin implements ViewerPlugin {
     usePlanProfileStore.getState().setEditSubMode(mode);
   }
 
+  // ── Trajectory follow mode ───────────────────────────────────────────────────
+
+  /**
+   * Move the slab to the next (+1) or previous (-1) trajectory point.
+   * Called by the < > navigation buttons in the secondary panel.
+   */
+  navigateFollow(delta: number): void {
+    if (!this.slab || !this.ctx) return;
+    const trajectoryData = useScanFilterStore.getState().trajectoryData;
+    if (!trajectoryData || trajectoryData.points.length === 0) return;
+
+    const { followIndex } = usePlanProfileStore.getState();
+    const newIndex = Math.max(0, Math.min(trajectoryData.points.length - 1, followIndex + delta));
+    if (newIndex === followIndex) return;
+
+    this.applyFollowIndex(newIndex, trajectoryData.points);
+  }
+
+  navigateToScanId(scanId: number): void {
+    if (!this.slab || !this.ctx) return;
+    const trajectoryData = useScanFilterStore.getState().trajectoryData;
+    if (!trajectoryData || trajectoryData.points.length === 0) return;
+
+    const index = trajectoryData.points.findIndex((p) => p.scanId === scanId);
+    if (index === -1) return;
+    this.applyFollowIndex(index, trajectoryData.points);
+  }
+
+  private startFollowCentroid(): void {
+    if (!this.ctx) return;
+    useScanFilterStore.getState().setTrajectoryVisible(true);
+
+    this.cancelFollowCentroid();
+
+    // Enter scan-filter mode so the trajectory toolbar icon shows as active
+    // and the command panel appears (collapsed). ScanFilterPlugin's own pointer
+    // listeners handle hover highlighting — no need to duplicate that here.
+    const modeStore = useViewerModeStore.getState();
+    if (modeStore.mode !== 'scan-filter') {
+      modeStore.enterScanFilterMode();
+      // Collapse the panel so it doesn't obscure the 3D view while picking.
+      modeStore.setCommandPanelExpanded(false);
+      this.enteredScanFilterMode = true;
+    }
+
+    // One-shot click to commit the selected trajectory point.
+    this.onCentroidClick = (e: MouseEvent) => {
+      this.cancelFollowCentroid();
+      this.pickFollowCentroid(e.clientX, e.clientY);
+    };
+    this.ctx.domElement.addEventListener('click', this.onCentroidClick, { once: true });
+  }
+
+  private cancelFollowCentroid(): void {
+    if (this.onCentroidClick && this.ctx) {
+      this.ctx.domElement.removeEventListener('click', this.onCentroidClick);
+      this.onCentroidClick = null;
+    }
+    this.ctx?.host.getPlugin<ScanFilterPlugin>('scan-filter')?.clearHover();
+  }
+
+  /**
+   * Screen-space pick the trajectory dot nearest to the click, reusing the same
+   * logic as the ScanFilterPlugin hover/click hit-test.
+   * Transitions trajectoryPhase → 'active' on success, → 'idle' on miss.
+   */
+  private pickFollowCentroid(clientX: number, clientY: number): void {
+    if (!this.ctx || !this.slab) return;
+
+    const trajectoryData = useScanFilterStore.getState().trajectoryData;
+    if (!trajectoryData || trajectoryData.points.length === 0) {
+      usePlanProfileStore.getState().stopFollow();
+      return;
+    }
+
+    const scanFilter = this.ctx.host.getPlugin<ScanFilterPlugin>('scan-filter');
+    const index = scanFilter?.pickNearestTrajectoryIndex(clientX, clientY) ?? null;
+
+    if (index === null) {
+      usePlanProfileStore.getState().stopFollow();
+      return;
+    }
+
+    this.applyFollowIndex(index, trajectoryData.points);
+  }
+
+  /**
+   * Move the slab center to trajectory point [index] and refresh all visuals.
+   * The scan filter is NOT touched here — the user manages it independently
+   * via the trajectory/scan-filter panel. The 2D view is already filtered to
+   * the slab bounding box via the clip box applied in renderSecondary().
+   */
+  private applyFollowIndex(
+    index: number,
+    points: { x: number; y: number; z: number; scanId: number }[],
+  ): void {
+    if (!this.slab || !this.ctx) return;
+    const pt = points[index];
+
+    // Convert trajectory local coords → world space via transform group
+    const tg = this.ctx.getEditor().getTransformGroup();
+    tg.updateMatrixWorld(true);
+    const worldPt = new Vector3(pt.x, pt.y, pt.z).applyMatrix4(tg.matrixWorld);
+
+    const dem = this.ctx.getDem();
+    // DEM takes transform-group-local coords; terrain Y is unaffected by XZ translation
+    const newTerrainY = dem ? dem.getElevationClamped(pt.x, pt.z) : worldPt.y;
+
+    // Reposition the 3D camera so it orbits around the new slab centre while
+    // preserving the current orbit radius/angle. Doing this correctly requires
+    // preserving the camera→target offset, NOT a slab-delta approach (which
+    // only works when controls.target ≡ slab.center, which isn't guaranteed).
+    const camera   = this.ctx.getActiveCamera();
+    const controls = this.ctx.controls;
+    const orbitOffset = camera.position.clone().sub(controls.target);
+
+    this.slab.center.set(worldPt.x, newTerrainY, worldPt.z);
+    this.slab.groundY = newTerrainY - this.slab.halfHeight;
+
+    controls.target.copy(this.slab.center);
+    camera.position.copy(this.slab.center).add(orbitOffset);
+    controls.update();
+
+    usePlanProfileStore.getState()._setFollowIndex(index);
+
+    // Keep the trajectory dot for the active follow position highlighted yellow.
+    const scanFilter = this.ctx.host.getPlugin<ScanFilterPlugin>('scan-filter');
+    scanFilter?.setFollowHighlight(points[index].scanId);
+
+    this.updateSlabVisuals();
+    this.applySlabToSecondary();
+    this.rebuildLodCamera();
+  }
+
   private applyEditSubMode(mode: PlanProfileEditSubMode): void {
     if (!this.drawEngine) return;
     if (mode === 'translate' || mode === 'rotate' || mode === 'scale') {
@@ -230,8 +399,10 @@ export class PlanProfilePlugin implements ViewerPlugin {
 
   /** Convert the current slab geometry into an ObbShape the editor understands. */
   private slabToObb(slab: PlaneSlab): ObbShape {
-    // OBB rotates about Y; local X = tangent, local Z = viewDir.
-    const rotationY = Math.atan2(slab.tangent.z, slab.tangent.x);
+    // Three.js makeRotationY(θ) maps local X → world (cos θ, 0, −sin θ).
+    // slab.tangent = (cos α, 0, +sin α), so we need θ = −α so that
+    // local X → world (cos α, 0, sin α) = tangent.
+    const rotationY = -Math.atan2(slab.tangent.z, slab.tangent.x);
     return {
       type: 'obb',
       id: PlanProfilePlugin.OBB_ID,
@@ -245,8 +416,9 @@ export class PlanProfilePlugin implements ViewerPlugin {
   /** Apply an updated ObbShape back onto the live slab and refresh all visuals. */
   private updateSlabFromObb(obb: ObbShape): void {
     if (!this.slab) return;
-    const tangent = new Vector3(Math.cos(obb.rotationY), 0, Math.sin(obb.rotationY));
-    const viewDir  = new Vector3(-Math.sin(obb.rotationY), 0, Math.cos(obb.rotationY));
+    // Inverse of slabToObb: with rotationY = −α, local X → world (cos α, 0, sin α).
+    const tangent = new Vector3(Math.cos(obb.rotationY), 0, -Math.sin(obb.rotationY));
+    const viewDir  = new Vector3(Math.sin(obb.rotationY), 0,  Math.cos(obb.rotationY));
     this.slab.center.set(obb.center.x, obb.center.y, obb.center.z);
     this.slab.tangent.copy(tangent);
     this.slab.viewDir.copy(viewDir);
@@ -414,6 +586,8 @@ export class PlanProfilePlugin implements ViewerPlugin {
 
     // Hide 3D-only overlays and filter annotations for the secondary render.
     if (this.directionArrow) this.directionArrow.visible = false;
+    const scanFilter = this.ctx.host.getPlugin<ScanFilterPlugin>('scan-filter');
+    scanFilter?.setTrajectoryMeshesVisible(false);
     const restoreScene = filterSceneForSlabRender(this.ctx.scene, clipBox, this.slab.halfDepth);
 
     if (pcos.length === 0) {
@@ -451,6 +625,7 @@ export class PlanProfilePlugin implements ViewerPlugin {
     }
 
     restoreScene();
+    scanFilter?.setTrajectoryMeshesVisible(true);
     if (this.directionArrow) this.directionArrow.visible = true;
   }
 
@@ -458,6 +633,12 @@ export class PlanProfilePlugin implements ViewerPlugin {
 
   private deactivateAll(): void {
     this.stopDrawing();
+    this.cancelFollowCentroid();
+    if (this.enteredScanFilterMode) {
+      useViewerModeStore.getState().exitMode();
+      this.enteredScanFilterMode = false;
+    }
+    this.ctx?.host.getPlugin<ScanFilterPlugin>('scan-filter')?.setFollowHighlight(null);
     this.clearSlabVisuals();
     this.slab = null;
     this.lodCamera = null;

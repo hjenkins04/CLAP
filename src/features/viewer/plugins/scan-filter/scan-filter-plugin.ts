@@ -38,6 +38,7 @@ export class ScanFilterPlugin implements ViewerPlugin {
   private trajGeo: BufferGeometry | null = null;
   private trajData: TrajectoryData | null = null;
   private hoveredScanId: number | null = null;
+  private followHighlightScanId: number | null = null;
   private demData: DemData | null = null;
 
   // LOD: 4 pre-built meshes (one per detail level). Only the active one is visible.
@@ -163,6 +164,23 @@ export class ScanFilterPlugin implements ViewerPlugin {
   }
 
   // ── Public API (called from UI) ─────────────────────────────────────────────
+
+  /** Highlight a specific trajectory dot as the active follow position (yellow). */
+  setFollowHighlight(scanId: number | null): void {
+    if (this.followHighlightScanId === scanId) return;
+    this.followHighlightScanId = scanId;
+    this.rebuildColors();
+  }
+
+  /** Temporarily override LOD mesh visibility (used by secondary render pass). */
+  setTrajectoryMeshesVisible(visible: boolean): void {
+    for (let lod = 0; lod < 4; lod++) {
+      if (this.lodMeshes[lod]) {
+        this.lodMeshes[lod]!.visible = visible && lod === this.currentLodLevel
+          && useScanFilterStore.getState().trajectoryVisible;
+      }
+    }
+  }
 
   applyFilter(): void {
     const { effectiveScanIdMin, effectiveScanIdMax, excludeRangeMin, excludeRangeMax, filterMode } = useScanFilterStore.getState();
@@ -414,7 +432,7 @@ export class ScanFilterPlugin implements ViewerPlugin {
       const count = Math.min(this.lodCounts[lod], n);
       for (let pi = 0; pi < count; pi++) {
         const sid = this.trajData.points[perm[pi]].scanId;
-        const [r, g, b] = sid === this.hoveredScanId
+        const [r, g, b] = sid === this.hoveredScanId || sid === this.followHighlightScanId
           ? COLOR_HOVER
           : selected.has(sid)
             ? COLOR_SELECTED
@@ -493,11 +511,21 @@ export class ScanFilterPlugin implements ViewerPlugin {
 
   // ── Hit testing ─────────────────────────────────────────────────────────────
 
-  private pickScanId(clientX: number, clientY: number, thresholdPx = 12): number | null {
-    if (!this.ctx || !this.trajData || !this.trajPoints || !this.trajGeo || !this.permutation) return null;
+  /**
+   * Screen-space pick of the nearest visible trajectory point.
+   * Returns the original index into trajectoryData.points, or null if nothing
+   * is within thresholdPx pixels.
+   *
+   * Public so other plugins (e.g. plan-profile follow mode) can reuse the same
+   * picking logic without duplicating it or raycasting to a ground plane.
+   */
+  pickNearestTrajectoryIndex(clientX: number, clientY: number, thresholdPx = 20): number | null {
+    if (!this.ctx || !this.trajData || !this.trajPoints || !this.trajGeo || !this.permutation) {
+      return null;
+    }
     const camera = this.ctx.getActiveCamera();
     const rect = this.ctx.domElement.getBoundingClientRect();
-    let best: number | null = null;
+    let bestIndex: number | null = null;
     let bestDist = Infinity;
     const posAttr = this.trajGeo.getAttribute('position');
     const visibleCount = this.lodCounts[this.currentLodLevel];
@@ -513,10 +541,34 @@ export class ScanFilterPlugin implements ViewerPlugin {
       const d = Math.sqrt((sx - clientX) ** 2 + (sy - clientY) ** 2);
       if (d < thresholdPx && d < bestDist) {
         bestDist = d;
-        best = this.trajData.points[perm[pi]].scanId;
+        bestIndex = perm[pi];
       }
     }
-    return best;
+
+    return bestIndex;
+  }
+
+  private pickScanId(clientX: number, clientY: number, thresholdPx = 12): number | null {
+    if (!this.trajData) return null;
+    const index = this.pickNearestTrajectoryIndex(clientX, clientY, thresholdPx);
+    return index !== null ? this.trajData.points[index].scanId : null;
+  }
+
+  /** Update the hover highlight from an external pointer position (e.g. plan-profile follow mode). */
+  updateHoverAt(clientX: number, clientY: number): void {
+    const sid = this.pickScanId(clientX, clientY, 14);
+    if (sid !== this.hoveredScanId) {
+      this.hoveredScanId = sid;
+      this.rebuildColors();
+    }
+  }
+
+  /** Clear hover highlight (call when the external listener is removed). */
+  clearHover(): void {
+    if (this.hoveredScanId !== null) {
+      this.hoveredScanId = null;
+      this.rebuildColors();
+    }
   }
 
   private handleClick(e: PointerEvent): void {

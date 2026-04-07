@@ -4,6 +4,7 @@ import { Plus, Trash2, Download, BoxSelect, StopCircle, Pencil } from 'lucide-re
 import { useStaticObstacleStore } from './static-obstacle-store';
 import { useViewerModeStore } from '@/app/stores';
 import { annotationsToGeoJson, downloadGeoJson } from './annotation-export';
+import { geoAnnotHistory } from '../../services/geometry-annotations-history';
 
 export function StaticObstaclePanel() {
   const layers = useStaticObstacleStore((s) => s.layers);
@@ -27,6 +28,7 @@ export function StaticObstaclePanel() {
 
   const handleAddLayer = () => {
     const name = newLayerName.trim() || `Layer ${layers.length + 1}`;
+    geoAnnotHistory.record();
     addLayer(name);
     setNewLayerName('');
   };
@@ -38,6 +40,7 @@ export function StaticObstaclePanel() {
 
   const handleRenameCommit = (id: string) => {
     if (editingName.trim()) {
+      geoAnnotHistory.record();
       renameLayer(id, editingName.trim());
     }
     setEditingLayerId(null);
@@ -139,6 +142,7 @@ export function StaticObstaclePanel() {
                   className="invisible ml-0.5 rounded p-0.5 text-muted-foreground opacity-0 transition-all hover:text-destructive group-hover:visible group-hover:opacity-100"
                   onClick={(e) => {
                     e.stopPropagation();
+                    geoAnnotHistory.record();
                     removeLayer(layer.id);
                   }}
                   title="Delete layer"

@@ -25,6 +25,8 @@ import {
 import { PointCloudEditor } from './point-cloud-editor';
 import { DemTerrain } from './dem-terrain';
 import { electronFetch } from './electron-fetch';
+import { loadGeometryAnnotations } from './geometry-annotations-io';
+import { geoAnnotHistory } from './geometry-annotations-history';
 
 /**
  * Classification color map for the AutoDrive / FLAINet dataset.
@@ -257,6 +259,12 @@ export class ViewerEngine implements PluginHost {
 
     // Attach the editor — reparents PCO into the editor's transform group
     await this.editor.attach(pco, this.worldRoot, baseUrl);
+
+    // Load geometry annotations (polygons + static obstacles) if the file exists,
+    // then reset undo history so the loaded state is the clean baseline.
+    await loadGeometryAnnotations(baseUrl);
+    geoAnnotHistory.reset();
+    geoAnnotHistory.markSaved();
 
     this.fitCameraToPointCloud(pco);
 

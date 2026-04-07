@@ -6,6 +6,7 @@ import { useViewerEngine } from '../hooks/use-viewer-engine';
 import { ViewerCanvas } from './viewer-canvas';
 import { ViewerToolbar } from './viewer-toolbar';
 import { ViewportToolbar } from './viewport-toolbar';
+import { AnnotationToolbar } from './annotation-toolbar';
 import { ViewerSidebarPanel } from './viewer-sidebar-panel';
 import { TransformCommandPanel } from './transform-command-panel';
 import { VirtualTilesCommandPanel } from './virtual-tiles-command-panel';
@@ -57,7 +58,11 @@ export function ViewerPage() {
 
       {/* Main Viewport */}
       <main className="relative flex-1 bg-background">
-        <ViewportToolbar engine={engine} />
+        {/* Left side vertical toolbars */}
+        <div className="absolute left-2 top-1/2 z-10 -translate-y-1/2 flex flex-col gap-2">
+          <ViewportToolbar engine={engine} />
+          <AnnotationToolbar engine={engine} />
+        </div>
         <ViewerToolbar engine={engine} />
         <ViewerCanvas containerRef={containerRef} engine={engine} />
         {mode === 'transform' && <TransformCommandPanel />}

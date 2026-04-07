@@ -22,6 +22,7 @@ import {
   type PolylineShape,
   type EditorShape,
 } from '../../modules/shape-editor';
+import { geoAnnotHistory } from '../../services/geometry-annotations-history';
 
 /** Screen-space px radius for snapping to an existing vertex while drawing. */
 const SNAP_PX = 18;
@@ -60,6 +61,15 @@ export class PolygonAnnotationPlugin implements ViewerPlugin {
   private unsubStore: (() => void) | null = null;
   private unsubSnap: (() => void) | null = null;
 
+  /**
+   * Guard flag: suppresses the engine↔store sync loop.
+   * Set to true whenever one side is writing to the other so the listener on
+   * the other side skips its echo. Covers both directions:
+   *   engine → store  (shape-updated → setAnnotationVertices)
+   *   store  → engine (undo/redo applySnapshot → updateShape)
+   */
+  private suppressSync = false;
+
   // ── Lifecycle ──────────────────────────────────────────────────────────────
 
   onInit(ctx: ViewerPluginContext): void {
@@ -83,10 +93,15 @@ export class PolygonAnnotationPlugin implements ViewerPlugin {
 
     this.updateElevationFn();
 
-    // Sync shape changes back to the annotation store
+    // Sync shape changes back to the annotation store.
+    // suppressSync guards against the store subscriber echoing the change back into the engine.
     this.editEngine.on('shape-updated', (shape: EditorShape) => {
       if (shape.type !== 'polyline' || !this.editingShapeId) return;
+      if (this.suppressSync) return;
+      geoAnnotHistory.record(); // snapshot pre-mutation state (fires once per drag end)
+      this.suppressSync = true;
       usePolyAnnotStore.getState().setAnnotationVertices(this.editingShapeId, shape.points);
+      this.suppressSync = false;
     });
 
     const { annotations, layers } = usePolyAnnotStore.getState();
@@ -120,6 +135,27 @@ export class PolygonAnnotationPlugin implements ViewerPlugin {
         const layer = state.layers.find((l) => l.id === ann.layerId);
         const group = this.annotationGroups.get(ann.id);
         if (group) group.visible = ann.visible && (layer?.visible ?? true);
+      }
+
+      // When vertices of the currently-edited annotation change externally
+      // (undo/redo via geoAnnotHistory), sync the new positions into the engine
+      // so vertex handles and the transform gizmo move to match.
+      // suppressSync prevents the resulting shape-updated emission from looping back.
+      if (!this.suppressSync && this.editingShapeId && this.editEngine) {
+        const curr  = state.annotations.find((a) => a.id === this.editingShapeId);
+        const prev_ = prev.annotations.find((a) => a.id === this.editingShapeId);
+        if (curr && prev_ && curr.vertices !== prev_.vertices) {
+          const engineShape = this.editEngine.getShape(this.editingShapeId);
+          if (engineShape && engineShape.type === 'polyline') {
+            this.suppressSync = true;
+            this.editEngine.updateShape({
+              ...engineShape,
+              points: curr.vertices.map((v) => ({ ...v })),
+            });
+            this.editEngine.refreshGizmoAnchor();
+            this.suppressSync = false;
+          }
+        }
       }
     });
   }
@@ -213,6 +249,7 @@ export class PolygonAnnotationPlugin implements ViewerPlugin {
   }
 
   commitPolygon(): void {
+    geoAnnotHistory.record();
     usePolyAnnotStore.getState().commitPolygon();
     this.attachDrawListeners();
   }
@@ -297,6 +334,7 @@ export class PolygonAnnotationPlugin implements ViewerPlugin {
   /** Delete the currently selected vertices (min 3 must remain). */
   private deleteSelectedVertices(): void {
     if (!this.editEngine || !this.editingShapeId) return;
+    geoAnnotHistory.record();
     const sel = this.editEngine.getSelection();
 
     // Collect selected vertex indices for this shape, sorted descending so splice is safe

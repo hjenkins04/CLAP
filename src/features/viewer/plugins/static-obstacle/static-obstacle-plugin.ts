@@ -8,6 +8,7 @@ import type { Annotate3DPhase, NormalFace } from './static-obstacle-types';
 import {
   buildAnnotationGroup,
   buildFacePickMeshes,
+  setFacePickHover,
   disposeGroup,
 } from './static-obstacle-visuals';
 import { StaticObstaclePanel } from './static-obstacle-panel';
@@ -36,6 +37,7 @@ export class StaticObstaclePlugin implements ViewerPlugin {
   // Face picking state
   private facePickGroup: Group | null = null;
   private faceListening = false;
+  private hoveredFaceMesh: Mesh | null = null;
 
   private fallbackElevY = 0;
 
@@ -53,6 +55,9 @@ export class StaticObstaclePlugin implements ViewerPlugin {
 
     // Shape-editor engine for drawing + editing the pending OBB
     this.engine = new ShapeEditorEngine(ctx, {
+      vertexHandleRadius: 0.03,
+      edgeHandleRadius:   0.025,
+      faceHandleRadius:   0.03,
       snapToGrid: false,
       showEdgeMidHandles: true,
       showFaceExtrudeHandles: true,
@@ -253,6 +258,7 @@ export class StaticObstaclePlugin implements ViewerPlugin {
     if (this.faceListening || !this.ctx) return;
     this.faceListening = true;
     this.ctx.domElement.addEventListener('pointerdown', this.onFacePointerDown);
+    this.ctx.domElement.addEventListener('pointermove', this.onFacePointerMove);
     this.ctx.domElement.style.cursor = 'pointer';
   }
 
@@ -260,8 +266,32 @@ export class StaticObstaclePlugin implements ViewerPlugin {
     if (!this.faceListening || !this.ctx) return;
     this.faceListening = false;
     this.ctx.domElement.removeEventListener('pointerdown', this.onFacePointerDown);
+    this.ctx.domElement.removeEventListener('pointermove', this.onFacePointerMove);
     this.ctx.domElement.style.cursor = '';
+    // Clear any lingering hover highlight
+    setFacePickHover(this.hoveredFaceMesh, false);
+    this.hoveredFaceMesh = null;
   }
+
+  private readonly onFacePointerMove = (e: PointerEvent): void => {
+    if (!this.ctx || !this.facePickGroup) return;
+    const camera = this.ctx.getActiveCamera();
+    const rect = this.ctx.domElement.getBoundingClientRect();
+    const ndc = new Vector2(
+      ((e.clientX - rect.left) / rect.width) * 2 - 1,
+      -((e.clientY - rect.top) / rect.height) * 2 + 1,
+    );
+    const raycaster = new Raycaster();
+    raycaster.setFromCamera(ndc, camera);
+    const hits = raycaster.intersectObjects(this.facePickGroup.children, false);
+    const hit = hits.length > 0 ? (hits[0].object as Mesh) : null;
+
+    if (hit !== this.hoveredFaceMesh) {
+      setFacePickHover(this.hoveredFaceMesh, false);
+      setFacePickHover(hit, true);
+      this.hoveredFaceMesh = hit;
+    }
+  };
 
   private readonly onFacePointerDown = (e: PointerEvent): void => {
     if (e.button !== 0 || !this.ctx || !this.facePickGroup) return;

@@ -3,7 +3,6 @@ import {
   BoxSelect,
   Eye,
   EyeOff,
-  Magnet,
   Power,
   PowerOff,
   PenLine,
@@ -27,7 +26,6 @@ import { useRoiStore } from '../plugins/roi-selection';
 import { RoiSelectionPlugin } from '../plugins/roi-selection';
 import { useWorldFrameStore } from '../plugins/world-frame';
 import type { WorldFramePlugin } from '../plugins/world-frame/world-frame-plugin';
-import { usePolyAnnotStore } from '../plugins/polygon-annotation';
 import type { ViewerEngine } from '../services/viewer-engine';
 
 interface ViewportToolbarProps {
@@ -52,11 +50,6 @@ export function ViewportToolbar({ engine }: ViewportToolbarProps) {
 
   const roiPlugin = engine?.getPlugin<RoiSelectionPlugin>('roi-selection');
   const worldFramePlugin = engine?.getPlugin<WorldFramePlugin>('world-frame');
-
-  const polyAnnotPhase = usePolyAnnotStore((s) => s.phase);
-  const snapEnabled    = usePolyAnnotStore((s) => s.snapEnabled);
-  const setSnapEnabled = usePolyAnnotStore((s) => s.setSnapEnabled);
-  const isPolyEditing  = mode === 'polygon-annotation' && polyAnnotPhase === 'editing';
 
   // World Frame state
   const isWorldFrame = mode === 'world-frame';
@@ -89,8 +82,7 @@ export function ViewportToolbar({ engine }: ViewportToolbarProps) {
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="absolute left-2 top-1/2 z-10 -translate-y-1/2">
-        <div className="flex flex-col items-center gap-0.5 rounded-lg border border-border bg-card/90 p-1 shadow-sm backdrop-blur-sm">
+      <div className="flex flex-col items-center gap-0.5 rounded-lg border border-border bg-card/90 p-1 shadow-sm backdrop-blur-sm">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -215,27 +207,6 @@ export function ViewportToolbar({ engine }: ViewportToolbarProps) {
             </Tooltip>
           )}
 
-          {isPolyEditing && (
-            <>
-              <div className="my-0.5 h-px w-full bg-border" />
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant={snapEnabled ? 'default' : 'ghost'}
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => setSnapEnabled(!snapEnabled)}
-                  >
-                    <Magnet className="h-3.5 w-3.5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="right">
-                  {snapEnabled ? 'Vertex Snap (on)' : 'Vertex Snap (off)'}
-                </TooltipContent>
-              </Tooltip>
-            </>
-          )}
-        </div>
       </div>
     </TooltipProvider>
   );

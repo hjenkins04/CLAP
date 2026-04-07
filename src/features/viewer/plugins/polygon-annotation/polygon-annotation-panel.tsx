@@ -5,6 +5,7 @@ import { useViewerModeStore } from '@/app/stores';
 import { usePolyAnnotStore } from './polygon-annotation-store';
 import { POLYGON_CLASS_LABELS } from './polygon-annotation-types';
 import { getPolyAnnotPlugin } from './polygon-annotation-plugin-ref';
+import { geoAnnotHistory } from '../../services/geometry-annotations-history';
 
 export function PolygonAnnotationPanel() {
   const mode = useViewerModeStore((s) => s.mode);
@@ -44,6 +45,7 @@ export function PolygonAnnotationPanel() {
 
   function handleAddLayer() {
     const name = newLayerName.trim() || `Layer ${layers.length + 1}`;
+    geoAnnotHistory.record();
     addLayer(name);
     setNewLayerName('');
   }
@@ -156,7 +158,7 @@ export function PolygonAnnotationPanel() {
                   value={renameVal}
                   onChange={(e) => setRenameVal(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') { renameLayer(layer.id, renameVal.trim() || layer.name); setRenamingId(null); }
+                    if (e.key === 'Enter') { geoAnnotHistory.record(); renameLayer(layer.id, renameVal.trim() || layer.name); setRenamingId(null); }
                     if (e.key === 'Escape') setRenamingId(null);
                   }}
                   className="h-5 flex-1 bg-transparent text-xs focus:outline-none"
@@ -172,7 +174,7 @@ export function PolygonAnnotationPanel() {
               <div className="flex shrink-0 items-center gap-0.5">
                 {isEditingName ? (
                   <>
-                    <button type="button" className="rounded p-0.5 hover:bg-muted" onClick={(e) => { e.stopPropagation(); renameLayer(layer.id, renameVal.trim() || layer.name); setRenamingId(null); }}>
+                    <button type="button" className="rounded p-0.5 hover:bg-muted" onClick={(e) => { e.stopPropagation(); geoAnnotHistory.record(); renameLayer(layer.id, renameVal.trim() || layer.name); setRenamingId(null); }}>
                       <Check className="h-3 w-3" />
                     </button>
                     <button type="button" className="rounded p-0.5 hover:bg-muted" onClick={(e) => { e.stopPropagation(); setRenamingId(null); }}>
@@ -184,7 +186,7 @@ export function PolygonAnnotationPanel() {
                     <button type="button" className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground" onClick={(e) => { e.stopPropagation(); setRenamingId(layer.id); setRenameVal(layer.name); }}>
                       <Pencil className="h-3 w-3" />
                     </button>
-                    <button type="button" className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-destructive" onClick={(e) => { e.stopPropagation(); removeLayer(layer.id); }}>
+                    <button type="button" className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-destructive" onClick={(e) => { e.stopPropagation(); geoAnnotHistory.record(); removeLayer(layer.id); }}>
                       <Trash2 className="h-3 w-3" />
                     </button>
                   </>
@@ -242,7 +244,7 @@ export function PolygonAnnotationPanel() {
                       <button
                         type="button"
                         className="shrink-0 text-muted-foreground hover:text-destructive"
-                        onClick={() => deleteAnnotation(ann.id)}
+                        onClick={() => { geoAnnotHistory.record(); deleteAnnotation(ann.id); }}
                       >
                         <Trash2 className="h-3 w-3" />
                       </button>

@@ -111,6 +111,9 @@ export function attachArrow(
   return arrow;
 }
 
+const FACE_HOVER_COLOR  = 0xff8800;
+const FACE_HOVER_OPACITY = 0.28;
+
 // ── Face-picking meshes ───────────────────────────────────────────────────────
 
 /** Build 6 invisible plane meshes for raycasting during face-picking phase. */
@@ -130,13 +133,28 @@ export function buildFacePickMeshes(
 
   return configs.map(({ face, pos, rot, w, h }) => {
     const geo = new PlaneGeometry(Math.max(w, 0.05), Math.max(h, 0.05));
-    const mat = new MeshBasicMaterial({ visible: false, side: DoubleSide, transparent: true, opacity: 0 });
+    const mat = new MeshBasicMaterial({
+      color: FACE_HOVER_COLOR,
+      side: DoubleSide,
+      transparent: true,
+      opacity: 0,
+      depthTest: false,
+      depthWrite: false,
+    });
     const mesh = new Mesh(geo, mat);
+    mesh.renderOrder = 902;
     mesh.position.copy(pos);
     mesh.rotation.copy(rot);
     mesh.userData.face = face as NormalFace;
     return mesh;
   });
+}
+
+/** Set or clear the hover highlight on a face pick mesh. */
+export function setFacePickHover(mesh: Mesh | null, hovered: boolean): void {
+  if (!mesh) return;
+  const mat = mesh.material as MeshBasicMaterial;
+  mat.opacity = hovered ? FACE_HOVER_OPACITY : 0;
 }
 
 // ── Annotation group builder ──────────────────────────────────────────────────

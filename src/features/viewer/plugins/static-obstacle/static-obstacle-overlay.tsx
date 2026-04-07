@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@clap/design-system';
+import { geoAnnotHistory } from '../../services/geometry-annotations-history';
 import {
   Check,
   GitCommitHorizontal,
@@ -299,7 +300,7 @@ function ClassificationForm() {
           <Button
             size="sm"
             className="flex-1 gap-1 text-xs"
-            onClick={commitAnnotation}
+            onClick={() => { geoAnnotHistory.record(); commitAnnotation(); }}
             disabled={!canCommit}
           >
             Save <ChevronRight className="h-3.5 w-3.5" />

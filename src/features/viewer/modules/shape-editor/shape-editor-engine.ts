@@ -150,6 +150,20 @@ export class ShapeEditorEngine {
     this.emit('shape-updated', shape);
   }
 
+  /**
+   * Reposition the transform gizmo anchor to match the current selection.
+   * Call this after externally mutating a shape (e.g. undo/redo restore) so
+   * the gizmo snaps to the correct centroid.
+   */
+  refreshGizmoAnchor(): void {
+    const sel = this.getSelection();
+    if (sel.elements.length > 0) {
+      this.transformCtrl.updateAnchorToElements();
+    } else if (sel.shapes.size > 0) {
+      this.transformCtrl.updateAnchorToSelection();
+    }
+  }
+
   getShape(id: ShapeId): EditorShape | undefined {
     return this._shapes.get(id);
   }

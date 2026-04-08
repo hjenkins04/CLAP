@@ -63,11 +63,13 @@ export class SecondaryReclassifyController {
   }
 
   activate(): void {
+    this.secondaryVp.controls.enabled = false;
     this.dragSelect.activate();
   }
 
   deactivate(): void {
     this.dragSelect.deactivate();
+    this.secondaryVp.controls.enabled = true;
     this.clearSelection();
   }
 

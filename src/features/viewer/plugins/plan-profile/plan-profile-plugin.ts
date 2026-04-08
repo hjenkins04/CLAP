@@ -22,10 +22,13 @@ import {
 } from '../../modules/plan-profile';
 import { usePlanProfileStore } from './plan-profile-store';
 import { SecondaryReclassifyController } from './secondary-reclassify-controller';
+import { SecondaryShapeEditController } from './secondary-shape-edit-controller';
 import { filterSceneForSlabRender } from './slab-scene-filter';
 import { useScanFilterStore } from '../scan-filter/scan-filter-store';
 import { ScanFilterPlugin } from '../scan-filter';
 import { useViewerModeStore } from '@/app/stores';
+import { PolygonAnnotationPlugin } from '../polygon-annotation/polygon-annotation-plugin';
+import { usePolyAnnotStore } from '../polygon-annotation/polygon-annotation-store';
 
 export class PlanProfilePlugin implements ViewerPlugin {
   readonly id = 'plan-profile';
@@ -47,6 +50,8 @@ export class PlanProfilePlugin implements ViewerPlugin {
   private directionArrow: ArrowHelper | null = null;
   private secondaryVp: SecondaryViewport | null = null;
   private reclassifyController: SecondaryReclassifyController | null = null;
+  private shapeEditController: SecondaryShapeEditController | null = null;
+  private unsubPolyAnnot: (() => void) | null = null;
 
   // Virtual perspective camera used solely to drive Potree LOD updates for
   // the slab region. Positioned close to the slab face so Potree loads
@@ -155,6 +160,23 @@ export class PlanProfilePlugin implements ViewerPlugin {
     if (useViewerModeStore.getState().mode === 'reclassify') {
       this.activateSecondaryReclassify();
     }
+
+    // Activate/deactivate the 2D shape-edit controller when polygon editing starts/stops
+    this.unsubPolyAnnot = usePolyAnnotStore.subscribe((state, prev) => {
+      const wasEditing = prev.phase === 'editing';
+      const isEditing  = state.phase === 'editing';
+      if (isEditing && !wasEditing)  this.activateSecondaryShapeEdit();
+      if (!isEditing && wasEditing)  this.deactivateSecondaryShapeEdit();
+      // Also handle annotation change while editing
+      if (isEditing && state.editingAnnotationId !== prev.editingAnnotationId) {
+        this.deactivateSecondaryShapeEdit();
+        if (state.editingAnnotationId) this.activateSecondaryShapeEdit();
+      }
+    });
+    // Activate immediately if already editing when plan-profile opens
+    if (usePolyAnnotStore.getState().phase === 'editing') {
+      this.activateSecondaryShapeEdit();
+    }
   }
 
   onUpdate(delta: number): void {
@@ -172,6 +194,7 @@ export class PlanProfilePlugin implements ViewerPlugin {
     // Reclassify selection evaluation also runs after driveSecondaryLod so the
     // evaluator sees slab-area nodes in visibleNodes, not primary-camera nodes.
     this.reclassifyController?.update();
+    this.shapeEditController?.update();
     this.renderSecondary();
   }
 
@@ -181,6 +204,8 @@ export class PlanProfilePlugin implements ViewerPlugin {
     this.unsub = null;
     this.unsubReclassifyMode?.();
     this.unsubReclassifyMode = null;
+    this.unsubPolyAnnot?.();
+    this.unsubPolyAnnot = null;
     this.drawEngine?.dispose();
     this.drawEngine = null;
     this.ctx = null;
@@ -197,6 +222,9 @@ export class PlanProfilePlugin implements ViewerPlugin {
     // transition may have returned early because secondaryVp was null at that point.
     if (useViewerModeStore.getState().mode === 'reclassify') {
       this.activateSecondaryReclassify();
+    }
+    if (usePolyAnnotStore.getState().phase === 'editing') {
+      this.activateSecondaryShapeEdit();
     }
   }
 
@@ -222,6 +250,61 @@ export class PlanProfilePlugin implements ViewerPlugin {
   private deactivateSecondaryReclassify(): void {
     this.reclassifyController?.dispose();
     this.reclassifyController = null;
+  }
+
+  // ── Secondary shape-edit lifecycle ───────────────────────────────────────────
+
+  private activateSecondaryShapeEdit(): void {
+    if (this.shapeEditController) return;
+    if (!this.slab || !this.secondaryVp || !this.ctx) return;
+
+    const polyPlugin = this.ctx.host.getPlugin<PolygonAnnotationPlugin>('polygon-annotation');
+    if (!polyPlugin) return;
+
+    this.shapeEditController = new SecondaryShapeEditController(
+      this.ctx,
+      this.secondaryVp,
+      () => this.slab,
+      () => polyPlugin.getEditEngine(),
+      () => usePolyAnnotStore.getState().editingAnnotationId,
+      () => {
+        const { editingAnnotationId, annotations } = usePolyAnnotStore.getState();
+        return annotations.find((a) => a.id === editingAnnotationId)?.vertices ?? null;
+      },
+      (annotationId, piercePoints, screenPos) => {
+        if (!annotationId || piercePoints.length === 0) {
+          usePlanProfileStore.getState().setPendingPiercePoints(null);
+          return;
+        }
+        usePlanProfileStore.getState().setPendingPiercePoints({
+          annotationId,
+          piercePoints: piercePoints.map((pp) => ({
+            edgeIndex: pp.edgeIndex,
+            worldPos: { x: pp.worldPos.x, y: pp.worldPos.y, z: pp.worldPos.z },
+          })),
+          screenPos,
+        });
+      },
+    );
+    this.shapeEditController.activate();
+  }
+
+  private deactivateSecondaryShapeEdit(): void {
+    this.shapeEditController?.dispose();
+    this.shapeEditController = null;
+    usePlanProfileStore.getState().setPendingPiercePoints(null);
+  }
+
+  insertPolygonVertices2D(
+    annotationId: string,
+    insertions: Array<{ edgeIndex: number; worldPos: { x: number; y: number; z: number } }>,
+  ): void {
+    const polyPlugin = this.ctx?.host.getPlugin<PolygonAnnotationPlugin>('polygon-annotation');
+    polyPlugin?.insertMultipleVerticesAt2D(
+      annotationId,
+      insertions.map((ins) => ({ edgeIndex: ins.edgeIndex, pos: ins.worldPos })),
+    );
+    this.shapeEditController?.update();
   }
 
   // ── Drawing ──────────────────────────────────────────────────────────────────
@@ -649,7 +732,13 @@ export class PlanProfilePlugin implements ViewerPlugin {
     if (this.directionArrow) this.directionArrow.visible = false;
     const scanFilter = this.ctx.host.getPlugin<ScanFilterPlugin>('scan-filter');
     scanFilter?.setTrajectoryMeshesVisible(false);
-    const restoreScene = filterSceneForSlabRender(this.ctx.scene, clipBox, this.slab.halfDepth);
+    const { editingAnnotationId, phase: annotPhase } = usePolyAnnotStore.getState();
+    const restoreScene = filterSceneForSlabRender(
+      this.ctx.scene, clipBox, this.slab.halfDepth,
+      {
+        editingPolygonId: annotPhase === 'editing' && editingAnnotationId ? editingAnnotationId : undefined,
+      },
+    );
 
     if (pcos.length === 0) {
       this.secondaryVp.render(this.ctx.scene);
@@ -713,6 +802,7 @@ export class PlanProfilePlugin implements ViewerPlugin {
     this.ctx?.host.getPlugin<ScanFilterPlugin>('scan-filter')?.setFollowHighlight(null);
     this.reclassifyController?.dispose();
     this.reclassifyController = null;
+    this.deactivateSecondaryShapeEdit();
     this.clearSlabVisuals();
     this.slab = null;
     this.lodCamera = null;

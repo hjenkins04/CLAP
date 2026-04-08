@@ -3,6 +3,7 @@ import { X, Minus, Plus, ArrowLeftRight, ChevronLeft, ChevronRight } from 'lucid
 import { Button, Separator } from '@clap/design-system';
 import { usePlanProfileStore } from './plan-profile-store';
 import { useScanFilterStore } from '../scan-filter/scan-filter-store';
+import { usePolyAnnotStore } from '../polygon-annotation/polygon-annotation-store';
 import type { PlanProfilePlugin } from './plan-profile-plugin';
 import type { ViewerEngine } from '../../services/viewer-engine';
 
@@ -38,6 +39,11 @@ export function SecondaryViewportPanel({ engine }: SecondaryViewportPanelProps) 
   const [panelHeight, setPanelHeight] = useState<number | null>(null);
 
   const isActive = phase !== 'idle';
+
+  const pendingPiercePoints    = usePlanProfileStore((s) => s.pendingPiercePoints);
+  const setPendingPiercePoints = usePlanProfileStore((s) => s.setPendingPiercePoints);
+  const polyAnnotPhase        = usePolyAnnotStore((s) => s.phase);
+  const editingAnnotationId   = usePolyAnnotStore((s) => s.editingAnnotationId);
 
   const plugin = engine?.getPlugin<PlanProfilePlugin>('plan-profile');
   const navigate = useCallback((delta: number) => plugin?.navigateFollow(delta), [plugin]);
@@ -139,6 +145,7 @@ export function SecondaryViewportPanel({ engine }: SecondaryViewportPanelProps) 
   const heightClass = panelHeight !== null ? '' : 'h-1/2';
 
   return (
+  <>
     <div
       ref={panelRef}
       style={heightStyle}
@@ -298,8 +305,59 @@ export function SecondaryViewportPanel({ engine }: SecondaryViewportPanelProps) 
         </div>
       )}
 
+      {/* Polygon editing hint when active */}
+      {polyAnnotPhase === 'editing' && !!editingAnnotationId && (
+        <div className="flex shrink-0 items-center gap-2 border-b border-border bg-blue-50/40 dark:bg-blue-950/20 px-3 py-1">
+          <span className="text-[10px] text-muted-foreground">
+            Orange dots: click or drag-select to add vertices · Blue dots: click/drag to select, then drag gizmo to move
+          </span>
+        </div>
+      )}
+
       {/* Canvas container — fills remaining height */}
       <div ref={containerRef} className="relative min-h-0 flex-1" />
     </div>
+
+    {/* Floating add-vertex popup near the cursor */}
+    {pendingPiercePoints && (
+      <div
+        style={{
+          position: 'fixed',
+          left: pendingPiercePoints.screenPos.x + 12,
+          top: pendingPiercePoints.screenPos.y + 12,
+          zIndex: 9999,
+        }}
+        className="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-900/90 dark:border-amber-700 p-3 shadow-xl backdrop-blur-sm"
+      >
+        <p className="text-xs font-medium text-amber-900 dark:text-amber-100 mb-2">
+          Add {pendingPiercePoints.piercePoints.length} vertex {pendingPiercePoints.piercePoints.length === 1 ? 'point' : 'points'}?
+        </p>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="default"
+            className="h-6 px-3 text-[11px]"
+            onClick={() => {
+              plugin?.insertPolygonVertices2D(
+                pendingPiercePoints.annotationId,
+                pendingPiercePoints.piercePoints,
+              );
+              setPendingPiercePoints(null);
+            }}
+          >
+            Add {pendingPiercePoints.piercePoints.length === 1 ? 'Vertex' : `${pendingPiercePoints.piercePoints.length} Vertices`}
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-6 px-3 text-[11px]"
+            onClick={() => setPendingPiercePoints(null)}
+          >
+            Cancel
+          </Button>
+        </div>
+      </div>
+    )}
+  </>
   );
 }

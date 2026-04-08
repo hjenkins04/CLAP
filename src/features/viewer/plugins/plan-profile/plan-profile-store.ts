@@ -52,6 +52,18 @@ interface PlanProfileState {
   activateFollow:  () => void;   // → 'centroid-picking'
   stopFollow:      () => void;   // → 'idle'
   _setFollowIndex: (i: number) => void; // internal: sets index + transitions to 'active'
+
+  // 2D pierce point pending insertion
+  pendingPiercePoints: {
+    annotationId: string;
+    piercePoints: Array<{ edgeIndex: number; worldPos: { x: number; y: number; z: number } }>;
+    screenPos: { x: number; y: number };
+  } | null;
+  setPendingPiercePoints: (info: {
+    annotationId: string;
+    piercePoints: Array<{ edgeIndex: number; worldPos: { x: number; y: number; z: number } }>;
+    screenPos: { x: number; y: number };
+  } | null) => void;
 }
 
 export const usePlanProfileStore = create<PlanProfileState>((set) => ({
@@ -65,6 +77,9 @@ export const usePlanProfileStore = create<PlanProfileState>((set) => ({
   trajectoryPhase: 'idle',
   followIndex: 0,
 
+  pendingPiercePoints: null,
+  setPendingPiercePoints: (pendingPiercePoints) => set({ pendingPiercePoints }),
+
 setPhase:           (phase)           => set({ phase }),
   setViewType:        (viewType)        => set({ viewType }),
   setHalfDepth:       (halfDepth)       => set({ halfDepth: Math.min(15, Math.max(0.001, halfDepth)) }),
@@ -77,7 +92,7 @@ setPhase:           (phase)           => set({ phase }),
   activate:  (viewType) => set({ phase: 'drawing-first', viewType, viewFlipped: false, trajectoryPhase: 'idle' }),
   startEdit: ()         => set({ phase: 'editing', editSubMode: 'shape' }),
   stopEdit:  ()         => set({ phase: 'active' }),
-  close:     ()         => set({ phase: 'idle', viewType: null, viewFlipped: false, trajectoryPhase: 'idle' }),
+  close:     ()         => set({ phase: 'idle', viewType: null, viewFlipped: false, trajectoryPhase: 'idle', pendingPiercePoints: null }),
 
   // Trajectory follow phase transitions (independent of plan/profile phase)
   setFollowIndex:  (followIndex) => set({ followIndex }),

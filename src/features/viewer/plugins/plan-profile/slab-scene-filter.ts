@@ -80,10 +80,16 @@ function clipSegmentToUnitBox(a: Vector3, b: Vector3): [number, number] | null {
 
 // ── Main export ───────────────────────────────────────────────────────────────
 
+interface FilterOptions {
+  /** When set: hide that polygon annotation's clipped outline (controller manages pierce markers). */
+  editingPolygonId?: string;
+}
+
 export function filterSceneForSlabRender(
   scene: Scene,
   clipBox: IClipBox,
   halfDepth: number,
+  options?: FilterOptions,
 ): () => void {
   const restores: Array<() => void> = [];
 
@@ -96,6 +102,23 @@ export function filterSceneForSlabRender(
   // ── 1. Shape editor UI (handles, highlights, pickers) ────────────────────────
   const editorRoot = scene.getObjectByName('shape-editor-root');
   if (editorRoot) hide(editorRoot);
+
+  // ── 1b. Polygon edit root (always hidden — SecondaryShapeEditController renders
+  //        its own pierce-point markers; we never want the full polyline wireframe
+  //        or vertex spheres appearing in the 2D view) ──────────────────────────
+  const polyEditRoot = scene.getObjectByName('polygon-edit-root');
+  if (polyEditRoot) hide(polyEditRoot);
+
+  // ── 1c. TransformControls gizmos ─────────────────────────────────────────────
+  // The gizmo is added directly to scene, not inside rootGroup.
+  // It uses world-space axes which may appear inverted in the 2D view — hide it.
+  // Exception: gizmos tagged as secondaryViewport are the 2D gizmo itself; skip them.
+  for (const child of scene.children) {
+    if ((child as unknown as { isTransformControls?: boolean }).isTransformControls) {
+      if ((child as { userData?: Record<string, unknown> }).userData?.secondaryViewport) continue;
+      hide(child);
+    }
+  }
 
   // ── 2. Static obstacle wireframe boxes ───────────────────────────────────────
   const obstaclesRoot = scene.getObjectByName('static-obstacles');
@@ -150,11 +173,36 @@ export function filterSceneForSlabRender(
       const wA  = new Vector3(), wB = new Vector3();
       const lA  = new Vector3(), lB = new Vector3();
 
+      // When editing this polygon: always show one pierce point per crossing edge,
+      // regardless of slab depth. This keeps the 2D view clean (no outline, just
+      // the sampled crossing points the user can click/drag to edit).
+      const isEditing = !!(options?.editingPolygonId && annotGroup.userData.annotationId === options.editingPolygonId);
+      const usePiercePoints = pointMode || isEditing;
+
+      // For the editing polygon, pre-compute which vertices lie inside the slab volume.
+      // Pierce points for edges touching those vertices are suppressed — the blue vertex
+      // marker rendered by SecondaryShapeEditController represents them instead.
+      let insideVertices: Set<number> | null = null;
+      if (isEditing) {
+        insideVertices = new Set<number>();
+        for (let i = 0; i < n; i++) {
+          const lv = new Vector3(posAttr.getX(i), posAttr.getY(i), posAttr.getZ(i))
+            .applyMatrix4(mw).applyMatrix4(inv);
+          if (lv.x >= -0.5 && lv.x <= 0.5 && lv.y >= -0.5 && lv.y <= 0.5 && lv.z >= -0.5 && lv.z <= 0.5) {
+            insideVertices.add(i);
+          }
+        }
+      }
+
       // Collect clipped positions — either segment pairs or midpoints.
       const positions: number[] = [];
 
       for (let i = 0; i < n; i++) {
         const next = (i + 1) % n; // LineLoop: last vertex wraps to first
+
+        // Suppress orange pierce point when either endpoint is an inside vertex
+        // (the blue marker already covers it; offering to add again would be wrong).
+        if (insideVertices && (insideVertices.has(i) || insideVertices.has(next))) continue;
 
         wA.set(posAttr.getX(i),    posAttr.getY(i),    posAttr.getZ(i)).applyMatrix4(mw);
         wB.set(posAttr.getX(next), posAttr.getY(next), posAttr.getZ(next)).applyMatrix4(mw);
@@ -167,7 +215,7 @@ export function filterSceneForSlabRender(
 
         const [t0, t1] = clip;
 
-        if (pointMode) {
+        if (usePiercePoints) {
           // Single pierce point: midpoint of the clipped fragment in world space.
           const mid = wA.clone().lerp(wB, (t0 + t1) / 2);
           positions.push(mid.x, mid.y, mid.z);
@@ -194,14 +242,14 @@ export function filterSceneForSlabRender(
 
       let visual: LineSegments | Points;
 
-      if (pointMode) {
+      if (usePiercePoints) {
         const ptMat = new PointsMaterial({
-          color: origMat.color,
-          size: 3,
-          sizeAttenuation: false, // screen-space pixels — stays tiny regardless of zoom
+          color: isEditing ? 0xff8800 : origMat.color, // orange for editing, layer colour otherwise
+          size: isEditing ? 5 : 3,  // dots for editing pierce points
+          sizeAttenuation: false,   // screen-space pixels — stays consistent regardless of zoom
           depthTest: false,
           transparent: true,
-          opacity: origMat.opacity ?? 1,
+          opacity: isEditing ? 0.95 : (origMat.opacity ?? 1),
         });
         visual = new Points(clippedGeo, ptMat);
       } else {

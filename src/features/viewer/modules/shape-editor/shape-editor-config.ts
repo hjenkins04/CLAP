@@ -32,11 +32,16 @@ export interface ShapeEditorConfig {
    * 0 means unlimited (commit on double-click / Enter). Default 0.
    */
   maxPolylinePoints: number;
+  /**
+   * Override the name of the Three.js root group added to the scene.
+   * Defaults to 'shape-editor-root' when omitted.
+   */
+  rootGroupName?: string;
 }
 
 const DEFAULTS: ShapeEditorConfig = {
-  vertexHandleRadius: 0.18,
-  edgeHandleRadius: 0.13,
+  vertexHandleRadius: 0.06,
+  edgeHandleRadius: 0.05,
   faceHandleRadius: 0.15,
   snapToGrid: false,
   snapGridSize: 1.0,

@@ -88,6 +88,7 @@ export class PolygonAnnotationPlugin implements ViewerPlugin {
       showFaceExtrudeHandles: false,
       escapeHandled:         true,
       deleteHandled:         false,  // we handle Delete to remove selected vertices
+      rootGroupName:         'polygon-edit-root',
     });
 
     this.updateElevationFn();
@@ -283,6 +284,34 @@ export class PolygonAnnotationPlugin implements ViewerPlugin {
     if (store.phase === 'editing') {
       store.setPhase('drawing');
       this.attachDrawListeners();
+    }
+  }
+
+  /** Expose edit engine for secondary-viewport vertex interaction. */
+  getEditEngine(): ShapeEditorEngine | null {
+    return this.editEngine;
+  }
+
+  /** Insert a vertex into the editing annotation at the given edge index.
+   *  Records undo history before mutating. Called from the 2D secondary viewport. */
+  insertVertexAt2D(annId: string, edgeIndex: number, pos: { x: number; y: number; z: number }): void {
+    geoAnnotHistory.record();
+    usePolyAnnotStore.getState().insertVertex(annId, edgeIndex, pos);
+  }
+
+  /** Insert multiple vertices into the editing annotation from 2D pierce point selections.
+   *  Sorts insertions descending by edge index so later indices don't shift earlier ones.
+   *  Records a single undo snapshot before all mutations. */
+  insertMultipleVerticesAt2D(
+    annId: string,
+    insertions: Array<{ edgeIndex: number; pos: { x: number; y: number; z: number } }>,
+  ): void {
+    if (insertions.length === 0) return;
+    geoAnnotHistory.record();
+    // Sort descending — insert at higher indices first so lower indices aren't shifted.
+    const sorted = [...insertions].sort((a, b) => b.edgeIndex - a.edgeIndex);
+    for (const { edgeIndex, pos } of sorted) {
+      usePolyAnnotStore.getState().insertVertex(annId, edgeIndex, pos);
     }
   }
 
@@ -569,6 +598,7 @@ export class PolygonAnnotationPlugin implements ViewerPlugin {
 
     const group = buildPolygonGroup(ann.vertices, layerColor);
     group.visible = ann.visible;
+    group.userData.annotationId = ann.id;
     this.annotationGroups.set(ann.id, group);
     this.rootGroup.add(group);
   }

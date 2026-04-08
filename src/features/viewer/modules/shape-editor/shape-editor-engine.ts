@@ -124,7 +124,7 @@ export class ShapeEditorEngine {
 
     // Root group at scene level (never inside worldRoot)
     this.rootGroup = new Group();
-    this.rootGroup.name = 'shape-editor-root';
+    this.rootGroup.name = config.rootGroupName ?? 'shape-editor-root';
     pluginCtx.scene.add(this.rootGroup);
 
     // Build internal context shared with sub-controllers
@@ -260,6 +260,11 @@ export class ShapeEditorEngine {
 
   clearSelection(): void {
     this.selCtrl.clearSelection();
+  }
+
+  /** Returns the current vertex + edge-mid handle meshes for external raycasting. */
+  getHandleMeshes(): Mesh[] {
+    return this.selCtrl.handleMeshes;
   }
 
   setSubMode(mode: SelectSubMode): void {
@@ -494,7 +499,7 @@ export class ShapeEditorEngine {
     if (arr) arr.forEach((h) => h(data));
   }
 
-  private setSelection(sel: SelectionState): void {
+  setSelection(sel: SelectionState): void {
     this._selection = sel;
     this.onSelectionChanged(sel);
   }

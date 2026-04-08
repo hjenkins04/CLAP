@@ -33,7 +33,7 @@ export class SecondaryViewport {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableRotate = false;
     this.controls.mouseButtons = {
-      LEFT: MOUSE.PAN,
+      LEFT: null,
       MIDDLE: MOUSE.DOLLY,
       RIGHT: MOUSE.PAN,
     };

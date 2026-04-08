@@ -21,6 +21,7 @@ import {
   type PlaneSlab,
 } from '../../modules/plan-profile';
 import { usePlanProfileStore } from './plan-profile-store';
+import { SecondaryReclassifyController } from './secondary-reclassify-controller';
 import { filterSceneForSlabRender } from './slab-scene-filter';
 import { useScanFilterStore } from '../scan-filter/scan-filter-store';
 import { ScanFilterPlugin } from '../scan-filter';
@@ -45,6 +46,7 @@ export class PlanProfilePlugin implements ViewerPlugin {
   private slabWireframe: LineSegments | null = null;
   private directionArrow: ArrowHelper | null = null;
   private secondaryVp: SecondaryViewport | null = null;
+  private reclassifyController: SecondaryReclassifyController | null = null;
 
   // Virtual perspective camera used solely to drive Potree LOD updates for
   // the slab region. Positioned close to the slab face so Potree loads
@@ -53,9 +55,8 @@ export class PlanProfilePlugin implements ViewerPlugin {
 
   // Trajectory follow mode
   private onCentroidClick: ((e: MouseEvent) => void) | null = null;
-  // True if we entered scan-filter mode on behalf of follow-centroid picking.
-  // Used to know whether to exit it after the centroid is committed.
   private enteredScanFilterMode = false;
+  private unsubReclassifyMode: (() => void) | null = null;
 
   onInit(ctx: ViewerPluginContext): void {
     this.ctx = ctx;
@@ -94,10 +95,20 @@ export class PlanProfilePlugin implements ViewerPlugin {
 
       // Plan/profile phase transitions
       if (state.phase !== prev.phase) {
-        if (state.phase === 'drawing-first')              this.startDrawing();
-        else if (state.phase === 'editing')               this.enterEditMode();
-        else if (state.phase === 'active' && prev.phase === 'editing') this.exitEditMode();
-        else if (state.phase === 'idle' && prev.phase !== 'idle') this.deactivateAll();
+        if (state.phase === 'drawing-first') {
+          this.startDrawing();
+        } else if (state.phase === 'editing') {
+          this.enterEditMode();
+        } else if (state.phase === 'active' && prev.phase === 'editing') {
+          this.exitEditMode();
+        } else if (state.phase === 'active') {
+          // Slab just drawn — activate secondary reclassify if mode is already on.
+          if (useViewerModeStore.getState().mode === 'reclassify') {
+            this.activateSecondaryReclassify();
+          }
+        } else if (state.phase === 'idle' && prev.phase !== 'idle') {
+          this.deactivateAll();
+        }
       }
 
       // Trajectory follow phase transitions (independent of plan/profile phase)
@@ -130,7 +141,20 @@ export class PlanProfilePlugin implements ViewerPlugin {
         this.updateDirectionArrow();
         this.applySlabToSecondary();
       }
+
     });
+
+    // Activate/deactivate the secondary reclassify controller whenever the
+    // primary 3D reclassify mode is toggled, so no separate 2D button is needed.
+    this.unsubReclassifyMode = useViewerModeStore.subscribe((state, prev) => {
+      const was = prev.mode === 'reclassify';
+      const is  = state.mode === 'reclassify';
+      if (is && !was)  this.activateSecondaryReclassify();
+      if (!is && was)  this.deactivateSecondaryReclassify();
+    });
+    if (useViewerModeStore.getState().mode === 'reclassify') {
+      this.activateSecondaryReclassify();
+    }
   }
 
   onUpdate(delta: number): void {
@@ -139,6 +163,15 @@ export class PlanProfilePlugin implements ViewerPlugin {
 
   onAfterRender(): void {
     this.driveSecondaryLod();
+    // The main render loop's editor.frameUpdate() runs with primary-camera
+    // visibleNodes, so LOD-camera nodes (slab detail) never get their
+    // classification/intensity attribute buffers patched there.  Call it again
+    // now that driveSecondaryLod() has placed those nodes in visibleNodes so
+    // that renderSecondary() sees up-to-date attribute data.
+    this.ctx?.getEditor().frameUpdate();
+    // Reclassify selection evaluation also runs after driveSecondaryLod so the
+    // evaluator sees slab-area nodes in visibleNodes, not primary-camera nodes.
+    this.reclassifyController?.update();
     this.renderSecondary();
   }
 
@@ -146,6 +179,8 @@ export class PlanProfilePlugin implements ViewerPlugin {
     this.deactivateAll();
     this.unsub?.();
     this.unsub = null;
+    this.unsubReclassifyMode?.();
+    this.unsubReclassifyMode = null;
     this.drawEngine?.dispose();
     this.drawEngine = null;
     this.ctx = null;
@@ -157,6 +192,12 @@ export class PlanProfilePlugin implements ViewerPlugin {
     if (!this.secondaryVp) this.secondaryVp = new SecondaryViewport();
     this.secondaryVp.attach(el);
     if (this.slab) this.applySlabToSecondary();
+    // If reclassify mode is already active when the panel attaches, activate
+    // the controller now — activateSecondaryReclassify() called during the phase
+    // transition may have returned early because secondaryVp was null at that point.
+    if (useViewerModeStore.getState().mode === 'reclassify') {
+      this.activateSecondaryReclassify();
+    }
   }
 
   detachSecondaryContainer(): void {
@@ -165,6 +206,22 @@ export class PlanProfilePlugin implements ViewerPlugin {
 
   resizeSecondary(): void {
     this.secondaryVp?.resize();
+  }
+
+  // ── Secondary reclassify lifecycle ───────────────────────────────────────────
+
+  private activateSecondaryReclassify(): void {
+    if (this.reclassifyController) return; // already active
+    if (!this.slab || !this.secondaryVp || !this.ctx) return;
+    this.reclassifyController = new SecondaryReclassifyController(
+      this.secondaryVp, this.ctx, () => this.slab,
+    );
+    this.reclassifyController.activate();
+  }
+
+  private deactivateSecondaryReclassify(): void {
+    this.reclassifyController?.dispose();
+    this.reclassifyController = null;
   }
 
   // ── Drawing ──────────────────────────────────────────────────────────────────
@@ -521,12 +578,16 @@ export class PlanProfilePlugin implements ViewerPlugin {
   private updateLodCamera(): void {
     if (!this.slab || !this.lodCamera) return;
     const { center, viewDir, halfLength, halfHeight } = this.slab;
-    // Distance chosen so the frustum covers the slab face at FOV=90°.
-    // Significantly closer than the orthographic secondary camera → higher LOD.
-    const dist = Math.max(halfLength, halfHeight) * 0.5 + 1;
+    // With aspect = halfLength/halfHeight and FOV=90° (half-angle=45°, tan=1):
+    //   vertical coverage at depth d  = ±d
+    //   horizontal coverage at depth d = ±d * aspect = ±d * halfLength/halfHeight
+    // For the frustum to contain the full slab face (halfLength × halfHeight),
+    // both constraints reduce to: d ≥ halfHeight.
+    // Use halfHeight + a small margin so edges are never clipped by near-plane.
+    const dist = halfHeight * 1.1 + 1;
     // Aspect ratio matches the slab face proportions.
     this.lodCamera.aspect  = halfLength / Math.max(halfHeight, 0.1);
-    this.lodCamera.far     = dist * 4 + this.slab.halfDepth * 2;
+    this.lodCamera.far     = dist * 2 + this.slab.halfDepth * 2;
     this.lodCamera.updateProjectionMatrix();
     // Place on the -viewDir side, looking toward slab centre.
     this.lodCamera.position.copy(center).addScaledVector(viewDir, -dist);
@@ -602,31 +663,42 @@ export class PlanProfilePlugin implements ViewerPlugin {
         maxSize: pco.material.maxSize,
       }));
 
-      for (const pco of pcos) {
-        pco.material.clipMode = ClipMode.CLIP_OUTSIDE;
-        pco.material.setClipBoxes([clipBox]);
-        // Force an exact pixel size by pinning minSize = maxSize = pointSize.
-        // This bypasses the adaptive formula (which depends on 3D camera distance)
-        // without touching pointSizeType (which would trigger a shader recompile).
-        pco.material.size    = pointSize;
-        pco.material.minSize = pointSize;
-        pco.material.maxSize = pointSize;
-      }
+      try {
+        for (const pco of pcos) {
+          pco.material.clipMode = ClipMode.CLIP_OUTSIDE;
+          pco.material.setClipBoxes([clipBox]);
+          // Force an exact pixel size by pinning minSize = maxSize = pointSize.
+          // This bypasses the adaptive formula (which depends on 3D camera distance)
+          // without touching pointSizeType (which would trigger a shader recompile).
+          pco.material.size    = pointSize;
+          pco.material.minSize = pointSize;
+          pco.material.maxSize = pointSize;
+        }
 
-      this.secondaryVp.render(this.ctx.scene);
-
-      for (let i = 0; i < pcos.length; i++) {
-        pcos[i].material.clipMode  = savedStates[i].mode;
-        pcos[i].material.setClipBoxes(savedStates[i].boxes);
-        pcos[i].material.size      = savedStates[i].size;
-        pcos[i].material.minSize   = savedStates[i].minSize;
-        pcos[i].material.maxSize   = savedStates[i].maxSize;
+        this.secondaryVp.render(this.ctx.scene);
+      } finally {
+        // Always restore primary-view material state — even if render throws.
+        // Without this, the slab clip box would persist on the material and leak
+        // into the primary 3D reclassify tool's clip-region filter.
+        for (let i = 0; i < pcos.length; i++) {
+          pcos[i].material.clipMode  = savedStates[i].mode;
+          pcos[i].material.setClipBoxes(savedStates[i].boxes);
+          pcos[i].material.size      = savedStates[i].size;
+          pcos[i].material.minSize   = savedStates[i].minSize;
+          pcos[i].material.maxSize   = savedStates[i].maxSize;
+        }
       }
     }
 
     restoreScene();
     scanFilter?.setTrajectoryMeshesVisible(true);
     if (this.directionArrow) this.directionArrow.visible = true;
+
+    // driveSecondaryLod() replaces pco.visibleNodes with slab-camera nodes so the
+    // secondary render sees them.  Restore the primary-camera visibleNodes now so
+    // that input events firing between frames (e.g. drag-select mouseup) evaluate
+    // the correct node set rather than the slab-restricted one.
+    this.ctx.updatePointCloudsForCamera(this.ctx.getActiveCamera());
   }
 
   // ── Deactivate ───────────────────────────────────────────────────────────────
@@ -639,6 +711,8 @@ export class PlanProfilePlugin implements ViewerPlugin {
       this.enteredScanFilterMode = false;
     }
     this.ctx?.host.getPlugin<ScanFilterPlugin>('scan-filter')?.setFollowHighlight(null);
+    this.reclassifyController?.dispose();
+    this.reclassifyController = null;
     this.clearSlabVisuals();
     this.slab = null;
     this.lodCamera = null;

@@ -46,6 +46,7 @@ interface PlanProfileState {
   stopEdit:           () => void;
   close:              () => void;
 
+
   // Trajectory follow actions
   setFollowIndex:  (i: number) => void;
   activateFollow:  () => void;   // → 'centroid-picking'
@@ -64,7 +65,7 @@ export const usePlanProfileStore = create<PlanProfileState>((set) => ({
   trajectoryPhase: 'idle',
   followIndex: 0,
 
-  setPhase:           (phase)           => set({ phase }),
+setPhase:           (phase)           => set({ phase }),
   setViewType:        (viewType)        => set({ viewType }),
   setHalfDepth:       (halfDepth)       => set({ halfDepth: Math.min(15, Math.max(0.001, halfDepth)) }),
   setPointSize:       (pointSize)       => set({ pointSize: Math.min(10, Math.max(0.5, pointSize)) }),
@@ -83,4 +84,5 @@ export const usePlanProfileStore = create<PlanProfileState>((set) => ({
   activateFollow:  ()            => set({ trajectoryPhase: 'centroid-picking' }),
   stopFollow:          ()                 => set({ trajectoryPhase: 'idle' }),
   _setFollowIndex:     (followIndex)      => set({ followIndex, trajectoryPhase: 'active' }),
+
 }));

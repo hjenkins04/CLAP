@@ -232,8 +232,7 @@ export class FlatBoxDrawController {
       halfExtents: { x: this.halfX, y: 0.2, z: this.halfZ },
     };
     const wireframe = buildObbWireframe(previewShape, SHAPE_COLOR_PREVIEW);
-    wireframe.children.forEach((c) => this.previewGroup!.add(c));
-    wireframe.children.length = 0;
+    [...wireframe.children].forEach((c) => this.previewGroup!.add(c));
     this.previewGroup.add(wireframe);
   }
 

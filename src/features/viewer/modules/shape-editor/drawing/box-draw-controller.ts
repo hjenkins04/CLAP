@@ -272,8 +272,9 @@ export class BoxDrawController {
     clearGroup(this.previewGroup);
     const shape = this.buildShape();
     const wireframe = buildObbWireframe(shape, SHAPE_COLOR_PREVIEW);
-    wireframe.children.forEach((c) => this.previewGroup!.add(c));
-    wireframe.children.length = 0; // prevent double dispose
+    // Snapshot children before iterating — add() removes from the old parent,
+    // which mutates wireframe.children mid-forEach and skips every other child.
+    [...wireframe.children].forEach((c) => this.previewGroup!.add(c));
     this.previewGroup.add(wireframe);
   }
 

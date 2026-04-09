@@ -1,5 +1,8 @@
 import { Group, Vector3 } from 'three';
 import type { ShapeEditorInternalContext, PolygonShape, Vec3 } from '../shape-editor-types';
+
+/** Screen-pixel radius within which clicking near the first vertex closes the polygon. */
+const CLOSE_VERTEX_PX = 14;
 import { clientToNdc, raycastHorizontalPlane } from '../utils/raycast-utils';
 import { buildPolygonWireframe } from '../visuals/shape-visual-builder';
 import { SHAPE_COLOR_PREVIEW } from '../visuals/visual-constants';
@@ -63,6 +66,22 @@ export class PolygonDrawController {
       this.vertices.pop();
       this.commit();
       return;
+    }
+
+    // Close polygon by clicking near the first vertex (≥3 vertices placed)
+    if (this.vertices.length >= 3) {
+      const first = this.vertices[0];
+      const camera = this.ctx.getCamera();
+      const rect = this.ctx.domElement.getBoundingClientRect();
+      const p = new Vector3(first.x, first.y, first.z).project(camera);
+      const sx = ((p.x + 1) / 2) * rect.width;
+      const sy = ((-p.y + 1) / 2) * rect.height;
+      const dx = e.clientX - rect.left - sx;
+      const dy = e.clientY - rect.top  - sy;
+      if (dx * dx + dy * dy <= CLOSE_VERTEX_PX * CLOSE_VERTEX_PX) {
+        this.commit();
+        return;
+      }
     }
 
     this.vertices.push({ x: hit.x, y: hit.y, z: hit.z });

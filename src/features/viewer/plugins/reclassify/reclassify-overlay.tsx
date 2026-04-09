@@ -15,6 +15,7 @@ export function ReclassifyOverlay({ engine }: ReclassifyOverlayProps) {
   const exitMode = useViewerModeStore((s) => s.exitMode);
   const selectedCount = useReclassifyStore((s) => s.selectedCount);
   const phase = useReclassifyStore((s) => s.phase);
+  const activeTool = useReclassifyStore((s) => s.activeTool);
 
   const plugin = engine?.getPlugin<ReclassifyPlugin>('reclassify');
   const isActive = mode === 'reclassify';
@@ -23,7 +24,11 @@ export function ReclassifyOverlay({ engine }: ReclassifyOverlayProps) {
     'Escape',
     (e) => {
       e.preventDefault();
-      if (selectedCount > 0) {
+      if (activeTool === 'polygon') {
+        // Let the polygon draw controller / confirm listener handle Escape internally.
+        // Fall back to drag-select if for some reason the controller didn't.
+        useReclassifyStore.getState().setActiveTool('drag-select');
+      } else if (selectedCount > 0) {
         plugin?.clearSelection();
       } else {
         exitMode();
@@ -45,7 +50,9 @@ export function ReclassifyOverlay({ engine }: ReclassifyOverlayProps) {
         <div className="rounded-md bg-card/90 px-3 py-1.5 text-xs text-muted-foreground shadow-sm backdrop-blur-sm">
           {phase === 'selected'
             ? `${selectedCount.toLocaleString()} point${selectedCount !== 1 ? 's' : ''} selected — pick a class to reclassify`
-            : 'Drag to select points · Alt+drag to deselect · Esc to exit'}
+            : activeTool === 'polygon'
+              ? 'Click to place vertices · click first vertex or double-click to close · Enter to confirm · Esc to cancel'
+              : 'Drag to select points · Alt+drag to deselect · Esc to exit'}
         </div>
       </div>
 

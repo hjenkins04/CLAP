@@ -15,6 +15,8 @@ import { makePointId } from '../../services/point-cloud-editor/point-id';
 import type { PointId } from '../../services/point-cloud-editor/types';
 import { DragSelectController } from '../../modules/drag-select';
 import type { SelectionFrustum, DragSelectMode } from '../../modules/drag-select';
+import { ShapeEditorEngine } from '../../modules/shape-editor';
+import type { PolygonShape, Vec3 } from '../../modules/shape-editor';
 
 /** Pre-extracted clip inverse matrix elements for fast inline testing */
 interface ClipInverse {
@@ -28,9 +30,14 @@ export class ReclassifyPlugin implements ViewerPlugin {
 
   private ctx: ViewerPluginContext | null = null;
   private unsubMode: (() => void) | null = null;
+  private unsubTool: (() => void) | null = null;
 
   // Drag-select
   private dragSelect: DragSelectController | null = null;
+
+  // Polygon draw
+  private polygonEngine: ShapeEditorEngine | null = null;
+  private polygonConfirmFn: ((e: KeyboardEvent) => void) | null = null;
 
   // Persistent selection frustum
   private selectionFrustum: SelectionFrustum | null = null;
@@ -87,19 +94,191 @@ export class ReclassifyPlugin implements ViewerPlugin {
 
   private activate(): void {
     if (!this.ctx) return;
-    this.ctx.domElement.style.cursor = 'crosshair';
-    this.dragSelect?.activate();
     useReclassifyStore.getState().setPhase('selecting');
     useReclassifyStore.getState().setApplyFn(this.applyReclassification.bind(this));
+
+    // Subscribe to active-tool changes
+    this.unsubTool = useReclassifyStore.subscribe((s, prev) => {
+      if (s.activeTool !== prev.activeTool) {
+        this.handleToolChange(s.activeTool);
+      }
+    });
+
+    // Activate the current tool
+    this.handleToolChange(useReclassifyStore.getState().activeTool);
   }
 
   private deactivate(): void {
     if (!this.ctx) return;
-    this.ctx.domElement.style.cursor = '';
+    this.unsubTool?.();
+    this.unsubTool = null;
+    this.stopPolygonDraw();
     this.dragSelect?.deactivate();
+    this.ctx.domElement.style.cursor = '';
     this.clearSelection();
     useReclassifyStore.getState().setApplyFn(null);
     useReclassifyStore.getState().reset();
+  }
+
+  private handleToolChange(tool: 'drag-select' | 'polygon'): void {
+    if (tool === 'polygon') {
+      this.dragSelect?.deactivate();
+      this.clearSelection();
+      this.startPolygonDraw();
+    } else {
+      this.stopPolygonDraw();
+      this.dragSelect?.activate();
+      if (this.ctx) this.ctx.domElement.style.cursor = 'crosshair';
+    }
+  }
+
+  // ── Polygon draw ───────────────────────────────────────────────────────────
+
+  private startPolygonDraw(): void {
+    if (!this.ctx || this.polygonEngine) return;
+
+    const ctx = this.ctx;
+    const engine = new ShapeEditorEngine(ctx, {
+      escapeHandled: false, // reclassify-overlay handles Escape
+      deleteHandled: false,
+      showEdgeMidHandles: false,
+      showFaceExtrudeHandles: false,
+    });
+
+    engine.setElevationFn((worldX: number, worldZ: number): number => {
+      const dem = ctx.getDem();
+      if (dem) {
+        const tg = ctx.getEditor().getTransformGroup();
+        tg.updateMatrixWorld(true);
+        const local = new Vector3(worldX, 0, worldZ)
+          .applyMatrix4(new Matrix4().copy(tg.matrixWorld).invert());
+        const elev = dem.getElevationClamped(local.x, local.z);
+        if (elev !== null) return elev as number;
+      }
+      return 0;
+    });
+
+    engine.on('shape-created', (shape) => {
+      if (shape.type !== 'polygon') return;
+      // Switch to vertex-edit mode so user can refine before confirming
+      engine.startSelect('vertex');
+      engine.selectShape(shape.id);
+      // Install Enter listener to confirm selection
+      this.installPolygonConfirm(shape as PolygonShape);
+    });
+
+    engine.on('draw-cancelled', () => {
+      this.stopPolygonDraw(false);
+      useReclassifyStore.getState().setActiveTool('drag-select');
+    });
+
+    this.polygonEngine = engine;
+    engine.startDrawPolygon();
+  }
+
+  private stopPolygonDraw(restoreCursor = true): void {
+    if (this.polygonConfirmFn) {
+      this.ctx?.domElement.removeEventListener('keydown', this.polygonConfirmFn);
+      this.polygonConfirmFn = null;
+    }
+    this.polygonEngine?.dispose();
+    this.polygonEngine = null;
+    if (restoreCursor && this.ctx) this.ctx.domElement.style.cursor = '';
+  }
+
+  private installPolygonConfirm(shape: PolygonShape): void {
+    if (this.polygonConfirmFn) {
+      this.ctx?.domElement.removeEventListener('keydown', this.polygonConfirmFn);
+    }
+    const fn = (e: KeyboardEvent): void => {
+      if (e.key === 'Enter') {
+        e.stopPropagation();
+        this.confirmPolygonSelection(shape);
+      } else if (e.key === 'Escape') {
+        this.stopPolygonDraw(false);
+        useReclassifyStore.getState().setActiveTool('drag-select');
+      }
+    };
+    this.polygonConfirmFn = fn;
+    this.ctx?.domElement.addEventListener('keydown', fn);
+  }
+
+  private confirmPolygonSelection(shape: PolygonShape): void {
+    this.stopPolygonDraw();
+    this.evaluateNodesPolygon(shape.basePoints);
+    useReclassifyStore.getState().setActiveTool('drag-select');
+  }
+
+  /** Select all point cloud points whose XZ position lies inside the polygon footprint. */
+  private evaluateNodesPolygon(basePoints: Vec3[]): void {
+    if (!this.ctx || basePoints.length < 3) return;
+
+    const xzPoly: [number, number][] = basePoints.map((p) => [p.x, p.z]);
+    const { classVisibility, classActive } = useAnnotateStore.getState();
+    const pointClouds = this.ctx.getPointClouds();
+    const clipRegions = this.getActiveClipRegions();
+
+    // Reset existing selection
+    this.selectedPositions = [];
+    this.selectedPointIds = [];
+    this.selectedPointKeys.clear();
+    this.gizmoFixed = false;
+
+    for (const pco of pointClouds) {
+      pco.updateMatrixWorld(true);
+
+      for (const node of pco.visibleNodes) {
+        const nodeKey = node.geometryNode?.name;
+        if (!nodeKey) continue;
+
+        const sceneNode = node.sceneNode;
+        if (!sceneNode) continue;
+        const geom = sceneNode.geometry;
+        if (!geom) continue;
+        const posAttr = geom.getAttribute('position');
+        if (!posAttr) continue;
+
+        const nodeWorld = sceneNode.matrixWorld;
+        const ne = nodeWorld.elements;
+        const arr = posAttr.array as Float32Array;
+        const count = posAttr.count;
+        const classAttr = geom.getAttribute('classification');
+
+        for (let i = 0; i < count; i++) {
+          const idx = i * 3;
+          const px = arr[idx], py = arr[idx + 1], pz = arr[idx + 2];
+
+          // World-space position
+          const wx = ne[0]*px + ne[4]*py + ne[8]*pz  + ne[12];
+          const wy = ne[1]*px + ne[5]*py + ne[9]*pz  + ne[13];
+          const wz = ne[2]*px + ne[6]*py + ne[10]*pz + ne[14];
+
+          // XZ polygon test (vertical prism selection)
+          if (!isPointInPolygon2D(wx, wz, xzPoly)) continue;
+
+          // Classification visibility + active filter
+          if (classAttr) {
+            const classVal = Math.round(classAttr.getX(i));
+            if (!(classVisibility[String(classVal)] ?? true)) continue;
+            if (!(classActive[String(classVal)] ?? true)) continue;
+          }
+
+          // Clip region test
+          if (clipRegions && !this.isPointInsideClip(wx, wy, wz, clipRegions.boxes, clipRegions.cylinders)) continue;
+
+          const key = `${nodeKey}:${i}`;
+          if (this.selectedPointKeys.has(key)) continue;
+          this.selectedPointKeys.add(key);
+          this.selectedPositions.push(wx, wy, wz);
+          this.selectedPointIds.push(makePointId(nodeKey, i));
+        }
+      }
+    }
+
+    this.rebuildHighlight();
+    const pointCount = this.selectedPointIds.length;
+    useReclassifyStore.getState().setSelectedCount(pointCount);
+    useReclassifyStore.getState().setPhase(pointCount > 0 ? 'selected' : 'selecting');
   }
 
   clearSelection(): void {
@@ -386,4 +565,23 @@ export class ReclassifyPlugin implements ViewerPlugin {
 
     useReclassifyStore.getState().setGizmoScreenPos({ x, y });
   }
+}
+
+// ── Utilities ─────────────────────────────────────────────────────────────────
+
+/**
+ * Ray-casting point-in-polygon test in 2D.
+ * px/py are the test coordinates; polygon is an array of [x, y] vertices.
+ */
+function isPointInPolygon2D(px: number, py: number, polygon: [number, number][]): boolean {
+  let inside = false;
+  const n = polygon.length;
+  for (let i = 0, j = n - 1; i < n; j = i++) {
+    const [xi, yi] = polygon[i];
+    const [xj, yj] = polygon[j];
+    if (((yi > py) !== (yj > py)) && (px < (xj - xi) * (py - yi) / (yj - yi) + xi)) {
+      inside = !inside;
+    }
+  }
+  return inside;
 }

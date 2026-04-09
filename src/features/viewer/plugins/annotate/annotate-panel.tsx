@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Eye, EyeOff, X, ChevronLeft, ChevronRight, Target } from 'lucide-react';
+import { Eye, EyeOff, X, ChevronLeft, ChevronRight, Target, BoxSelect, LassoSelect } from 'lucide-react';
 import {
   Button,
   ScrollArea,
@@ -11,6 +11,7 @@ import {
 import { useViewerModeStore } from '@/app/stores';
 import { useAnnotateStore } from './annotate-store';
 import { CLASSIFICATION_CLASSES } from './classification-classes';
+import { useReclassifyStore } from '../reclassify/reclassify-store';
 
 export function AnnotatePanel() {
   const mode = useViewerModeStore((s) => s.mode);
@@ -25,6 +26,8 @@ export function AnnotatePanel() {
   const [collapsed, setCollapsed] = useState(false);
 
   const isReclassify = mode === 'reclassify';
+  const activeTool = useReclassifyStore((s) => s.activeTool);
+  const setActiveTool = useReclassifyStore((s) => s.setActiveTool);
 
   if (mode !== 'annotate' && mode !== 'reclassify') return null;
 
@@ -180,12 +183,49 @@ export function AnnotatePanel() {
             </div>
           </ScrollArea>
 
+          {/* Reclassify tool selector */}
+          {isReclassify && (
+            <div className="border-t border-border/50 px-2 py-1.5">
+              <p className="mb-1 text-[10px] text-muted-foreground">Selection tool</p>
+              <div className="flex gap-1">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant={activeTool === 'drag-select' ? 'secondary' : 'ghost'}
+                      className="h-7 flex-1 gap-1.5 text-xs"
+                      onClick={() => setActiveTool('drag-select')}
+                    >
+                      <BoxSelect className="h-3.5 w-3.5" />
+                      Box
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">Drag to draw a selection rectangle</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant={activeTool === 'polygon' ? 'secondary' : 'ghost'}
+                      className="h-7 flex-1 gap-1.5 text-xs"
+                      onClick={() => setActiveTool('polygon')}
+                    >
+                      <LassoSelect className="h-3.5 w-3.5" />
+                      Polygon
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">Click to draw a polygon selection</TooltipContent>
+                </Tooltip>
+              </div>
+            </div>
+          )}
+
           {/* Reclassify hint */}
           {isReclassify && (
             <div className="border-t border-border/50 px-2.5 py-1.5">
               <p className="text-[10px] leading-relaxed text-muted-foreground">
                 <Target className="mr-1 inline h-2.5 w-2.5 text-cyan-400" />
-                Active classes only are drag-selectable
+                Active classes only are selectable
               </p>
             </div>
           )}

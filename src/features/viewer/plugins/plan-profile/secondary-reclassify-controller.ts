@@ -17,6 +17,169 @@ import type { PointId } from '../../services/point-cloud-editor/types';
 import { useAnnotateStore } from '../annotate/annotate-store';
 import { useReclassifyStore } from '../reclassify/reclassify-store';
 
+// ── Point-in-polygon (ray casting) ───────────────────────────────────────────
+
+function isPointInPolygon2D(px: number, py: number, poly: [number, number][]): boolean {
+  let inside = false;
+  const n = poly.length;
+  for (let i = 0, j = n - 1; i < n; j = i++) {
+    const [xi, yi] = poly[i];
+    const [xj, yj] = poly[j];
+    if (((yi > py) !== (yj > py)) && (px < (xj - xi) * (py - yi) / (yj - yi) + xi)) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+// ── 2D Polygon draw overlay ───────────────────────────────────────────────────
+
+/**
+ * Lightweight polygon drawing for the secondary (2D profile) viewport.
+ * Renders a canvas overlay for vertex preview and fires onComplete when
+ * the polygon is closed (double-click, first-vertex click, or Enter).
+ */
+class SecondaryPolygonDraw {
+  private readonly canvas: HTMLCanvasElement;
+  private readonly onComplete: (ndcPolygon: [number, number][]) => void;
+  private readonly onCancel: () => void;
+  private readonly targetEl: HTMLCanvasElement;
+
+  /** Vertices in canvas-local pixel coords [x, y] */
+  private vertices: [number, number][] = [];
+  private cursor: [number, number] | null = null;
+
+  private readonly CLOSE_PX = 14;
+  private readonly keyFn: (e: KeyboardEvent) => void;
+
+  constructor(
+    targetEl: HTMLCanvasElement,
+    onComplete: (ndcPolygon: [number, number][]) => void,
+    onCancel: () => void,
+  ) {
+    this.targetEl = targetEl;
+    this.onComplete = onComplete;
+    this.onCancel = onCancel;
+
+    // Create overlay canvas
+    this.canvas = document.createElement('canvas');
+    this.canvas.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:50;';
+    this.canvas.width  = targetEl.clientWidth;
+    this.canvas.height = targetEl.clientHeight;
+
+    const parent = targetEl.parentElement ?? document.body;
+    parent.style.position = 'relative';
+    parent.appendChild(this.canvas);
+
+    this.keyFn = this.onKeyDown.bind(this);
+    targetEl.addEventListener('pointerdown', this.onPointerDown);
+    targetEl.addEventListener('pointermove', this.onPointerMove);
+    window.addEventListener('keydown', this.keyFn);
+    targetEl.style.cursor = 'crosshair';
+  }
+
+  dispose(): void {
+    this.targetEl.removeEventListener('pointerdown', this.onPointerDown);
+    this.targetEl.removeEventListener('pointermove', this.onPointerMove);
+    window.removeEventListener('keydown', this.keyFn);
+    this.canvas.remove();
+    this.targetEl.style.cursor = '';
+  }
+
+  private readonly onPointerDown = (e: PointerEvent): void => {
+    if (e.button !== 0) return;
+    const rect = this.targetEl.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    // Check close-on-first-vertex
+    if (this.vertices.length >= 3) {
+      const [fx, fy] = this.vertices[0];
+      const dx = x - fx, dy = y - fy;
+      if (dx * dx + dy * dy <= this.CLOSE_PX * this.CLOSE_PX) {
+        this.close();
+        return;
+      }
+    }
+
+    // Double-click closes
+    // (handled implicitly via close-on-first-vertex for repeated clicks)
+
+    this.vertices.push([x, y]);
+    this.redraw();
+  };
+
+  private readonly onPointerMove = (e: PointerEvent): void => {
+    const rect = this.targetEl.getBoundingClientRect();
+    this.cursor = [e.clientX - rect.left, e.clientY - rect.top];
+    this.redraw();
+  };
+
+  private onKeyDown(e: KeyboardEvent): void {
+    if (e.key === 'Enter' && this.vertices.length >= 3) {
+      this.close();
+    } else if (e.key === 'Escape') {
+      this.dispose();
+      this.onCancel();
+    } else if ((e.key === 'Backspace' || e.key === 'Delete') && this.vertices.length > 0) {
+      this.vertices.pop();
+      this.redraw();
+    }
+  }
+
+  private close(): void {
+    if (this.vertices.length < 3) return;
+    const w = this.targetEl.clientWidth;
+    const h = this.targetEl.clientHeight;
+    const ndcPoly: [number, number][] = this.vertices.map(([px, py]) => [
+      (px / w) * 2 - 1,
+      -((py / h) * 2 - 1),
+    ]);
+    this.dispose();
+    this.onComplete(ndcPoly);
+  }
+
+  private redraw(): void {
+    const w = this.canvas.width  = this.targetEl.clientWidth;
+    const h = this.canvas.height = this.targetEl.clientHeight;
+    const ctx2d = this.canvas.getContext('2d');
+    if (!ctx2d) return;
+    ctx2d.clearRect(0, 0, w, h);
+    if (this.vertices.length === 0) return;
+
+    // Draw polygon outline
+    ctx2d.beginPath();
+    ctx2d.moveTo(this.vertices[0][0], this.vertices[0][1]);
+    for (let i = 1; i < this.vertices.length; i++) {
+      ctx2d.lineTo(this.vertices[i][0], this.vertices[i][1]);
+    }
+    if (this.cursor) ctx2d.lineTo(this.cursor[0], this.cursor[1]);
+    ctx2d.strokeStyle = 'rgba(253, 224, 71, 0.9)';  // yellow
+    ctx2d.lineWidth = 1.5;
+    ctx2d.setLineDash([4, 3]);
+    ctx2d.stroke();
+
+    // Draw vertex dots
+    ctx2d.setLineDash([]);
+    for (let i = 0; i < this.vertices.length; i++) {
+      const [vx, vy] = this.vertices[i];
+      const isFirst = i === 0;
+      ctx2d.beginPath();
+      ctx2d.arc(vx, vy, isFirst ? 5 : 3, 0, Math.PI * 2);
+      ctx2d.fillStyle = isFirst ? 'rgba(0, 229, 255, 0.9)' : 'rgba(253, 224, 71, 0.9)';
+      ctx2d.fill();
+      // Close indicator ring on first vertex when ≥ 3 vertices
+      if (isFirst && this.vertices.length >= 3) {
+        ctx2d.beginPath();
+        ctx2d.arc(vx, vy, this.CLOSE_PX, 0, Math.PI * 2);
+        ctx2d.strokeStyle = 'rgba(0, 229, 255, 0.4)';
+        ctx2d.lineWidth = 1;
+        ctx2d.stroke();
+      }
+    }
+  }
+}
+
 /** Pre-extracted inverse matrix elements for fast inline point-in-box test */
 interface ClipInverse {
   e: Float64Array;
@@ -28,6 +191,8 @@ export class SecondaryReclassifyController {
   private readonly getSlab: () => PlaneSlab | null;
 
   private dragSelect: DragSelectController;
+  private polygonDraw: SecondaryPolygonDraw | null = null;
+  private unsubTool: (() => void) | null = null;
 
   private selectionFrustum: SelectionFrustum | null = null;
   private processedNodes = new Set<string>();
@@ -64,10 +229,21 @@ export class SecondaryReclassifyController {
 
   activate(): void {
     this.secondaryVp.controls.enabled = false;
-    this.dragSelect.activate();
+
+    // Subscribe to tool changes
+    this.unsubTool = useReclassifyStore.subscribe((s, prev) => {
+      if (s.activeTool !== prev.activeTool) {
+        this.handleToolChange(s.activeTool);
+      }
+    });
+
+    this.handleToolChange(useReclassifyStore.getState().activeTool);
   }
 
   deactivate(): void {
+    this.unsubTool?.();
+    this.unsubTool = null;
+    this.stopPolygonDraw();
     this.dragSelect.deactivate();
     this.secondaryVp.controls.enabled = true;
     this.clearSelection();
@@ -76,6 +252,34 @@ export class SecondaryReclassifyController {
   update(): void {
     if (!this.selectionFrustum) return;
     this.evaluateNewNodes();
+  }
+
+  private handleToolChange(tool: 'drag-select' | 'polygon'): void {
+    if (tool === 'polygon') {
+      this.dragSelect.deactivate();
+      this.startPolygonDraw();
+    } else {
+      this.stopPolygonDraw();
+      this.dragSelect.activate();
+    }
+  }
+
+  private startPolygonDraw(): void {
+    if (this.polygonDraw) return;
+    this.polygonDraw = new SecondaryPolygonDraw(
+      this.secondaryVp.renderer.domElement,
+      (ndcPolygon) => this.confirmPolygonSelection(ndcPolygon),
+      () => useReclassifyStore.getState().setActiveTool('drag-select'),
+    );
+  }
+
+  private stopPolygonDraw(): void {
+    this.polygonDraw?.dispose();
+    this.polygonDraw = null;
+  }
+
+  private confirmPolygonSelection(ndcPolygon: [number, number][]): void {
+    this.evaluateNodesPolygon(ndcPolygon);
   }
 
   applyClassification(classId: number): void {
@@ -191,6 +395,93 @@ export class SecondaryReclassifyController {
   }
 
   // ── Selection evaluation ──────────────────────────────────────────────────────
+
+  /** Select points whose NDC position (secondary camera) lies inside the drawn polygon. */
+  private evaluateNodesPolygon(ndcPolygon: [number, number][]): void {
+    if (ndcPolygon.length < 3) return;
+
+    const { classVisibility, classActive } = useAnnotateStore.getState();
+    const pointClouds = this.ctx.getPointClouds();
+    const slabClip = this.buildSlabClipInverse();
+    const vpMatrix = this.secondaryVp.camera.projectionMatrix.clone()
+      .multiply(this.secondaryVp.camera.matrixWorldInverse);
+    const mvp = new Matrix4();
+
+    // Take ownership of the store
+    if (!this.isOwningStore) {
+      this.prevApplyFn = useReclassifyStore.getState()._applyReclassification;
+      this.isOwningStore = true;
+      useReclassifyStore.getState().setApplyFn(this.boundApplyFn);
+    }
+
+    // Fresh selection
+    this.selectedPositions = [];
+    this.selectedPointIds = [];
+    this.selectedPointKeys.clear();
+
+    for (const pco of pointClouds) {
+      pco.updateMatrixWorld(true);
+
+      for (const node of pco.visibleNodes) {
+        const nodeKey = node.geometryNode?.name;
+        if (!nodeKey) continue;
+
+        const sceneNode = node.sceneNode;
+        if (!sceneNode) continue;
+        const geom = sceneNode.geometry;
+        if (!geom) continue;
+        const posAttr = geom.getAttribute('position');
+        if (!posAttr) continue;
+
+        const nodeWorld = sceneNode.matrixWorld;
+        const ne = nodeWorld.elements;
+        mvp.multiplyMatrices(vpMatrix, nodeWorld);
+        const m = mvp.elements;
+
+        const arr = posAttr.array as Float32Array;
+        const count = posAttr.count;
+        const classAttr = geom.getAttribute('classification');
+
+        for (let i = 0; i < count; i++) {
+          const idx = i * 3;
+          const px = arr[idx], py = arr[idx + 1], pz = arr[idx + 2];
+
+          // Project to secondary camera NDC
+          const cw = m[3]*px + m[7]*py + m[11]*pz + m[15];
+          if (cw <= 0) continue;
+          const ndcX = (m[0]*px + m[4]*py + m[8]*pz  + m[12]) / cw;
+          const ndcY = (m[1]*px + m[5]*py + m[9]*pz  + m[13]) / cw;
+
+          // NDC polygon test
+          if (!isPointInPolygon2D(ndcX, ndcY, ndcPolygon)) continue;
+
+          // Classification filter
+          if (classAttr) {
+            const classVal = Math.round(classAttr.getX(i));
+            if (!(classVisibility[String(classVal)] ?? true)) continue;
+            if (!(classActive[String(classVal)] ?? true)) continue;
+          }
+
+          // World-space position
+          const wx = ne[0]*px + ne[4]*py + ne[8]*pz  + ne[12];
+          const wy = ne[1]*px + ne[5]*py + ne[9]*pz  + ne[13];
+          const wz = ne[2]*px + ne[6]*py + ne[10]*pz + ne[14];
+
+          // Slab clip test
+          if (slabClip && !this.isPointInSlab(wx, wy, wz, slabClip)) continue;
+
+          const pid = makePointId(nodeKey, i);
+          if (this.selectedPointKeys.has(pid)) continue;
+          this.selectedPointKeys.add(pid);
+          this.selectedPositions.push(wx, wy, wz);
+          this.selectedPointIds.push(pid);
+        }
+      }
+    }
+
+    this.rebuildHighlight();
+    this.updateStore();
+  }
 
   private evaluateNewNodes(): void {
     if (!this.selectionFrustum) return;

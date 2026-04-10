@@ -1,0 +1,40 @@
+{
+  "filename": "07-poi-measurement-reference.png",
+  "title": "POI used as a measurement reference alongside the Point Info tool",
+  "capture_instructions": "POI marker is placed on one corner of a building in the Queens Campus point cloud. The Point Info tool is active (rightmost toolbar button highlighted). Hover the cursor over a second feature on the same building (e.g., opposite corner) so the Point Info coordinate readout is visible in the viewport or status bar. Layers panel visible on left showing POI Marker with coordinates.",
+  "ui_state": "POI placed on building corner, Point Info tool active, cursor hovering second feature, coordinate readout visible",
+  "annotations": [
+    {
+      "type": "circle",
+      "x": 1050,
+      "y": 440,
+      "radius": 24,
+      "number": 1,
+      "label": "POI marker on first measurement point (building corner)"
+    },
+    {
+      "type": "circle",
+      "x": 1240,
+      "y": 460,
+      "radius": 18,
+      "number": 2,
+      "label": "Cursor hovering second feature — Point Info coordinates displayed"
+    },
+    {
+      "type": "bbox",
+      "x": 0,
+      "y": 290,
+      "width": 256,
+      "height": 50,
+      "label": "POI Marker coordinates in Layers panel"
+    },
+    {
+      "type": "bbox",
+      "x": 1140,
+      "y": 430,
+      "width": 200,
+      "height": 60,
+      "label": "Point Info coordinate readout overlay"
+    }
+  ]
+}

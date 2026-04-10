@@ -1,0 +1,32 @@
+{
+  "filename": "01-classification-color-mode.png",
+  "title": "Switching to Classification color mode before reclassifying",
+  "capture_instructions": "Queens Campus (Segmented) point cloud visible in the 3D viewport. The sidebar Settings tab is open and the Color Mode section shows 'Classification' selected. The point cloud should be colored by semantic class (grey roads, green trees, purple buildings, etc.).",
+  "ui_state": "Classification color mode active, sidebar Settings tab open, point cloud fully loaded",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 0,
+      "y": 0,
+      "width": 256,
+      "height": 1080,
+      "label": "Left sidebar — Settings tab open"
+    },
+    {
+      "type": "circle",
+      "x": 120,
+      "y": 260,
+      "radius": 26,
+      "number": 1,
+      "label": "Color Mode — Classification selected"
+    },
+    {
+      "type": "bbox",
+      "x": 256,
+      "y": 40,
+      "width": 1664,
+      "height": 1000,
+      "label": "3D viewport — points colored by classification class"
+    }
+  ]
+}

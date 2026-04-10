@@ -1,0 +1,52 @@
+{
+  "filename": "07-projection-comparison.png",
+  "title": "Perspective vs Orthographic camera projection comparison — same scene, same camera position",
+  "capture_instructions": "Composite image. Left half: Perspective projection active, Queens Campus scene at a 30-degree oblique angle — parallel road edges should converge toward a vanishing point, buildings should show foreshortening. Right half: identical camera position, Orthographic projection active — road edges should appear parallel, no foreshortening. RGB color mode on both. The projection toggle in the Settings panel sidebar should be visible in both halves.",
+  "ui_state": "Left: Camera Projection = Perspective. Right: Camera Projection = Orthographic. RGB color mode, oblique camera angle, same position both sides.",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 256,
+      "y": 40,
+      "width": 820,
+      "height": 680,
+      "label": "Perspective projection — converging lines, natural depth"
+    },
+    {
+      "type": "bbox",
+      "x": 1076,
+      "y": 40,
+      "width": 820,
+      "height": 680,
+      "label": "Orthographic projection — parallel lines, consistent scale"
+    },
+    {
+      "type": "arrow",
+      "x1": 400,
+      "y1": 600,
+      "x2": 700,
+      "y2": 350,
+      "label": "Road edges converge to vanishing point (Perspective)"
+    },
+    {
+      "type": "arrow",
+      "x1": 1200,
+      "y1": 600,
+      "x2": 1200,
+      "y2": 350,
+      "label": "Road edges remain parallel (Orthographic)"
+    },
+    {
+      "type": "hotkey",
+      "x": 60,
+      "y": 665,
+      "label": "Perspective"
+    },
+    {
+      "type": "hotkey",
+      "x": 1250,
+      "y": 665,
+      "label": "Orthographic"
+    }
+  ]
+}

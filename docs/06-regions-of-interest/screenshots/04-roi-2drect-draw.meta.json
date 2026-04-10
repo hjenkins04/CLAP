@@ -1,0 +1,41 @@
+{
+  "filename": "04-roi-2drect-draw.png",
+  "title": "Drawing a 2D Rectangle ROI — click-drag gesture in progress",
+  "capture_instructions": "2D Rectangle drawing mode is active. The user is mid-drag: mouse button is held down. A flat rectangular preview outline is visible in the viewport stretching from the origin click point to the current cursor position. Camera is at a top-down (plan) view over a road segment of the Queens Campus scene. The rectangle aligns along the road corridor.",
+  "ui_state": "2D Rectangle draw mode active, mouse button held, rectangle preview visible, camera in top-down view",
+  "annotations": [
+    {
+      "type": "circle",
+      "x": 600,
+      "y": 380,
+      "radius": 12,
+      "number": 1,
+      "label": "Click-drag origin point"
+    },
+    {
+      "type": "circle",
+      "x": 1300,
+      "y": 560,
+      "radius": 12,
+      "number": 2,
+      "label": "Current cursor position (release to confirm)"
+    },
+    {
+      "type": "bbox",
+      "x": 600,
+      "y": 380,
+      "width": 700,
+      "height": 180,
+      "label": "2D Rectangle preview — stretches to cursor as you drag"
+    },
+    {
+      "type": "hotkey",
+      "keys": [
+        "Esc"
+      ],
+      "x": 900,
+      "y": 700,
+      "label": "Press Escape to cancel drawing"
+    }
+  ]
+}

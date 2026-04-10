@@ -1,0 +1,41 @@
+{
+  "filename": "03-pan.png",
+  "title": "Panning the camera — right mouse button drag",
+  "capture_instructions": "Queens Campus point cloud visible. The view should show the point cloud offset to one side of the viewport (not centred), as if the user has panned the camera to the right or left. The View Cube orientation should be unchanged from a standard view (e.g., still top-down). A right-mouse-button icon or annotation should indicate the control being used. Optionally show a motion arrow overlaid on the viewport indicating the pan direction.",
+  "ui_state": "Grab/Navigate mode active, camera panned so point cloud is offset in the viewport, same orbit angle as starting view",
+  "annotations": [
+    {
+      "type": "hotkey",
+      "x": 700,
+      "y": 200,
+      "keys": [
+        "RMB",
+        "Drag"
+      ]
+    },
+    {
+      "type": "arrow",
+      "x1": 700,
+      "y1": 540,
+      "x2": 1100,
+      "y2": 540,
+      "label": "Pan direction — camera moves parallel to view plane"
+    },
+    {
+      "type": "bbox",
+      "x": 256,
+      "y": 50,
+      "width": 1664,
+      "height": 1030,
+      "label": "Viewport — point cloud offset after pan"
+    },
+    {
+      "type": "circle",
+      "x": 1100,
+      "y": 540,
+      "radius": 30,
+      "number": 1,
+      "label": "Point cloud position after panning right"
+    }
+  ]
+}

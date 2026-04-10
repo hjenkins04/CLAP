@@ -1,0 +1,48 @@
+{
+  "filename": "04-classification-mode.png",
+  "title": "Queens Campus in Classification color mode showing all class colors",
+  "capture_instructions": "Classification selected in Color Mode section. Same broad overhead-angled view of Queens Campus. The classification legend should be visible in the bottom-right corner of the viewport. Multiple class colors should be clearly visible — road gray, building red, tree green, sidewalk tan.",
+  "ui_state": "Settings tab, Color Mode = Classification, Queens Campus loaded, classification legend visible bottom-right of viewport",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 16,
+      "y": 341,
+      "width": 213,
+      "height": 31,
+      "label": "Classification option selected"
+    },
+    {
+      "type": "arrow",
+      "x1": 820,
+      "y1": 510,
+      "x2": 780,
+      "y2": 480,
+      "label": "Roads — class 2 (gray)"
+    },
+    {
+      "type": "arrow",
+      "x1": 680,
+      "y1": 370,
+      "x2": 720,
+      "y2": 350,
+      "label": "Buildings — class 6 (red)"
+    },
+    {
+      "type": "arrow",
+      "x1": 1080,
+      "y1": 290,
+      "x2": 1050,
+      "y2": 320,
+      "label": "Trees — class 7 (dark green)"
+    },
+    {
+      "type": "bbox",
+      "x": 1620,
+      "y": 580,
+      "width": 280,
+      "height": 380,
+      "label": "Classification legend panel"
+    }
+  ]
+}

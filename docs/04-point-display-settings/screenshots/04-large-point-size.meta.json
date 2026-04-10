@@ -1,0 +1,32 @@
+{
+  "filename": "04-large-point-size.png",
+  "title": "Queens Campus rendered with a large point size (4.0) — filled, solid appearance",
+  "capture_instructions": "Point Size slider set to 4.0. Same camera position and zoom as screenshot 03 (small-point-size) so the visual difference is directly comparable. RGB color mode. The scene should appear filled-in and solid — gaps between points covered by large point splats.",
+  "ui_state": "Point Size = 4.0, RGB color mode, same camera position as screenshot 03",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 16,
+      "y": 378,
+      "width": 223,
+      "height": 50,
+      "label": "Point Size section — slider at 4.0"
+    },
+    {
+      "type": "circle",
+      "x": 680,
+      "y": 420,
+      "radius": 60,
+      "number": 1,
+      "label": "Same area as screenshot 03 — points now appear large and overlapping"
+    },
+    {
+      "type": "arrow",
+      "x1": 760,
+      "y1": 450,
+      "x2": 820,
+      "y2": 480,
+      "label": "Class boundary blurred by large splat size"
+    }
+  ]
+}

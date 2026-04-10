@@ -1,0 +1,40 @@
+{
+  "filename": "03-roi-3dbox-draw.png",
+  "title": "Drawing a 3D Box ROI — first corner placed, dragging to second corner",
+  "capture_instructions": "3D Box drawing mode is active (selected from shape picker). The user has placed the first corner (visible as a point or corner indicator) and is currently dragging to the second corner. A rectangular preview outline stretches between the first corner and the cursor position. The cursor is approximately over the opposite corner of a building footprint. Camera is at a slight top-down perspective.",
+  "ui_state": "3D Box draw mode active, first corner placed, dragging to second corner, preview rectangle visible",
+  "annotations": [
+    {
+      "type": "circle",
+      "x": 820,
+      "y": 340,
+      "radius": 14,
+      "number": 1,
+      "label": "First corner — click to start box"
+    },
+    {
+      "type": "circle",
+      "x": 1180,
+      "y": 620,
+      "radius": 14,
+      "number": 2,
+      "label": "Second corner — click here to complete box footprint"
+    },
+    {
+      "type": "bbox",
+      "x": 820,
+      "y": 340,
+      "width": 360,
+      "height": 280,
+      "label": "Box footprint preview (stretches as cursor moves)"
+    },
+    {
+      "type": "arrow",
+      "x1": 820,
+      "y1": 340,
+      "x2": 1180,
+      "y2": 620,
+      "label": "Drag direction from first to second corner"
+    }
+  ]
+}

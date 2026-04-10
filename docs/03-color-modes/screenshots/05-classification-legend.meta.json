@@ -1,0 +1,40 @@
+{
+  "filename": "05-classification-legend.png",
+  "title": "Classification legend panel showing all Queens Campus class codes and colors",
+  "capture_instructions": "Close-up crop of the classification legend panel in the bottom-right corner of the viewport while Classification mode is active. All 17 class entries should be legible: class code, color swatch, and label name. Crop to roughly 320x440px showing just the legend panel.",
+  "ui_state": "Classification color mode active, legend panel fully visible, all 17 Queens Campus classes listed",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 4,
+      "y": 4,
+      "width": 312,
+      "height": 432,
+      "label": "Full classification legend — 17 classes"
+    },
+    {
+      "type": "circle",
+      "x": 24,
+      "y": 30,
+      "radius": 12,
+      "number": 1,
+      "label": "Class code column"
+    },
+    {
+      "type": "circle",
+      "x": 60,
+      "y": 30,
+      "radius": 12,
+      "number": 2,
+      "label": "Color swatch column"
+    },
+    {
+      "type": "circle",
+      "x": 160,
+      "y": 30,
+      "radius": 12,
+      "number": 3,
+      "label": "Class label column"
+    }
+  ]
+}

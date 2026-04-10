@@ -1,0 +1,40 @@
+{
+  "filename": "02-draw-profile-line.png",
+  "title": "Drawing the slab center line — two-click workflow",
+  "capture_instructions": "Plan/Profile tool is active. First click has been placed on the left side of a road section in the 3D viewport (visible as a small marker). The cursor is positioned at the intended second click location on the opposite side of the road. The overlay instruction text 'Click to place end point' is visible in the viewport.",
+  "ui_state": "Plan/Profile active, first vertex placed, cursor at second click position, no 2D panel yet",
+  "annotations": [
+    {
+      "type": "circle",
+      "x": 580,
+      "y": 480,
+      "radius": 18,
+      "number": 1,
+      "label": "First vertex (start point) placed on left road edge"
+    },
+    {
+      "type": "circle",
+      "x": 860,
+      "y": 520,
+      "radius": 18,
+      "number": 2,
+      "label": "Cursor at second click location — right road edge"
+    },
+    {
+      "type": "arrow",
+      "x1": 580,
+      "y1": 480,
+      "x2": 860,
+      "y2": 520,
+      "label": "Slab center line direction"
+    },
+    {
+      "type": "bbox",
+      "x": 300,
+      "y": 55,
+      "width": 500,
+      "height": 28,
+      "label": "Overlay instruction: 'Click to place end point'"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "filename": "02-toolbar-2d-mode-toggle.png",
+  "title": "Toolbar mode toggle buttons for 3D vs 2D reclassification",
+  "capture_instructions": "Close-up of the toolbar area. Reclassify Points is active. The additional 3D/2D mode toggle buttons should be visible in the toolbar. The 2D button should be highlighted/selected. Profile Viewer is open.",
+  "ui_state": "Reclassify Points active, 2D mode selected in toolbar toggle, Profile Viewer open",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 256,
+      "y": 0,
+      "width": 1664,
+      "height": 50,
+      "label": "Main toolbar"
+    },
+    {
+      "type": "circle",
+      "x": 1060,
+      "y": 28,
+      "radius": 30,
+      "number": 1,
+      "label": "2D mode toggle button — highlighted/active"
+    },
+    {
+      "type": "circle",
+      "x": 1000,
+      "y": 28,
+      "radius": 30,
+      "number": 2,
+      "label": "3D mode toggle button — inactive"
+    },
+    {
+      "type": "bbox",
+      "x": 960,
+      "y": 4,
+      "width": 140,
+      "height": 42,
+      "label": "3D / 2D mode toggle button group"
+    }
+  ]
+}

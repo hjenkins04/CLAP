@@ -1,0 +1,32 @@
+{
+  "filename": "05-polygon-mode-2d.png",
+  "title": "Polygon mode button active in toolbar for 2D viewport",
+  "capture_instructions": "In the toolbar (or 2D panel header), the Polygon mode button should be highlighted/active. No vertices placed yet. The cursor should appear as a crosshair when hovering over the 2D viewport. Profile Viewer is open, Reclassify Points is active.",
+  "ui_state": "Reclassify Points active, Polygon mode selected, 2D viewport ready for vertex placement, no polygon started",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 256,
+      "y": 0,
+      "width": 1664,
+      "height": 50,
+      "label": "Main toolbar"
+    },
+    {
+      "type": "circle",
+      "x": 1110,
+      "y": 28,
+      "radius": 28,
+      "number": 1,
+      "label": "Polygon mode button — highlighted/active"
+    },
+    {
+      "type": "bbox",
+      "x": 1200,
+      "y": 0,
+      "width": 720,
+      "height": 1080,
+      "label": "2D viewport — crosshair cursor visible, ready for vertex clicks"
+    }
+  ]
+}

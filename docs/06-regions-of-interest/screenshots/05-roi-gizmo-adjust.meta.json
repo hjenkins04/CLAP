@@ -1,0 +1,56 @@
+{
+  "filename": "05-roi-gizmo-adjust.png",
+  "title": "ROI gizmo for fine-tuning position, size, and rotation after drawing",
+  "capture_instructions": "A 3D Box ROI has been drawn around a building in the Queens Campus point cloud. The box wireframe outline is visible. The 3D transform gizmo (colored axis arrows, plane handles, and scale handles on box edges/corners) overlays the ROI. Camera is at a 3/4 perspective to show all three axes of the gizmo clearly. The building points are visible inside the box.",
+  "ui_state": "3D Box ROI drawn, gizmo active, camera at 3/4 perspective, building points inside box",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 720,
+      "y": 280,
+      "width": 560,
+      "height": 400,
+      "label": "3D Box ROI wireframe outline"
+    },
+    {
+      "type": "circle",
+      "x": 1000,
+      "y": 480,
+      "radius": 16,
+      "number": 1,
+      "label": "Gizmo center — drag for free 3D translation"
+    },
+    {
+      "type": "arrow",
+      "x1": 1100,
+      "y1": 380,
+      "x2": 1020,
+      "y2": 460,
+      "label": "Red axis arrow (X)"
+    },
+    {
+      "type": "arrow",
+      "x1": 880,
+      "y1": 360,
+      "x2": 970,
+      "y2": 450,
+      "label": "Green axis arrow (Y)"
+    },
+    {
+      "type": "arrow",
+      "x1": 1000,
+      "y1": 280,
+      "x2": 1000,
+      "y2": 445,
+      "label": "Blue axis arrow (Z — drag to adjust height)"
+    },
+    {
+      "type": "circle",
+      "x": 1280,
+      "y": 480,
+      "radius": 12,
+      "number": 2,
+      "label": "Edge scale handle — drag to resize box face"
+    }
+  ]
+}

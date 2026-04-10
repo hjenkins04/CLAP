@@ -1,0 +1,32 @@
+{
+  "filename": "03-small-point-size.png",
+  "title": "Queens Campus rendered with a small point size (0.5) — precise point boundaries",
+  "capture_instructions": "Point Size slider set to 0.5. Point Budget at 5,000,000. Queens Campus loaded, camera zoomed into a road/building boundary area so individual points are distinguishable. Classification color mode active to make class boundaries visible. The scene should look sparse — individual points clearly separated.",
+  "ui_state": "Point Size = 0.5, Point Budget = 5M, Classification color mode, zoomed into road-building boundary",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 16,
+      "y": 378,
+      "width": 223,
+      "height": 50,
+      "label": "Point Size section — slider at 0.5"
+    },
+    {
+      "type": "circle",
+      "x": 680,
+      "y": 420,
+      "radius": 60,
+      "number": 1,
+      "label": "Individual points clearly separated — precise class boundary visible"
+    },
+    {
+      "type": "arrow",
+      "x1": 760,
+      "y1": 450,
+      "x2": 820,
+      "y2": 480,
+      "label": "Road-to-sidewalk boundary — sharp at small point size"
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "filename": "12-polygon-vertices.png",
+  "title": "Placing polygon vertices one by one in the 3D viewport",
+  "capture_instructions": "Polygon sub-mode is active. Four or five vertices have been placed by clicking in the 3D viewport, forming a partial polygon outline over a group of road or sidewalk points. Lines connect the vertices in sequence. The first vertex should have a distinct marker (larger dot or different color) to show it is the closing target. The polygon is not yet closed.",
+  "ui_state": "Polygon mode active, 4–5 vertices placed, polygon not yet closed, connecting lines visible",
+  "annotations": [
+    {
+      "type": "circle",
+      "x": 560,
+      "y": 400,
+      "radius": 16,
+      "number": 1,
+      "label": "First vertex (closing target — distinct marker)"
+    },
+    {
+      "type": "circle",
+      "x": 720,
+      "y": 370,
+      "radius": 14,
+      "number": 2,
+      "label": "Second vertex"
+    },
+    {
+      "type": "circle",
+      "x": 840,
+      "y": 450,
+      "radius": 14,
+      "number": 3,
+      "label": "Third vertex"
+    },
+    {
+      "type": "circle",
+      "x": 790,
+      "y": 580,
+      "radius": 14,
+      "number": 4,
+      "label": "Fourth vertex"
+    },
+    {
+      "type": "circle",
+      "x": 620,
+      "y": 600,
+      "radius": 14,
+      "number": 5,
+      "label": "Fifth vertex (most recently placed)"
+    },
+    {
+      "type": "bbox",
+      "x": 545,
+      "y": 355,
+      "width": 310,
+      "height": 260,
+      "label": "Polygon outline (lines connecting vertices)"
+    },
+    {
+      "type": "hotkey",
+      "keys": [
+        "Backspace"
+      ],
+      "x": 900,
+      "y": 340,
+      "label": "Delete removes last placed vertex"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "filename": "03-height-mode.png",
+  "title": "Queens Campus point cloud in Height color mode",
+  "capture_instructions": "Height selected in Color Mode section. Same camera angle as the RGB screenshot (02-rgb-mode.png) for easy comparison. The elevation gradient should be clearly visible — ground level in blue/cyan, building mid-floors in green/yellow, rooftops and tree tops in orange/red.",
+  "ui_state": "Settings tab, Color Mode = Height, Queens Campus loaded, same viewport angle as RGB screenshot",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 16,
+      "y": 341,
+      "width": 213,
+      "height": 31,
+      "label": "Height option selected"
+    },
+    {
+      "type": "arrow",
+      "x1": 480,
+      "y1": 570,
+      "x2": 520,
+      "y2": 540,
+      "label": "Ground plane — blue (lowest elevation)"
+    },
+    {
+      "type": "arrow",
+      "x1": 780,
+      "y1": 420,
+      "x2": 740,
+      "y2": 390,
+      "label": "Mid-height building floors — green/yellow"
+    },
+    {
+      "type": "arrow",
+      "x1": 1050,
+      "y1": 280,
+      "x2": 1020,
+      "y2": 310,
+      "label": "Rooftops and treetops — red (highest elevation)"
+    }
+  ]
+}

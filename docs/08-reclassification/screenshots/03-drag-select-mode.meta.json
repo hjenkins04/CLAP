@@ -1,0 +1,55 @@
+{
+  "filename": "03-drag-select-mode.png",
+  "title": "Drag-Select sub-mode active — overlay instruction visible",
+  "capture_instructions": "Reclassify Points tool active, Drag-Select sub-mode selected and highlighted in the sub-panel. The 3D viewport overlay at the bottom of the viewport shows the instruction text 'Drag to select points · Alt+drag to deselect · Esc to exit'. No selection rectangle is being drawn yet — the cursor is hovering over the point cloud.",
+  "ui_state": "Reclassify Points active, Drag-Select sub-mode active, no selection yet",
+  "annotations": [
+    {
+      "type": "circle",
+      "x": 380,
+      "y": 58,
+      "radius": 22,
+      "number": 1,
+      "label": "Drag-Select button — active/highlighted"
+    },
+    {
+      "type": "bbox",
+      "x": 300,
+      "y": 1020,
+      "width": 700,
+      "height": 30,
+      "label": "Overlay instruction text"
+    },
+    {
+      "type": "hotkey",
+      "keys": [
+        "Click",
+        "+",
+        "Drag"
+      ],
+      "x": 800,
+      "y": 540,
+      "label": "Default drag: replace selection"
+    },
+    {
+      "type": "hotkey",
+      "keys": [
+        "Alt",
+        "+",
+        "Drag"
+      ],
+      "x": 800,
+      "y": 600,
+      "label": "Alt+drag: subtract from selection"
+    },
+    {
+      "type": "hotkey",
+      "keys": [
+        "Esc"
+      ],
+      "x": 800,
+      "y": 660,
+      "label": "Escape: clear selection and exit"
+    }
+  ]
+}

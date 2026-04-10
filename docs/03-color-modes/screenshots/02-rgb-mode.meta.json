@@ -1,0 +1,40 @@
+{
+  "filename": "02-rgb-mode.png",
+  "title": "Queens Campus point cloud in RGB color mode",
+  "capture_instructions": "RGB selected in Color Mode section. Queens Campus (Segmented) point cloud loaded. Camera positioned to show a broad overhead-angled view of the campus — roads, buildings, and tree canopy all visible. Sidebar showing Settings tab with RGB highlighted.",
+  "ui_state": "Settings tab, Color Mode = RGB, Queens Campus loaded, isometric-style viewport perspective",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 16,
+      "y": 341,
+      "width": 213,
+      "height": 31,
+      "label": "RGB selected"
+    },
+    {
+      "type": "arrow",
+      "x1": 600,
+      "y1": 400,
+      "x2": 720,
+      "y2": 360,
+      "label": "Building facades in true red-brick color"
+    },
+    {
+      "type": "arrow",
+      "x1": 900,
+      "y1": 520,
+      "x2": 860,
+      "y2": 490,
+      "label": "Asphalt road surface in natural gray"
+    },
+    {
+      "type": "arrow",
+      "x1": 1100,
+      "y1": 310,
+      "x2": 1060,
+      "y2": 340,
+      "label": "Tree canopy in seasonal green"
+    }
+  ]
+}

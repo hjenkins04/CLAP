@@ -1,0 +1,57 @@
+{
+  "filename": "06-2d-navigation.png",
+  "title": "Navigating the 2D viewport — zoom and pan controls",
+  "capture_instructions": "Split-viewport layout. The 2D viewport is zoomed in on a section of the cross-section showing individual point returns clearly. The cursor should be positioned within the 2D viewport (hovering, not dragging). Optionally show a scroll-wheel cursor icon overlay if possible.",
+  "ui_state": "Plan/Profile active, 2D viewport zoomed in on road cross-section, cursor in 2D panel",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 1200,
+      "y": 0,
+      "width": 720,
+      "height": 1080,
+      "label": "2D viewport — navigation is independent of the 3D view"
+    },
+    {
+      "type": "hotkey",
+      "keys": [
+        "Scroll"
+      ],
+      "x": 1560,
+      "y": 300,
+      "label": "Scroll wheel to zoom in/out"
+    },
+    {
+      "type": "hotkey",
+      "keys": [
+        "RMB",
+        "+",
+        "Drag"
+      ],
+      "x": 1560,
+      "y": 380,
+      "label": "Right-click + drag to pan"
+    },
+    {
+      "type": "hotkey",
+      "keys": [
+        "Ctrl",
+        "+",
+        "Shift",
+        "+",
+        "Scroll"
+      ],
+      "x": 1560,
+      "y": 460,
+      "label": "Trackpad: Ctrl+Shift+scroll to pan"
+    },
+    {
+      "type": "circle",
+      "x": 1560,
+      "y": 560,
+      "radius": 30,
+      "number": 1,
+      "label": "Zoomed area — individual point returns visible"
+    }
+  ]
+}

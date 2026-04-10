@@ -1,0 +1,41 @@
+{
+  "filename": "02-orbit.png",
+  "title": "Orbiting the camera — mid-drag state showing tilted view",
+  "capture_instructions": "Queens Campus point cloud visible from a tilted angle (approximately 30–45 degrees from horizontal) that clearly shows orbit has been performed from the default top-down view. The View Cube in the bottom-right should show a matching tilted orientation. Use a composite or annotated image to show the middle mouse button being held (mouse icon overlay with middle button highlighted). The camera should be mid-orbit showing buildings from the side.",
+  "ui_state": "Grab/Navigate mode active, mid-orbit view of Queens Campus, tilted perspective showing building facades",
+  "annotations": [
+    {
+      "type": "circle",
+      "x": 960,
+      "y": 540,
+      "radius": 40,
+      "number": 1,
+      "label": "Point cloud — tilted orbit angle, building facades visible"
+    },
+    {
+      "type": "bbox",
+      "x": 1740,
+      "y": 8,
+      "width": 172,
+      "height": 168,
+      "label": "View Cube — shows tilted orientation matching viewport"
+    },
+    {
+      "type": "hotkey",
+      "x": 700,
+      "y": 200,
+      "keys": [
+        "Middle Mouse",
+        "Drag"
+      ]
+    },
+    {
+      "type": "arrow",
+      "x1": 800,
+      "y1": 400,
+      "x2": 1000,
+      "y2": 300,
+      "label": "Drag direction — horizontal = yaw, vertical = pitch"
+    }
+  ]
+}

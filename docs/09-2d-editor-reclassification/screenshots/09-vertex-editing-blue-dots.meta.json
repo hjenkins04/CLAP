@@ -1,0 +1,64 @@
+{
+  "filename": "09-vertex-editing-blue-dots.png",
+  "title": "Blue vertex handle dots on polygon annotation in 2D viewport",
+  "capture_instructions": "A polygon annotation must already exist in the scene (created in a previous step or preloaded). In the 2D viewport, the polygon annotation boundary should be visible with blue dots at each vertex. One vertex should be selected (click a blue dot first), showing the move gizmo at that vertex. No new polygon is being drawn.",
+  "ui_state": "Existing polygon annotation visible in 2D viewport, blue vertex dots shown on all vertices, one vertex selected with move gizmo visible",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 1200,
+      "y": 0,
+      "width": 720,
+      "height": 1080,
+      "label": "2D secondary viewport"
+    },
+    {
+      "type": "circle",
+      "x": 1340,
+      "y": 310,
+      "radius": 14,
+      "number": 1,
+      "label": "Blue vertex dot — click to select"
+    },
+    {
+      "type": "circle",
+      "x": 1540,
+      "y": 290,
+      "radius": 14,
+      "number": 2,
+      "label": "Blue vertex dot"
+    },
+    {
+      "type": "circle",
+      "x": 1620,
+      "y": 490,
+      "radius": 14,
+      "number": 3,
+      "label": "Blue vertex dot"
+    },
+    {
+      "type": "circle",
+      "x": 1420,
+      "y": 570,
+      "radius": 14,
+      "number": 4,
+      "label": "Blue vertex dot"
+    },
+    {
+      "type": "bbox",
+      "x": 1310,
+      "y": 275,
+      "width": 60,
+      "height": 60,
+      "label": "Selected vertex — move gizmo appears here"
+    },
+    {
+      "type": "arrow",
+      "x1": 1200,
+      "y1": 200,
+      "x2": 1338,
+      "y2": 308,
+      "label": "Blue dots = vertex handles — click to select, drag gizmo to move"
+    }
+  ]
+}

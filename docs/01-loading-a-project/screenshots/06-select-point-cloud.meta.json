@@ -1,0 +1,32 @@
+{
+  "filename": "06-select-point-cloud.png",
+  "title": "Selecting Queens Campus (Segmented) from the dropdown or folder picker",
+  "capture_instructions": "Browser mode preferred for this screenshot. The dropdown in the Point Cloud section must be open and showing a list of available point clouds. 'Queens Campus (Segmented)' must be visible and either hovered or highlighted in the list. The rest of the sidebar and empty viewport are visible in the background.",
+  "ui_state": "Settings tab active, Point Cloud dropdown open, Queens Campus (Segmented) entry highlighted",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 16,
+      "y": 77,
+      "width": 223,
+      "height": 200,
+      "label": "Dropdown menu — list of available point clouds"
+    },
+    {
+      "type": "circle",
+      "x": 120,
+      "y": 160,
+      "radius": 24,
+      "number": 1,
+      "label": "Queens Campus (Segmented) — highlighted entry"
+    },
+    {
+      "type": "arrow",
+      "x1": 260,
+      "y1": 160,
+      "x2": 200,
+      "y2": 160,
+      "label": "Click this entry to load"
+    }
+  ]
+}

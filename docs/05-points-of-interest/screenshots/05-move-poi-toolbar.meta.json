@@ -1,0 +1,32 @@
+{
+  "filename": "05-move-poi-toolbar.png",
+  "title": "Move POI option in the toolbar",
+  "capture_instructions": "A POI marker exists in the scene. The toolbar at top center shows the Move POI button (the Set Target POI icon with a move/arrows modifier, or a dedicated move icon). Hover over the Move POI button so its tooltip is displayed. The gizmo on the POI is dismissed (not active) — gizmo reactivates after clicking Move POI.",
+  "ui_state": "POI placed, gizmo dismissed, hovering Move POI button in toolbar",
+  "annotations": [
+    {
+      "type": "circle",
+      "x": 760,
+      "y": 20,
+      "radius": 22,
+      "number": 1,
+      "label": "Move POI button"
+    },
+    {
+      "type": "circle",
+      "x": 810,
+      "y": 20,
+      "radius": 22,
+      "number": 2,
+      "label": "Delete POI button"
+    },
+    {
+      "type": "bbox",
+      "x": 1100,
+      "y": 0,
+      "width": 200,
+      "height": 50,
+      "label": "POI action buttons area"
+    }
+  ]
+}

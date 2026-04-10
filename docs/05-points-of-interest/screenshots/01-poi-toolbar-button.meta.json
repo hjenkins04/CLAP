@@ -1,0 +1,24 @@
+{
+  "filename": "01-poi-toolbar-button.png",
+  "title": "Set Target POI button in the toolbar",
+  "capture_instructions": "App in default state with Queens Campus (Segmented) point cloud loaded. Toolbar visible at top center. Hover the mouse over the Set Target POI button (target/crosshair icon) so its tooltip is visible. Grab/Navigate mode is active.",
+  "ui_state": "Default/Grab mode, point cloud loaded, toolbar visible, no POI placed yet",
+  "annotations": [
+    {
+      "type": "circle",
+      "x": 780,
+      "y": 20,
+      "radius": 22,
+      "number": 1,
+      "label": "Set Target POI button (target/crosshair icon)"
+    },
+    {
+      "type": "bbox",
+      "x": 887,
+      "y": 0,
+      "width": 403,
+      "height": 50,
+      "label": "Top-center toolbar region"
+    }
+  ]
+}

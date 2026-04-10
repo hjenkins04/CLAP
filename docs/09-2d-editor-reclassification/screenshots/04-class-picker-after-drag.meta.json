@@ -1,0 +1,40 @@
+{
+  "filename": "04-class-picker-after-drag.png",
+  "title": "Class picker appearing after completing a 2D drag selection",
+  "capture_instructions": "Complete a drag selection in the 2D viewport (release mouse button). The rubber-band rectangle should be gone and points remain highlighted. The class picker panel or floating overlay should be visible, listing classification codes and labels. No class selected yet.",
+  "ui_state": "2D drag selection complete, points highlighted in both viewports, class picker visible and awaiting selection",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 1200,
+      "y": 0,
+      "width": 720,
+      "height": 1080,
+      "label": "2D secondary viewport — selected points highlighted"
+    },
+    {
+      "type": "bbox",
+      "x": 1200,
+      "y": 300,
+      "width": 300,
+      "height": 500,
+      "label": "Class picker — list of classification codes"
+    },
+    {
+      "type": "circle",
+      "x": 1350,
+      "y": 350,
+      "radius": 20,
+      "number": 1,
+      "label": "Class picker overlay — click a class to reclassify"
+    },
+    {
+      "type": "arrow",
+      "x1": 1100,
+      "y1": 350,
+      "x2": 1210,
+      "y2": 380,
+      "label": "Class picker appears here after selection"
+    }
+  ]
+}

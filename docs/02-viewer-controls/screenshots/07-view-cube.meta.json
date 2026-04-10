@@ -1,0 +1,56 @@
+{
+  "filename": "07-view-cube.png",
+  "title": "View Cube — faces, edges, and corners for standard views",
+  "capture_instructions": "Close-up of the View Cube in the bottom-right corner. The cube should be shown from a slight isometric angle so that three faces are visible simultaneously (Top, Front, Right). The face labels should be readable. Optionally use a zoomed/enlarged inset of just the View Cube alongside the full viewport view. Annotations should label each face type (face, edge, corner) with callouts. The Queens Campus top-down view should be visible in the main viewport.",
+  "ui_state": "Grab/Navigate mode active, top-down view of Queens Campus, View Cube showing labelled faces",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 1740,
+      "y": 8,
+      "width": 172,
+      "height": 168,
+      "label": "View Cube widget"
+    },
+    {
+      "type": "circle",
+      "x": 1810,
+      "y": 915,
+      "radius": 16,
+      "number": 1,
+      "label": "Top face — click for top-down plan view"
+    },
+    {
+      "type": "circle",
+      "x": 1730,
+      "y": 980,
+      "radius": 14,
+      "number": 2,
+      "label": "Front face — click for front elevation"
+    },
+    {
+      "type": "circle",
+      "x": 1890,
+      "y": 980,
+      "radius": 14,
+      "number": 3,
+      "label": "Right face — click for right side elevation"
+    },
+    {
+      "type": "circle",
+      "x": 1730,
+      "y": 920,
+      "radius": 10,
+      "number": 4,
+      "label": "Edge — 45° view between two faces"
+    },
+    {
+      "type": "circle",
+      "x": 1720,
+      "y": 900,
+      "radius": 10,
+      "number": 5,
+      "label": "Corner — isometric view (three faces meet)"
+    }
+  ]
+}

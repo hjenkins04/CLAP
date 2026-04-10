@@ -1,0 +1,35 @@
+{
+  "filename": "04-drag-select-rectangle.png",
+  "title": "Drawing a selection rectangle over road points",
+  "capture_instructions": "The user is mid-drag in the 3D viewport. A dashed or solid selection rectangle is visible, drawn from an upper-left corner to a lower-right corner over a section of road points. The cursor is at the lower-right corner of the rectangle. Road points (grey/dark brown in Classification mode) are inside the rectangle area. The drag is not yet released.",
+  "ui_state": "Reclassify Points active, Drag-Select mode, selection rectangle being drawn over road",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 500,
+      "y": 380,
+      "width": 420,
+      "height": 260,
+      "label": "Selection rectangle being drawn"
+    },
+    {
+      "type": "circle",
+      "x": 920,
+      "y": 640,
+      "radius": 16,
+      "number": 1,
+      "label": "Cursor position (drag end point)"
+    },
+    {
+      "type": "hotkey",
+      "keys": [
+        "Click",
+        "+",
+        "Drag"
+      ],
+      "x": 650,
+      "y": 340,
+      "label": "Default drag = replace selection with rectangle contents"
+    }
+  ]
+}

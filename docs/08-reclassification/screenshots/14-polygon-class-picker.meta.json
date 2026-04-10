@@ -1,0 +1,60 @@
+{
+  "filename": "14-polygon-class-picker.png",
+  "title": "Class picker after polygon selection — reclassifying the enclosed points",
+  "capture_instructions": "Polygon selection is complete. Yellow points are visible in the closed polygon area. The class picker panel is open alongside the 3D viewport, showing the search field and class list. Ideally show a state where a class (e.g., Sidewalks or Trees) is highlighted in the list, ready to be confirmed. This demonstrates the full end-to-end polygon reclassification workflow.",
+  "ui_state": "Polygon mode, selection confirmed, class picker open with a class highlighted",
+  "annotations": [
+    {
+      "type": "circle",
+      "x": 700,
+      "y": 485,
+      "radius": 55,
+      "number": 1,
+      "label": "Yellow selection from polygon"
+    },
+    {
+      "type": "bbox",
+      "x": 950,
+      "y": 200,
+      "width": 340,
+      "height": 500,
+      "label": "Class picker panel"
+    },
+    {
+      "type": "circle",
+      "x": 1120,
+      "y": 225,
+      "radius": 22,
+      "number": 2,
+      "label": "Search field"
+    },
+    {
+      "type": "bbox",
+      "x": 960,
+      "y": 295,
+      "width": 320,
+      "height": 36,
+      "label": "Highlighted class entry — ready to confirm with Enter"
+    },
+    {
+      "type": "hotkey",
+      "keys": [
+        "Enter"
+      ],
+      "x": 1310,
+      "y": 313,
+      "label": "Enter to confirm reclassification"
+    },
+    {
+      "type": "hotkey",
+      "keys": [
+        "Ctrl",
+        "+",
+        "Z"
+      ],
+      "x": 1310,
+      "y": 390,
+      "label": "Ctrl+Z to undo if needed"
+    }
+  ]
+}

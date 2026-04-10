@@ -1,0 +1,40 @@
+{
+  "filename": "01-point-budget-slider.png",
+  "title": "Point Budget slider in the Settings panel",
+  "capture_instructions": "Settings tab open. Scroll to show the Point Budget section clearly. The slider should be at the default position (2,000,000). The numeric readout showing the current value should be visible. Sidebar fills left 240px of the frame.",
+  "ui_state": "Settings tab active, Point Budget section visible, slider at 2,000,000 (default)",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 16,
+      "y": 434,
+      "width": 223,
+      "height": 50,
+      "label": "Point Budget section"
+    },
+    {
+      "type": "circle",
+      "x": 120,
+      "y": 355,
+      "radius": 16,
+      "number": 1,
+      "label": "Budget slider — default at 2,000,000"
+    },
+    {
+      "type": "arrow",
+      "x1": 16,
+      "y1": 375,
+      "x2": 44,
+      "y2": 375,
+      "label": "Min: 100,000"
+    },
+    {
+      "type": "arrow",
+      "x1": 224,
+      "y1": 375,
+      "x2": 196,
+      "y2": 375,
+      "label": "Max: 10,000,000"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "filename": "07-polygon-closed-2d.png",
+  "title": "Polygon closed in 2D viewport — semi-transparent fill overlay visible",
+  "capture_instructions": "After clicking the first vertex to close the polygon, the polygon should show a closed outline and a semi-transparent fill overlay indicating the selected area. Points inside the polygon should be highlighted. The Confirm selection button should be visible in the 2D panel header/overlay at this point (or about to appear).",
+  "ui_state": "Reclassify Points active, Polygon mode, polygon closed in 2D viewport, fill overlay visible, points inside highlighted, Confirm button visible in 2D panel",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 1200,
+      "y": 0,
+      "width": 720,
+      "height": 1080,
+      "label": "2D secondary viewport"
+    },
+    {
+      "type": "bbox",
+      "x": 1280,
+      "y": 260,
+      "width": 360,
+      "height": 320,
+      "label": "Closed polygon with semi-transparent fill overlay"
+    },
+    {
+      "type": "circle",
+      "x": 1350,
+      "y": 44,
+      "radius": 24,
+      "number": 1,
+      "label": "Confirm selection button in 2D panel header"
+    },
+    {
+      "type": "arrow",
+      "x1": 1350,
+      "y1": 80,
+      "x2": 1350,
+      "y2": 56,
+      "label": "Confirm button location — inside 2D panel overlay"
+    }
+  ]
+}

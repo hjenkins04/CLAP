@@ -1,0 +1,51 @@
+{
+  "filename": "05-laptop-controls.png",
+  "title": "Laptop controls — Ctrl+Shift+LMB for orbit",
+  "capture_instructions": "Queens Campus point cloud visible from a mid-orbit angle (same as the orbit screenshot). The keyboard shortcut overlay must be prominent — show Ctrl, Shift, and LMB as pill badges at the top of the viewport or in a legend. The point cloud should appear as if the user is mid-orbit using the keyboard shortcut. The View Cube should show the tilted orientation.",
+  "ui_state": "Grab/Navigate mode active, camera at mid-orbit angle achieved via Ctrl+Shift+LMB shortcut",
+  "annotations": [
+    {
+      "type": "hotkey",
+      "x": 600,
+      "y": 120,
+      "keys": [
+        "Ctrl",
+        "Shift",
+        "LMB",
+        "Drag"
+      ]
+    },
+    {
+      "type": "hotkey",
+      "x": 900,
+      "y": 120,
+      "keys": [
+        "Two-Finger Scroll"
+      ]
+    },
+    {
+      "type": "circle",
+      "x": 600,
+      "y": 170,
+      "radius": 14,
+      "number": 1,
+      "label": "Ctrl+Shift+LMB — orbit (laptop/trackpad)"
+    },
+    {
+      "type": "circle",
+      "x": 900,
+      "y": 170,
+      "radius": 14,
+      "number": 2,
+      "label": "Two-finger scroll — zoom (trackpad)"
+    },
+    {
+      "type": "bbox",
+      "x": 256,
+      "y": 50,
+      "width": 1664,
+      "height": 1030,
+      "label": "3D viewport — showing orbit result"
+    }
+  ]
+}

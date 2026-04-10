@@ -1,0 +1,32 @@
+{
+  "filename": "03-open-sidebar.png",
+  "title": "Opening the collapsed left sidebar",
+  "capture_instructions": "The sidebar must be in its collapsed state (only the thin left edge strip visible). The chevron/arrow expand button on the left edge of the viewport must be clearly visible. No point cloud loaded.",
+  "ui_state": "Sidebar collapsed, no point cloud loaded, Grab/Navigate mode active",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 0,
+      "y": 0,
+      "width": 18,
+      "height": 1080,
+      "label": "Collapsed sidebar strip"
+    },
+    {
+      "type": "circle",
+      "x": 12,
+      "y": 540,
+      "radius": 20,
+      "number": 1,
+      "label": "Sidebar expand arrow — click to open"
+    },
+    {
+      "type": "arrow",
+      "x1": 80,
+      "y1": 540,
+      "x2": 20,
+      "y2": 540,
+      "label": "Click here to expand the sidebar"
+    }
+  ]
+}

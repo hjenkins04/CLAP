@@ -1,0 +1,48 @@
+{
+  "filename": "03-secondary-viewport.png",
+  "title": "Secondary 2D viewport open alongside the 3D view",
+  "capture_instructions": "Both profile line points have been placed. The window is split: the 3D viewport occupies the left portion (240–1200px) and the 2D viewport occupies the right portion (1200–1920px). The 2D panel shows a Plan or Profile view of the slab with points visible. The Plan/Profile toggle and Point Size slider are visible at the top of the 2D panel.",
+  "ui_state": "Plan/Profile active, both points placed, split-viewport layout, 2D panel showing slab contents",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 256,
+      "y": 50,
+      "width": 960,
+      "height": 1030,
+      "label": "3D viewport (narrowed)"
+    },
+    {
+      "type": "bbox",
+      "x": 1200,
+      "y": 50,
+      "width": 720,
+      "height": 1030,
+      "label": "2D profile viewport"
+    },
+    {
+      "type": "circle",
+      "x": 1560,
+      "y": 60,
+      "radius": 28,
+      "number": 1,
+      "label": "Plan / Profile toggle"
+    },
+    {
+      "type": "circle",
+      "x": 1560,
+      "y": 110,
+      "radius": 22,
+      "number": 2,
+      "label": "Point Size slider"
+    },
+    {
+      "type": "bbox",
+      "x": 500,
+      "y": 300,
+      "width": 340,
+      "height": 200,
+      "label": "Slab center line and vertex handles in 3D view"
+    }
+  ]
+}

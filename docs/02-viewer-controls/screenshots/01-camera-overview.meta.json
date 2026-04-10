@@ -1,0 +1,48 @@
+{
+  "filename": "01-camera-overview.png",
+  "title": "Viewer overview — camera controls orientation",
+  "capture_instructions": "Queens Campus (Segmented) point cloud loaded, isometric overview angle showing the full campus. Grab/Navigate button is active (highlighted) in the toolbar. Sidebar is open on Settings tab. View Cube is visible in the bottom-right corner. Status bar shows a point count.",
+  "ui_state": "Point cloud loaded, Grab/Navigate mode active, Settings tab open, orthographic projection",
+  "annotations": [
+    {
+      "type": "circle",
+      "x": 400,
+      "y": 22,
+      "radius": 18,
+      "number": 1,
+      "label": "Grab/Navigate button — active (highlighted)"
+    },
+    {
+      "type": "bbox",
+      "x": 256,
+      "y": 50,
+      "width": 1664,
+      "height": 1030,
+      "label": "3D viewport — Queens Campus point cloud"
+    },
+    {
+      "type": "bbox",
+      "x": 1740,
+      "y": 8,
+      "width": 172,
+      "height": 168,
+      "label": "View Cube — current orientation indicator"
+    },
+    {
+      "type": "bbox",
+      "x": 1785,
+      "y": 178,
+      "width": 72,
+      "height": 90,
+      "label": "Top-right viewport controls"
+    },
+    {
+      "type": "bbox",
+      "x": 16,
+      "y": 205,
+      "width": 223,
+      "height": 20,
+      "label": "Status bar — visible point count"
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "filename": "10-campus-navigation.png",
+  "title": "Practical navigation — Queens Campus isometric overview",
+  "capture_instructions": "Queens Campus (Segmented) point cloud from an isometric or 3/4 view angle that clearly shows multiple features: buildings, roads, vegetation, ground. The camera angle should be approximately 45 degrees from horizontal and show the majority of the campus area. Classification colours should be clearly visible. Sidebar is collapsed to maximise viewport. The View Cube shows the corresponding isometric orientation. Status bar shows a realistic point count.",
+  "ui_state": "Grab/Navigate mode active, sidebar collapsed, Queens Campus at isometric overview angle, classification colour mode",
+  "annotations": [
+    {
+      "type": "circle",
+      "x": 700,
+      "y": 400,
+      "radius": 30,
+      "number": 1,
+      "label": "Buildings — classification colour (grey)"
+    },
+    {
+      "type": "circle",
+      "x": 900,
+      "y": 600,
+      "radius": 30,
+      "number": 2,
+      "label": "Vegetation — classification colour (green)"
+    },
+    {
+      "type": "circle",
+      "x": 1100,
+      "y": 500,
+      "radius": 30,
+      "number": 3,
+      "label": "Ground / roads — classification colour (brown/tan)"
+    },
+    {
+      "type": "bbox",
+      "x": 1740,
+      "y": 8,
+      "width": 172,
+      "height": 168,
+      "label": "View Cube — isometric orientation"
+    },
+    {
+      "type": "bbox",
+      "x": 16,
+      "y": 205,
+      "width": 223,
+      "height": 20,
+      "label": "Status bar — visible points count"
+    },
+    {
+      "type": "arrow",
+      "x1": 960,
+      "y1": 120,
+      "x2": 960,
+      "y2": 80,
+      "label": "Top-down view: click Top face of View Cube"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "filename": "06-edl-settings.png",
+  "title": "EDL section in Settings panel with enable toggle and Strength/Radius sliders",
+  "capture_instructions": "Settings tab open. Scroll to the EDL section. EDL toggle is ON. Both Strength slider (at ~0.5) and Radius slider (at ~2) are visible below the toggle. Sidebar fills left 240px of the frame. Capture enough vertical height to show all three controls: toggle, Strength slider, Radius slider.",
+  "ui_state": "Settings tab, EDL section expanded, EDL enabled, Strength = 0.5, Radius = 2",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 16,
+      "y": 500,
+      "width": 223,
+      "height": 164,
+      "label": "EDL section — toggle + two sliders"
+    },
+    {
+      "type": "circle",
+      "x": 210,
+      "y": 528,
+      "radius": 14,
+      "number": 1,
+      "label": "EDL enable toggle (ON)"
+    },
+    {
+      "type": "circle",
+      "x": 120,
+      "y": 570,
+      "radius": 14,
+      "number": 2,
+      "label": "Strength slider — at 0.5"
+    },
+    {
+      "type": "circle",
+      "x": 120,
+      "y": 620,
+      "radius": 14,
+      "number": 3,
+      "label": "Radius slider — at 2"
+    }
+  ]
+}

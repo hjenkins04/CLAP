@@ -1,0 +1,14 @@
+{
+  "name": "clap-docs-scripts",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "annotate": "node annotate.js",
+    "annotate:section": "node annotate.js",
+    "pdf": "node generate-pdf.js"
+  },
+  "dependencies": {
+    "puppeteer": "^22.0.0",
+    "sharp": "^0.33.0"
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "filename": "10-road-crosssection-workflow.png",
+  "title": "Complete workflow — road cross-section in Classification color mode",
+  "capture_instructions": "Split-viewport layout. The 3D viewport should show the Queens Campus road section in Classification color mode (multi-colored by class). The profile line should cross a road section perpendicularly. The 2D viewport (Profile view) should show a clear cross-section with road points (one color), sidewalk points (another color), and vegetation or other points at different heights, creating a visually distinct layered cross-section shape.",
+  "ui_state": "Plan/Profile active, Classification color mode, Profile view open, road cross-section displayed",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 256,
+      "y": 50,
+      "width": 960,
+      "height": 1030,
+      "label": "3D viewport — Classification color mode"
+    },
+    {
+      "type": "bbox",
+      "x": 1200,
+      "y": 40,
+      "width": 720,
+      "height": 1000,
+      "label": "2D Profile view — road cross-section by height"
+    },
+    {
+      "type": "circle",
+      "x": 660,
+      "y": 450,
+      "radius": 30,
+      "number": 1,
+      "label": "Slab center line crossing the road"
+    },
+    {
+      "type": "circle",
+      "x": 1560,
+      "y": 550,
+      "radius": 40,
+      "number": 2,
+      "label": "Road surface points in profile (lowest height band)"
+    },
+    {
+      "type": "circle",
+      "x": 1300,
+      "y": 450,
+      "radius": 30,
+      "number": 3,
+      "label": "Sidewalk / kerb points at slightly higher elevation"
+    },
+    {
+      "type": "bbox",
+      "x": 1210,
+      "y": 45,
+      "width": 200,
+      "height": 35,
+      "label": "Profile toggle — active"
+    }
+  ]
+}

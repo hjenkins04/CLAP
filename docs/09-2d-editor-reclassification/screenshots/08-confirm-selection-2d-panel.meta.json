@@ -1,0 +1,40 @@
+{
+  "filename": "08-confirm-selection-2d-panel.png",
+  "title": "Confirm selection button in the 2D panel overlay — close-up",
+  "capture_instructions": "Close-up or cropped view of the 2D panel header/overlay area. The Confirm selection button must be clearly visible inside the 2D viewport panel (not in the main 3D toolbar). The button should be prominent. The closed polygon fill should be visible in the 2D viewport behind the overlay.",
+  "ui_state": "Polygon closed in 2D viewport, Confirm selection button visible in 2D panel overlay, awaiting confirmation",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 1200,
+      "y": 0,
+      "width": 720,
+      "height": 80,
+      "label": "2D panel header/overlay area"
+    },
+    {
+      "type": "bbox",
+      "x": 1280,
+      "y": 8,
+      "width": 220,
+      "height": 48,
+      "label": "Confirm selection button"
+    },
+    {
+      "type": "circle",
+      "x": 1390,
+      "y": 32,
+      "radius": 36,
+      "number": 1,
+      "label": "Click here to confirm and open class picker"
+    },
+    {
+      "type": "arrow",
+      "x1": 1200,
+      "y1": 120,
+      "x2": 1390,
+      "y2": 50,
+      "label": "Confirm is inside 2D panel — NOT in the main toolbar"
+    }
+  ]
+}

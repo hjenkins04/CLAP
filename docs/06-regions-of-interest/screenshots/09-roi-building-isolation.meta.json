@@ -1,0 +1,40 @@
+{
+  "filename": "09-roi-building-isolation.png",
+  "title": "Practical example — ROI isolating a building for reclassification",
+  "capture_instructions": "Full workflow result: a 3D Box ROI is drawn around one building in the Queens Campus scene. Crop is active so only that building's point cloud is visible. The Reclassify Points tool is active in the toolbar (its button should be highlighted). The sidebar may show classification color legend. This illustrates the end-to-end workflow of using ROI + Reclassify together.",
+  "ui_state": "3D Box ROI cropped to single building, Reclassify Points tool active, building points shown in classification colors",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 660,
+      "y": 240,
+      "width": 620,
+      "height": 460,
+      "label": "Isolated building — only these points visible due to active crop"
+    },
+    {
+      "type": "circle",
+      "x": 920,
+      "y": 20,
+      "radius": 22,
+      "number": 1,
+      "label": "Reclassify Points tool (active) in toolbar"
+    },
+    {
+      "type": "circle",
+      "x": 1820,
+      "y": 110,
+      "radius": 20,
+      "number": 2,
+      "label": "Enable Crop active — hiding surrounding point cloud"
+    },
+    {
+      "type": "arrow",
+      "x1": 970,
+      "y1": 300,
+      "x2": 850,
+      "y2": 340,
+      "label": "Misclassified rooftop points to correct with Reclassify tool"
+    }
+  ]
+}

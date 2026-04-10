@@ -1,0 +1,32 @@
+{
+  "filename": "02-poi-placed-viewport.png",
+  "title": "POI marker placed in the 3D viewport",
+  "capture_instructions": "Set Target POI mode was active and the user clicked on the point cloud surface near the center of the Queens Campus scene. The POI sphere marker is now visible in the viewport. The 3D transform gizmo (red/green/blue axis arrows) is overlaid on the marker. The toolbar should show Move POI and Delete POI options replacing the Set Target POI button.",
+  "ui_state": "POI placed, gizmo visible on marker, toolbar updated with Move POI and Delete POI",
+  "annotations": [
+    {
+      "type": "circle",
+      "x": 1020,
+      "y": 480,
+      "radius": 30,
+      "number": 1,
+      "label": "POI sphere marker on point cloud surface"
+    },
+    {
+      "type": "arrow",
+      "x1": 900,
+      "y1": 120,
+      "x2": 1010,
+      "y2": 465,
+      "label": "Gizmo axis handles extend from marker"
+    },
+    {
+      "type": "bbox",
+      "x": 1100,
+      "y": 0,
+      "width": 200,
+      "height": 50,
+      "label": "Toolbar — Move POI and Delete POI appear here"
+    }
+  ]
+}

@@ -1,0 +1,174 @@
+- generic:
+  - generic:
+    - generic:
+      - complementary:
+        - generic:
+          - generic:
+            - img
+            - generic: CLAP
+          - button:
+            - img
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - heading [level=3]: Point Cloud
+                - generic:
+                  - combobox [expanded]:
+                    - generic: Grant Timmins
+                    - img
+                  - button:
+                    - img
+                    - text: Open
+                - generic:
+                  - img
+                  - generic: "Visible: 0 points"
+            - generic:
+              - generic:
+                - button:
+                  - img
+                  - text: Layers
+                - button:
+                  - img
+                  - text: Settings
+              - generic:
+                - generic:
+                  - generic:
+                    - button:
+                      - heading [level=3]: Coloring & Points
+                      - img
+                    - generic:
+                      - generic:
+                        - generic: Color Mode
+                        - combobox
+                      - generic:
+                        - generic: "Point Size: 1.0"
+                        - slider: "1"
+                      - generic:
+                        - generic: "Point Budget: 2.0M"
+                        - slider: "2000000"
+                  - generic:
+                    - button:
+                      - heading [level=3]: Eye-Dome Lighting
+                      - img
+                  - generic:
+                    - button:
+                      - heading [level=3]: Camera
+                      - img
+                  - generic:
+                    - button:
+                      - heading [level=3]: Base Satellite Map
+                      - img
+                  - generic:
+                    - button:
+                      - heading [level=3]: OSM Features
+                      - img
+                  - generic:
+                    - button:
+                      - heading [level=3]: Custom Map
+                      - img
+                  - generic:
+                    - button:
+                      - heading [level=3]: Static Obstacles
+                      - img
+                  - generic:
+                    - button:
+                      - heading [level=3]: Polygons
+                      - img
+                  - generic:
+                    - button:
+                      - heading [level=3]: Road Extraction
+                      - img
+                  - generic:
+                    - button:
+                      - heading [level=3]: DEM Surface
+                      - img
+                  - generic:
+                    - button:
+                      - heading [level=3]: World Frame
+                      - img
+                  - generic:
+                    - button:
+                      - heading [level=3]: ROI
+                      - img
+                  - generic:
+                    - button:
+                      - heading [level=3]: Grid
+                      - img
+                  - generic:
+                    - button:
+                      - heading [level=3]: Axis Settings
+                      - img
+      - main:
+        - generic:
+          - generic:
+            - generic:
+              - button:
+                - img
+              - button:
+                - img
+              - button:
+                - img
+            - generic:
+              - button:
+                - img
+              - button:
+                - img
+              - button:
+                - img
+                - img
+              - button [disabled]:
+                - img
+          - generic:
+            - generic:
+              - button:
+                - img
+              - button:
+                - img
+              - button [disabled]:
+                - img
+              - button [disabled]:
+                - img
+              - button [disabled]:
+                - img
+              - button:
+                - img
+              - button:
+                - img
+              - button:
+                - img
+              - button:
+                - img
+              - button:
+                - img
+              - button [disabled]:
+                - img
+              - button:
+                - img
+          - generic:
+            - generic:
+              - button:
+                - img
+              - button:
+                - img
+          - generic:
+            - generic:
+              - generic:
+                - button [ref=e229] [cursor=pointer]:
+                  - img [ref=e139]
+                - button [ref=e230] [cursor=pointer]:
+                  - img [ref=e143]
+              - button [ref=e231] [cursor=pointer]: 2D
+    - region "Notifications alt+T"
+  - listbox [ref=e232]:
+    - option "Grant Timmins" [active] [selected] [ref=e233]:
+      - img [ref=e236]
+      - generic [ref=e238]: Grant Timmins
+    - option "KCity Test" [ref=e239]:
+      - generic [ref=e241]: KCity Test
+    - option "KCity Full" [ref=e242]:
+      - generic [ref=e244]: KCity Full
+    - option "KCity Segmented" [ref=e245]:
+      - generic [ref=e247]: KCity Segmented
+    - option "Queens Campus (Segmented)" [ref=e248]:
+      - generic [ref=e250]: Queens Campus (Segmented)

@@ -1,0 +1,48 @@
+{
+  "filename": "04-plan-vs-profile.png",
+  "title": "Plan view vs. Profile view toggle in the 2D panel",
+  "capture_instructions": "Split-viewport layout is open. The 2D panel is showing Profile view (elevation/side view) of a road cross-section — a trapezoid or curved surface shape should be visible. The Profile button in the Plan/Profile toggle at the top of the 2D panel is highlighted/active. Use Queens Campus road section data.",
+  "ui_state": "Plan/Profile active, 2D panel in Profile view showing road cross-section by elevation",
+  "annotations": [
+    {
+      "type": "circle",
+      "x": 1290,
+      "y": 60,
+      "radius": 22,
+      "number": 1,
+      "label": "Plan toggle button (inactive)"
+    },
+    {
+      "type": "circle",
+      "x": 1380,
+      "y": 60,
+      "radius": 22,
+      "number": 2,
+      "label": "Profile toggle button (active/highlighted)"
+    },
+    {
+      "type": "bbox",
+      "x": 1200,
+      "y": 150,
+      "width": 720,
+      "height": 900,
+      "label": "Profile view — elevation cross-section (Z vs. distance along line)"
+    },
+    {
+      "type": "arrow",
+      "x1": 1250,
+      "y1": 700,
+      "x2": 1880,
+      "y2": 700,
+      "label": "Horizontal axis: distance along the slab center line"
+    },
+    {
+      "type": "arrow",
+      "x1": 1210,
+      "y1": 800,
+      "x2": 1210,
+      "y2": 200,
+      "label": "Vertical axis: height (Z)"
+    }
+  ]
+}

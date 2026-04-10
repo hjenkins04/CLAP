@@ -1,0 +1,32 @@
+{
+  "filename": "06-roi-crop-enable.png",
+  "title": "Enable Crop — points outside ROI hidden, only enclosed region visible",
+  "capture_instructions": "A 3D Box ROI is drawn around a building. The Enable Crop button has been clicked. The viewport now shows ONLY the points inside the ROI box — all surrounding point cloud (roads, trees, other buildings) has disappeared. The ROI wireframe outline is still visible around the isolated building points. The Enable Crop button in the ROI action bar should appear in a toggled/active state.",
+  "ui_state": "Crop active, points outside ROI hidden, building points visible inside box, ROI outline visible",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 700,
+      "y": 260,
+      "width": 580,
+      "height": 420,
+      "label": "ROI box — only points inside are visible after cropping"
+    },
+    {
+      "type": "circle",
+      "x": 1820,
+      "y": 110,
+      "radius": 24,
+      "number": 1,
+      "label": "Enable Crop button (active/toggled state)"
+    },
+    {
+      "type": "arrow",
+      "x1": 1680,
+      "y1": 110,
+      "x2": 1798,
+      "y2": 110,
+      "label": "Click to toggle crop on/off"
+    }
+  ]
+}

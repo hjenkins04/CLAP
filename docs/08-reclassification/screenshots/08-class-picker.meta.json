@@ -1,0 +1,51 @@
+{
+  "filename": "08-class-picker.png",
+  "title": "Class picker panel appearing after selection",
+  "capture_instructions": "Yellow points are visible in the 3D viewport. The class picker panel has appeared — it shows a search text field at the top and a scrollable list of classification class names with their codes (e.g., '2 — Roads', '3 — Sidewalks', etc.). The list should be fully unfiltered (empty search field) so all classes are visible. The panel may appear as a floating overlay near the selection or as a side panel.",
+  "ui_state": "Reclassify Points active, selection made (yellow points), class picker open with full class list",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 950,
+      "y": 200,
+      "width": 340,
+      "height": 500,
+      "label": "Class picker panel"
+    },
+    {
+      "type": "circle",
+      "x": 1120,
+      "y": 225,
+      "radius": 22,
+      "number": 1,
+      "label": "Search field — type to filter class list"
+    },
+    {
+      "type": "bbox",
+      "x": 960,
+      "y": 250,
+      "width": 320,
+      "height": 420,
+      "label": "Scrollable class list (all 18 classification codes)"
+    },
+    {
+      "type": "hotkey",
+      "keys": [
+        "↑",
+        "↓"
+      ],
+      "x": 1310,
+      "y": 350,
+      "label": "Arrow keys to navigate the list"
+    },
+    {
+      "type": "hotkey",
+      "keys": [
+        "Enter"
+      ],
+      "x": 1310,
+      "y": 420,
+      "label": "Enter to confirm reclassification"
+    }
+  ]
+}

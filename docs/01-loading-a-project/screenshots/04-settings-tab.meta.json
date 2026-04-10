@@ -1,0 +1,64 @@
+{
+  "filename": "04-settings-tab.png",
+  "title": "Settings tab selected in the sidebar",
+  "capture_instructions": "Sidebar is open. The Settings tab must be the active tab (visually selected/underlined). The settings sections are visible: Point Cloud at the top, then Color Mode, Point Size, Point Budget, Camera Projection, EDL, Theme below. No point cloud loaded yet.",
+  "ui_state": "Sidebar open, Settings tab active, no point cloud loaded",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 0,
+      "y": 0,
+      "width": 256,
+      "height": 1080,
+      "label": "Left sidebar panel"
+    },
+    {
+      "type": "circle",
+      "x": 160,
+      "y": 44,
+      "radius": 22,
+      "number": 1,
+      "label": "Settings tab — active"
+    },
+    {
+      "type": "bbox",
+      "x": 16,
+      "y": 77,
+      "width": 223,
+      "height": 148,
+      "label": "Point Cloud section"
+    },
+    {
+      "type": "bbox",
+      "x": 16,
+      "y": 315,
+      "width": 223,
+      "height": 57,
+      "label": "Color Mode section"
+    },
+    {
+      "type": "bbox",
+      "x": 16,
+      "y": 378,
+      "width": 223,
+      "height": 50,
+      "label": "Point Size section"
+    },
+    {
+      "type": "bbox",
+      "x": 16,
+      "y": 434,
+      "width": 223,
+      "height": 50,
+      "label": "Point Budget section"
+    },
+    {
+      "type": "bbox",
+      "x": 16,
+      "y": 370,
+      "width": 223,
+      "height": 60,
+      "label": "Camera Projection section"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "filename": "07-roi-outline-toggle.png",
+  "title": "Show/Hide ROI outline toggle — outline hidden to inspect boundary points clearly",
+  "capture_instructions": "Crop is active on a 3D Box ROI. The Show/Hide Outlines button in the ROI action bar has been clicked so the wireframe outline is now HIDDEN. Only the cropped point cloud (building) is visible with no overlaid box wireframe. This demonstrates that the outline visibility is independent of the crop state. The toggle button should appear in its 'outline hidden' state.",
+  "ui_state": "Crop active, ROI outline hidden, building points visible, no wireframe overlay",
+  "annotations": [
+    {
+      "type": "circle",
+      "x": 1860,
+      "y": 110,
+      "radius": 22,
+      "number": 1,
+      "label": "Show/Hide Outlines toggle button (outline currently hidden)"
+    },
+    {
+      "type": "bbox",
+      "x": 650,
+      "y": 240,
+      "width": 640,
+      "height": 460,
+      "label": "Cropped region — building points with no box outline overlaid"
+    }
+  ]
+}

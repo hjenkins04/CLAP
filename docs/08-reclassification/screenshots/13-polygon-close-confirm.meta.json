@@ -1,0 +1,49 @@
+{
+  "filename": "13-polygon-close-confirm.png",
+  "title": "Closing the polygon — Confirm selection button visible",
+  "capture_instructions": "The polygon has just been closed (either by clicking the first vertex or pressing Enter). The polygon outline is now a closed shape. The points inside the polygon are highlighted yellow. A 'Confirm selection' button overlay is visible in the 3D viewport (typically bottom-center or lower-right corner of the viewport). The class picker may also be starting to appear.",
+  "ui_state": "Polygon mode, polygon closed, points inside highlighted yellow, Confirm button visible",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 540,
+      "y": 355,
+      "width": 320,
+      "height": 260,
+      "label": "Closed polygon shape"
+    },
+    {
+      "type": "circle",
+      "x": 700,
+      "y": 485,
+      "radius": 55,
+      "number": 1,
+      "label": "Points inside polygon — highlighted yellow"
+    },
+    {
+      "type": "bbox",
+      "x": 680,
+      "y": 990,
+      "width": 200,
+      "height": 40,
+      "label": "Confirm selection button overlay"
+    },
+    {
+      "type": "circle",
+      "x": 780,
+      "y": 1010,
+      "radius": 22,
+      "number": 2,
+      "label": "Confirm selection button"
+    },
+    {
+      "type": "hotkey",
+      "keys": [
+        "Enter"
+      ],
+      "x": 1000,
+      "y": 1010,
+      "label": "Enter also closes and confirms the polygon"
+    }
+  ]
+}

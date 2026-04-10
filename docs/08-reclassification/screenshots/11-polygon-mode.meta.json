@@ -1,0 +1,50 @@
+{
+  "filename": "11-polygon-mode.png",
+  "title": "Switching to Polygon sub-mode",
+  "capture_instructions": "Reclassify Points tool is active. The sub-panel shows both Drag-Select and Polygon buttons. The Polygon button is now highlighted/active (just clicked or about to be clicked). The overlay text in the 3D viewport has updated to 'Click to place vertices · click first vertex to close'. No polygon vertices have been placed yet.",
+  "ui_state": "Reclassify Points active, Polygon sub-mode just activated, no vertices placed yet",
+  "annotations": [
+    {
+      "type": "circle",
+      "x": 380,
+      "y": 58,
+      "radius": 20,
+      "number": 1,
+      "label": "Drag-Select button (now inactive)"
+    },
+    {
+      "type": "circle",
+      "x": 480,
+      "y": 58,
+      "radius": 20,
+      "number": 2,
+      "label": "Polygon button (now active/highlighted)"
+    },
+    {
+      "type": "bbox",
+      "x": 300,
+      "y": 1020,
+      "width": 700,
+      "height": 30,
+      "label": "Overlay: 'Click to place vertices · click first vertex to close'"
+    },
+    {
+      "type": "hotkey",
+      "keys": [
+        "Backspace"
+      ],
+      "x": 800,
+      "y": 620,
+      "label": "Remove last vertex"
+    },
+    {
+      "type": "hotkey",
+      "keys": [
+        "Esc"
+      ],
+      "x": 800,
+      "y": 680,
+      "label": "Cancel polygon"
+    }
+  ]
+}

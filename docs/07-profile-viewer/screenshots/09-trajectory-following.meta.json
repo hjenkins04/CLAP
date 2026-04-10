@@ -1,0 +1,50 @@
+{
+  "filename": "09-trajectory-following.png",
+  "title": "Trajectory following — stepping along the scan path with < and > keys",
+  "capture_instructions": "Split-viewport layout. The 3D viewport should show the vehicle trajectory line (if visible in the dataset). The slab center line should be positioned perpendicular to the trajectory direction, showing trajectory-aligned placement. The 2D viewport should show the current cross-section contents. Ideally show the trajectory line in the 3D view with the slab crossing it at a right angle.",
+  "ui_state": "Plan/Profile active, slab positioned on trajectory, 2D panel showing cross-section",
+  "annotations": [
+    {
+      "type": "hotkey",
+      "keys": [
+        ">"
+      ],
+      "x": 700,
+      "y": 80,
+      "label": "Step forward along trajectory"
+    },
+    {
+      "type": "hotkey",
+      "keys": [
+        "<"
+      ],
+      "x": 580,
+      "y": 80,
+      "label": "Step backward along trajectory"
+    },
+    {
+      "type": "bbox",
+      "x": 350,
+      "y": 200,
+      "width": 750,
+      "height": 600,
+      "label": "Vehicle trajectory line visible in 3D view"
+    },
+    {
+      "type": "circle",
+      "x": 660,
+      "y": 460,
+      "radius": 28,
+      "number": 1,
+      "label": "Current slab position on the trajectory"
+    },
+    {
+      "type": "bbox",
+      "x": 1200,
+      "y": 0,
+      "width": 720,
+      "height": 1080,
+      "label": "2D viewport updates at each trajectory step"
+    }
+  ]
+}

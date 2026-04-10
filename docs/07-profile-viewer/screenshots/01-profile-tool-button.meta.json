@@ -1,0 +1,24 @@
+{
+  "filename": "01-profile-tool-button.png",
+  "title": "Activating the Plan/Profile tool",
+  "capture_instructions": "Queens Campus (Segmented) point cloud loaded and visible in the 3D viewport. Cursor hovering over the Plan/Profile button in the top toolbar. No secondary viewport open yet. Grab/Navigate mode is the currently active tool.",
+  "ui_state": "Default mode, point cloud loaded, toolbar visible, no secondary viewport",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 256,
+      "y": 0,
+      "width": 1664,
+      "height": 50,
+      "label": "Main toolbar"
+    },
+    {
+      "type": "circle",
+      "x": 800,
+      "y": 20,
+      "radius": 22,
+      "number": 1,
+      "label": "Plan/Profile toolbar button"
+    }
+  ]
+}

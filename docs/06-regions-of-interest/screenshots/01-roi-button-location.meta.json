@@ -1,0 +1,32 @@
+{
+  "filename": "01-roi-button-location.png",
+  "title": "ROI button location in the top-right viewport area",
+  "capture_instructions": "Full application window with Queens Campus (Segmented) loaded. No ROI drawn yet, Grab/Navigate mode active. The ROI button is visible in the top-right area of the 3D viewport (separate from the main toolbar). Hover over the ROI button to show its tooltip.",
+  "ui_state": "Default state, no ROI, point cloud fully visible, hovering ROI button",
+  "annotations": [
+    {
+      "type": "circle",
+      "x": 1860,
+      "y": 60,
+      "radius": 26,
+      "number": 1,
+      "label": "ROI button (top-right viewport corner)"
+    },
+    {
+      "type": "bbox",
+      "x": 1785,
+      "y": 206,
+      "width": 32,
+      "height": 32,
+      "label": "ROI button region"
+    },
+    {
+      "type": "arrow",
+      "x1": 1700,
+      "y1": 140,
+      "x2": 1845,
+      "y2": 68,
+      "label": "ROI button — click to open shape picker"
+    }
+  ]
+}

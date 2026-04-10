@@ -1,0 +1,48 @@
+{
+  "filename": "01-color-mode-settings.png",
+  "title": "Color mode selector in the Settings panel",
+  "capture_instructions": "Settings tab open in left sidebar. Color Mode section visible near top of settings list. RGB option currently selected. No point cloud interaction needed — just show the sidebar controls clearly.",
+  "ui_state": "Settings tab active, Color Mode section expanded, RGB selected",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 16,
+      "y": 315,
+      "width": 223,
+      "height": 57,
+      "label": "Color Mode section"
+    },
+    {
+      "type": "circle",
+      "x": 28,
+      "y": 207,
+      "radius": 14,
+      "number": 1,
+      "label": "RGB option (currently selected)"
+    },
+    {
+      "type": "circle",
+      "x": 28,
+      "y": 233,
+      "radius": 14,
+      "number": 2,
+      "label": "Height option"
+    },
+    {
+      "type": "circle",
+      "x": 28,
+      "y": 259,
+      "radius": 14,
+      "number": 3,
+      "label": "Classification option"
+    },
+    {
+      "type": "circle",
+      "x": 28,
+      "y": 285,
+      "radius": 14,
+      "number": 4,
+      "label": "Intensity option"
+    }
+  ]
+}

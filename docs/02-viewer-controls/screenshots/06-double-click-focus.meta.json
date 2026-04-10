@@ -1,0 +1,41 @@
+{
+  "filename": "06-double-click-focus.png",
+  "title": "Double-click focus — camera pivots to clicked point",
+  "capture_instructions": "Show a before/after or use a single screenshot of the result of double-clicking on a building rooftop in the Queens Campus point cloud. The camera should be centred on and zoomed toward that building. A circle or crosshair annotation marks the point that was double-clicked (the new pivot). The surrounding context (other buildings, roads) is visible at the edges. If possible, show a subtle animation trail or use an arrow pointing to the focus point.",
+  "ui_state": "Grab/Navigate mode active, camera pivoted to a building in the Queens Campus after double-click",
+  "annotations": [
+    {
+      "type": "circle",
+      "x": 960,
+      "y": 540,
+      "radius": 28,
+      "number": 1,
+      "label": "Double-click target — new camera pivot point"
+    },
+    {
+      "type": "arrow",
+      "x1": 800,
+      "y1": 400,
+      "x2": 950,
+      "y2": 530,
+      "label": "Double-click here to focus camera on this point"
+    },
+    {
+      "type": "hotkey",
+      "x": 700,
+      "y": 200,
+      "keys": [
+        "LMB",
+        "Double-click"
+      ]
+    },
+    {
+      "type": "bbox",
+      "x": 256,
+      "y": 50,
+      "width": 1664,
+      "height": 1030,
+      "label": "Viewport — camera centred on double-clicked point"
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "filename": "01-app-launch.png",
+  "title": "Application launch — initial empty state",
+  "capture_instructions": "Launch CLAP fresh (or with no point cloud previously loaded). The viewport must be empty (no point cloud data). The sidebar should be in its default state (may be collapsed). No modal dialogs open.",
+  "ui_state": "Default launch state, no point cloud loaded, Grab/Navigate mode active",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 0,
+      "y": 0,
+      "width": 256,
+      "height": 1080,
+      "label": "Left sidebar (collapsed or expanded)"
+    },
+    {
+      "type": "bbox",
+      "x": 256,
+      "y": 0,
+      "width": 1664,
+      "height": 50,
+      "label": "Main toolbar"
+    },
+    {
+      "type": "bbox",
+      "x": 256,
+      "y": 50,
+      "width": 1664,
+      "height": 1030,
+      "label": "Empty 3D viewport"
+    },
+    {
+      "type": "circle",
+      "x": 960,
+      "y": 540,
+      "radius": 36,
+      "number": 1,
+      "label": "Empty viewport — no point cloud loaded"
+    },
+    {
+      "type": "bbox",
+      "x": 16,
+      "y": 205,
+      "width": 223,
+      "height": 20,
+      "label": "Status bar — shows 0 points"
+    }
+  ]
+}

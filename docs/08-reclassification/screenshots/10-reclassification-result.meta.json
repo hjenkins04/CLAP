@@ -1,0 +1,38 @@
+{
+  "filename": "10-reclassification-result.png",
+  "title": "Reclassification confirmed — points change color immediately",
+  "capture_instructions": "Reclassification has just been confirmed by pressing Enter. The previously yellow points have changed to the color of the newly assigned class (e.g., grey/dark brown for Roads, or purple for Buildings). The class picker has closed. The selection is cleared. All other points in the viewport retain their original Classification colors. The change is clearly visible as a patch of newly colored points where the selection was.",
+  "ui_state": "Reclassify Points active, reclassification complete, points now colored by new class, class picker closed",
+  "annotations": [
+    {
+      "type": "circle",
+      "x": 710,
+      "y": 510,
+      "radius": 55,
+      "number": 1,
+      "label": "Reclassified points — now displaying new class color"
+    },
+    {
+      "type": "hotkey",
+      "keys": [
+        "Ctrl",
+        "+",
+        "Z"
+      ],
+      "x": 1100,
+      "y": 120,
+      "label": "Ctrl+Z to undo if result is incorrect"
+    },
+    {
+      "type": "hotkey",
+      "keys": [
+        "Ctrl",
+        "+",
+        "S"
+      ],
+      "x": 1100,
+      "y": 180,
+      "label": "Ctrl+S to save changes to disk"
+    }
+  ]
+}

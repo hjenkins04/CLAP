@@ -1,0 +1,51 @@
+{
+  "filename": "07-subtractive-selection.png",
+  "title": "Subtractive selection — Alt+drag removes points from the selection",
+  "capture_instructions": "A larger yellow selection is visible covering both road and some adjacent sidewalk points. The user is performing an Alt+drag (Alt key held) with a rectangle drawn over the sidewalk points they want to remove from the selection. The overlay instruction text 'Alt+drag to deselect' is visible.",
+  "ui_state": "Reclassify Points active, Drag-Select mode, Alt+drag in progress to deselect a sub-region",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 400,
+      "y": 340,
+      "width": 560,
+      "height": 310,
+      "label": "Existing yellow selection (road + some sidewalk points)"
+    },
+    {
+      "type": "bbox",
+      "x": 760,
+      "y": 350,
+      "width": 200,
+      "height": 130,
+      "label": "Alt+drag rectangle — these points will be deselected"
+    },
+    {
+      "type": "hotkey",
+      "keys": [
+        "Alt",
+        "+",
+        "Drag"
+      ],
+      "x": 860,
+      "y": 300,
+      "label": "Alt+drag subtracts from the current selection"
+    },
+    {
+      "type": "circle",
+      "x": 860,
+      "y": 415,
+      "radius": 28,
+      "number": 1,
+      "label": "Points to be removed (sidewalk points inside Alt+drag box)"
+    },
+    {
+      "type": "bbox",
+      "x": 300,
+      "y": 1020,
+      "width": 700,
+      "height": 30,
+      "label": "Overlay instruction: 'Alt+drag to deselect'"
+    }
+  ]
+}

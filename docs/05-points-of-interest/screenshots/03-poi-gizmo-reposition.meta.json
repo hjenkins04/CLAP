@@ -1,0 +1,48 @@
+{
+  "filename": "03-poi-gizmo-reposition.png",
+  "title": "3D gizmo for repositioning the POI marker",
+  "capture_instructions": "Close-up view of the POI marker with the 3D transform gizmo clearly visible. Camera is orbited to a 3/4 perspective angle so all three axis arrows (X=red, Y=green, Z=blue) and the plane handles are visible. The gizmo should fill roughly the center of the frame. No drag in progress — idle gizmo state.",
+  "ui_state": "POI placed and gizmo active, camera at 3/4 perspective, zoomed in on marker",
+  "annotations": [
+    {
+      "type": "circle",
+      "x": 960,
+      "y": 500,
+      "radius": 18,
+      "number": 1,
+      "label": "POI sphere marker center"
+    },
+    {
+      "type": "arrow",
+      "x1": 1080,
+      "y1": 430,
+      "x2": 1010,
+      "y2": 490,
+      "label": "Red axis arrow (X — drag to constrain movement)"
+    },
+    {
+      "type": "arrow",
+      "x1": 850,
+      "y1": 410,
+      "x2": 940,
+      "y2": 480,
+      "label": "Green axis arrow (Y)"
+    },
+    {
+      "type": "arrow",
+      "x1": 960,
+      "y1": 310,
+      "x2": 960,
+      "y2": 470,
+      "label": "Blue axis arrow (Z — vertical)"
+    },
+    {
+      "type": "bbox",
+      "x": 880,
+      "y": 420,
+      "width": 160,
+      "height": 160,
+      "label": "Plane handles area (corner squares for 2-axis movement)"
+    }
+  ]
+}

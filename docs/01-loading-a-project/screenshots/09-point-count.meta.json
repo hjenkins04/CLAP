@@ -1,0 +1,32 @@
+{
+  "filename": "09-point-count.png",
+  "title": "Status bar — visible point count after loading",
+  "capture_instructions": "Close-up of the bottom status bar after the Queens Campus (Segmented) point cloud has finished loading. The status bar must display a visible point count (e.g. '1,240,000 points' or similar). The point cloud should be visible in the viewport above. Crop or annotate to draw attention to the status bar.",
+  "ui_state": "Point cloud fully loaded, status bar showing non-zero point count",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 16,
+      "y": 205,
+      "width": 223,
+      "height": 20,
+      "label": "Status bar — visible points count"
+    },
+    {
+      "type": "circle",
+      "x": 400,
+      "y": 1060,
+      "radius": 22,
+      "number": 1,
+      "label": "Point count readout (e.g. 1,240,000 points visible)"
+    },
+    {
+      "type": "arrow",
+      "x1": 400,
+      "y1": 1010,
+      "x2": 400,
+      "y2": 1045,
+      "label": "Status bar is at the bottom of the window"
+    }
+  ]
+}

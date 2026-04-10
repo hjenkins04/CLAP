@@ -1,0 +1,30 @@
+{
+  "filename": "02-point-size-slider.png",
+  "title": "Point Size slider in the Settings panel",
+  "capture_instructions": "Settings tab open. Scroll to show the Point Size section clearly. The slider should be at the default position (1.0). Numeric readout of the current value visible. Sidebar fills left 240px of the frame.",
+  "ui_state": "Settings tab active, Point Size section visible, slider at 1.0 (default)",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 16,
+      "y": 378,
+      "width": 223,
+      "height": 50,
+      "label": "Point Size section"
+    },
+    {
+      "type": "circle",
+      "x": 68,
+      "y": 455,
+      "radius": 16,
+      "number": 1,
+      "label": "Point Size slider — default at 1.0"
+    },
+    {
+      "type": "hotkey",
+      "x": 140,
+      "y": 420,
+      "label": "0.1 – 5.0 range"
+    }
+  ]
+}

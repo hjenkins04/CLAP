@@ -1,0 +1,48 @@
+{
+  "filename": "02-activate-reclassify.png",
+  "title": "Activating the Reclassify Points tool from the toolbar",
+  "capture_instructions": "Queens Campus point cloud visible in Classification color mode. The cursor is hovering over (or just clicked) the 'Reclassify Points' button in the top toolbar. The button should appear highlighted/active. The sub-panel below (or near) the toolbar should be visible with the Drag-Select and Polygon sub-mode buttons. The overlay instruction text is visible in the 3D viewport.",
+  "ui_state": "Reclassify Points tool active, sub-panel visible, Drag-Select sub-mode default",
+  "annotations": [
+    {
+      "type": "circle",
+      "x": 920,
+      "y": 20,
+      "radius": 22,
+      "number": 1,
+      "label": "Reclassify Points toolbar button (highlighted/active)"
+    },
+    {
+      "type": "bbox",
+      "x": 256,
+      "y": 40,
+      "width": 800,
+      "height": 36,
+      "label": "Sub-panel: Drag-Select and Polygon mode toggle buttons"
+    },
+    {
+      "type": "circle",
+      "x": 380,
+      "y": 58,
+      "radius": 20,
+      "number": 2,
+      "label": "Drag-Select sub-mode button"
+    },
+    {
+      "type": "circle",
+      "x": 480,
+      "y": 58,
+      "radius": 20,
+      "number": 3,
+      "label": "Polygon sub-mode button"
+    },
+    {
+      "type": "bbox",
+      "x": 300,
+      "y": 1020,
+      "width": 650,
+      "height": 30,
+      "label": "Overlay: 'Drag to select points · Alt+drag to deselect · Esc to exit'"
+    }
+  ]
+}

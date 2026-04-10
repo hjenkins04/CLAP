@@ -1,0 +1,24 @@
+{
+  "filename": "05-selected-points-yellow.png",
+  "title": "Selected points highlighted in yellow",
+  "capture_instructions": "The drag is complete. A region of road points is now highlighted bright yellow in the 3D viewport. All non-selected points retain their Classification color (grey roads, green trees, etc.). The selection rectangle is no longer visible (it disappears on release). The class picker panel is NOT yet open — this screenshot is taken immediately after releasing the mouse button, before the class picker appears or after it has appeared below/beside the selection.",
+  "ui_state": "Reclassify Points active, Drag-Select mode, selection complete, points highlighted yellow",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 490,
+      "y": 370,
+      "width": 440,
+      "height": 280,
+      "label": "Selected points — displayed in yellow"
+    },
+    {
+      "type": "circle",
+      "x": 710,
+      "y": 510,
+      "radius": 50,
+      "number": 1,
+      "label": "Yellow highlighted points (selected region)"
+    }
+  ]
+}

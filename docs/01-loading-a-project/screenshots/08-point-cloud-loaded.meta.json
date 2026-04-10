@@ -1,0 +1,40 @@
+{
+  "filename": "08-point-cloud-loaded.png",
+  "title": "Queens Campus (Segmented) fully loaded in the 3D viewport",
+  "capture_instructions": "The Queens Campus (Segmented) point cloud must be fully loaded and visible in the 3D viewport. Points should be coloured by classification (ground, vegetation, buildings). The camera should show a top-down or isometric overview of the entire campus scan. The sidebar Settings tab is still open. The status bar shows a non-zero point count.",
+  "ui_state": "Point cloud loaded, classification colour mode active, Grab/Navigate mode, overview camera angle",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 256,
+      "y": 50,
+      "width": 1664,
+      "height": 1030,
+      "label": "3D viewport — Queens Campus (Segmented) point cloud"
+    },
+    {
+      "type": "circle",
+      "x": 960,
+      "y": 500,
+      "radius": 40,
+      "number": 1,
+      "label": "Point cloud — classification colours visible"
+    },
+    {
+      "type": "bbox",
+      "x": 16,
+      "y": 77,
+      "width": 223,
+      "height": 148,
+      "label": "Point Cloud section — shows loaded dataset name"
+    },
+    {
+      "type": "bbox",
+      "x": 1740,
+      "y": 8,
+      "width": 172,
+      "height": 168,
+      "label": "View Cube — shows current orientation"
+    }
+  ]
+}

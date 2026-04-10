@@ -1,0 +1,32 @@
+{
+  "filename": "08-roi-clear.png",
+  "title": "Clear ROI — removing the ROI and restoring full point cloud view",
+  "capture_instructions": "The Clear ROI button in the ROI action bar is highlighted (hover state). The viewport shows the ROI box and possibly cropped state just before clearing. Alternatively, show the state immediately after clearing: full Queens Campus point cloud is fully visible again with no ROI box wireframe present. Prefer showing the before state with the Clear ROI button highlighted.",
+  "ui_state": "ROI present, hovering Clear ROI button in action bar",
+  "annotations": [
+    {
+      "type": "circle",
+      "x": 1820,
+      "y": 155,
+      "radius": 24,
+      "number": 1,
+      "label": "Clear ROI button"
+    },
+    {
+      "type": "arrow",
+      "x1": 1680,
+      "y1": 200,
+      "x2": 1800,
+      "y2": 162,
+      "label": "Click to remove ROI and restore full point cloud"
+    },
+    {
+      "type": "bbox",
+      "x": 720,
+      "y": 280,
+      "width": 560,
+      "height": 400,
+      "label": "Existing ROI box (will be removed after clicking Clear ROI)"
+    }
+  ]
+}

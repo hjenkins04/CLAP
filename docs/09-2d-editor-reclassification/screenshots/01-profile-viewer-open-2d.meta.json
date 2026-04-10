@@ -1,0 +1,48 @@
+{
+  "filename": "01-profile-viewer-open-2d.png",
+  "title": "Profile Viewer open with 2D secondary viewport visible",
+  "capture_instructions": "Profile Viewer must be active so the screen is split into a 3D viewport (left) and a 2D orthographic viewport (right). Reclassify Points mode must be active (button highlighted in toolbar). Point cloud (Queens Campus Segmented) visible in both panels. No selection active.",
+  "ui_state": "Profile Viewer active, Reclassify Points mode active, both 3D and 2D viewports visible, no active selection",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 0,
+      "y": 0,
+      "width": 256,
+      "height": 1080,
+      "label": "Left sidebar"
+    },
+    {
+      "type": "bbox",
+      "x": 256,
+      "y": 0,
+      "width": 960,
+      "height": 1080,
+      "label": "3D primary viewport"
+    },
+    {
+      "type": "bbox",
+      "x": 1200,
+      "y": 0,
+      "width": 720,
+      "height": 1080,
+      "label": "2D secondary viewport (orthographic)"
+    },
+    {
+      "type": "circle",
+      "x": 960,
+      "y": 44,
+      "radius": 24,
+      "number": 1,
+      "label": "Reclassify Points button — must be active/highlighted"
+    },
+    {
+      "type": "arrow",
+      "x1": 1100,
+      "y1": 200,
+      "x2": 1220,
+      "y2": 200,
+      "label": "2D viewport panel"
+    }
+  ]
+}

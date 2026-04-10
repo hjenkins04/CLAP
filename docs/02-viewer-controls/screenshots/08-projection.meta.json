@@ -1,0 +1,40 @@
+{
+  "filename": "08-projection.png",
+  "title": "Camera Projection toggle in the Settings panel",
+  "capture_instructions": "Left sidebar is open on the Settings tab. The Camera Projection section is visible and highlighted or annotated. If possible show a side-by-side comparison of the viewport in Orthographic vs Perspective (split screen or two inset thumbnails). Otherwise show the Settings panel with the Camera Projection toggle and the viewport in Perspective mode to contrast with the default Orthographic look. The Queens Campus point cloud should be visible at a tilted orbit angle to make the projection difference obvious.",
+  "ui_state": "Settings tab open, Camera Projection section visible, Perspective projection active in viewport (to show contrast)",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 16,
+      "y": 680,
+      "width": 223,
+      "height": 56,
+      "label": "Camera Projection section in Settings"
+    },
+    {
+      "type": "circle",
+      "x": 120,
+      "y": 405,
+      "radius": 24,
+      "number": 1,
+      "label": "Projection toggle — Orthographic / Perspective"
+    },
+    {
+      "type": "bbox",
+      "x": 256,
+      "y": 50,
+      "width": 1664,
+      "height": 1030,
+      "label": "Viewport — perspective distortion visible at tilted angle"
+    },
+    {
+      "type": "arrow",
+      "x1": 240,
+      "y1": 405,
+      "x2": 140,
+      "y2": 405,
+      "label": "Click to switch projection mode"
+    }
+  ]
+}

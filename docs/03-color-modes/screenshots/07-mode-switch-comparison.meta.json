@@ -1,0 +1,32 @@
+{
+  "filename": "07-mode-switch-comparison.png",
+  "title": "Side-by-side comparison of RGB and Classification modes on the same scene area",
+  "capture_instructions": "Composite image showing the same viewport area (a road junction with buildings and trees) rendered in RGB on the left half and Classification on the right half, with a thin dividing line. Alternatively, capture two separate screenshots of identical camera position and arrange them side-by-side in the docs image. The scene should be zoomed in enough to show individual building/road/tree class boundaries clearly.",
+  "ui_state": "Two captures: Color Mode = RGB (left), Color Mode = Classification (right), identical camera position and zoom level on both",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 256,
+      "y": 40,
+      "width": 820,
+      "height": 680,
+      "label": "RGB render — left panel"
+    },
+    {
+      "type": "bbox",
+      "x": 1076,
+      "y": 40,
+      "width": 820,
+      "height": 680,
+      "label": "Classification render — right panel"
+    },
+    {
+      "type": "arrow",
+      "x1": 840,
+      "y1": 380,
+      "x2": 1060,
+      "y2": 380,
+      "label": "Same scene area — switching mode reveals class boundaries"
+    }
+  ]
+}

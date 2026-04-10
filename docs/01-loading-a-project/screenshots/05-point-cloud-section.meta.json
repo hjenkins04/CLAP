@@ -1,0 +1,32 @@
+{
+  "filename": "05-point-cloud-section.png",
+  "title": "Point Cloud section — Open Folder button (desktop) or dropdown (browser)",
+  "capture_instructions": "Close-up / zoomed view of the Point Cloud section at the top of the Settings tab. In desktop mode: show the 'Open Folder' button. In browser mode: show the dropdown selector (unpopulated or showing placeholder text). No point cloud loaded.",
+  "ui_state": "Settings tab active, Point Cloud section visible at top of sidebar, no point cloud selected",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 16,
+      "y": 77,
+      "width": 223,
+      "height": 148,
+      "label": "Point Cloud section"
+    },
+    {
+      "type": "circle",
+      "x": 120,
+      "y": 115,
+      "radius": 28,
+      "number": 1,
+      "label": "Open Folder button (desktop) / Dropdown selector (browser)"
+    },
+    {
+      "type": "arrow",
+      "x1": 260,
+      "y1": 115,
+      "x2": 180,
+      "y2": 115,
+      "label": "Click to open folder picker or dropdown"
+    }
+  ]
+}

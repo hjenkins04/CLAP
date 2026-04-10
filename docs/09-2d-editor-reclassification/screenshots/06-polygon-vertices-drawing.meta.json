@@ -1,0 +1,56 @@
+{
+  "filename": "06-polygon-vertices-drawing.png",
+  "title": "Polygon vertices being placed in the 2D viewport — polygon open/in-progress",
+  "capture_instructions": "In Polygon mode with the 2D viewport focused, place 4–5 vertices by clicking. The polygon outline should be visible connecting the placed vertices. The last edge from the most recent vertex to the cursor should preview as a dotted or lighter line. Do not close the polygon yet.",
+  "ui_state": "Reclassify Points active, Polygon mode, 4–5 vertices placed in 2D viewport, polygon not yet closed, outline visible",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 1200,
+      "y": 0,
+      "width": 720,
+      "height": 1080,
+      "label": "2D secondary viewport — polygon drawing in progress"
+    },
+    {
+      "type": "circle",
+      "x": 1320,
+      "y": 280,
+      "radius": 12,
+      "number": 1,
+      "label": "First vertex (click here last to close polygon)"
+    },
+    {
+      "type": "circle",
+      "x": 1520,
+      "y": 280,
+      "radius": 10,
+      "number": 2,
+      "label": "Second vertex"
+    },
+    {
+      "type": "circle",
+      "x": 1600,
+      "y": 480,
+      "radius": 10,
+      "number": 3,
+      "label": "Third vertex"
+    },
+    {
+      "type": "circle",
+      "x": 1400,
+      "y": 560,
+      "radius": 10,
+      "number": 4,
+      "label": "Fourth vertex"
+    },
+    {
+      "type": "arrow",
+      "x1": 1320,
+      "y1": 180,
+      "x2": 1320,
+      "y2": 270,
+      "label": "Click first vertex to close polygon"
+    }
+  ]
+}

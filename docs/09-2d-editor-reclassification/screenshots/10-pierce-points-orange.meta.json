@@ -1,0 +1,56 @@
+{
+  "filename": "10-pierce-points-orange.png",
+  "title": "Orange pierce points on polygon edges in 2D viewport",
+  "capture_instructions": "With a 3D polygon annotation visible whose edges cross the current 2D slab plane, the 2D viewport should show orange dots on the polygon edges where the 3D edges intersect the slab. One orange dot should be clicked or hovered, showing an 'Add vertex' context button or tooltip. Blue vertex dots are also visible for contrast.",
+  "ui_state": "3D polygon annotation active, 2D viewport showing polygon boundary with blue vertex dots AND orange pierce points on edges, Add vertex option visible on one pierce point",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 1200,
+      "y": 0,
+      "width": 720,
+      "height": 1080,
+      "label": "2D secondary viewport"
+    },
+    {
+      "type": "circle",
+      "x": 1440,
+      "y": 340,
+      "radius": 16,
+      "number": 1,
+      "label": "Orange pierce point — 3D edge crosses 2D slab here"
+    },
+    {
+      "type": "circle",
+      "x": 1590,
+      "y": 430,
+      "radius": 16,
+      "number": 2,
+      "label": "Orange pierce point"
+    },
+    {
+      "type": "bbox",
+      "x": 1390,
+      "y": 300,
+      "width": 180,
+      "height": 40,
+      "label": "Add vertex button — appears when pierce point is clicked"
+    },
+    {
+      "type": "arrow",
+      "x1": 1300,
+      "y1": 240,
+      "x2": 1438,
+      "y2": 338,
+      "label": "Click orange pierce point → Add vertex to refine boundary"
+    },
+    {
+      "type": "circle",
+      "x": 1340,
+      "y": 310,
+      "radius": 12,
+      "number": 3,
+      "label": "Blue vertex dot (existing vertex — for reference)"
+    }
+  ]
+}

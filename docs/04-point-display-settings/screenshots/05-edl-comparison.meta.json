@@ -1,0 +1,40 @@
+{
+  "filename": "05-edl-comparison.png",
+  "title": "EDL disabled vs enabled — side-by-side depth perception comparison",
+  "capture_instructions": "Composite image. Left half: EDL disabled, RGB mode, Queens Campus at a 45-degree oblique angle showing buildings and roads. Right half: identical camera position, EDL enabled at Strength 0.5 Radius 2, same RGB mode. The difference in perceived depth and edge definition should be clearly visible — building edges, rooftop lips, and tree silhouettes should gain visible dark halos in the right panel.",
+  "ui_state": "Left: EDL off. Right: EDL on (Strength 0.5, Radius 2). RGB color mode, oblique camera angle.",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 256,
+      "y": 40,
+      "width": 820,
+      "height": 680,
+      "label": "EDL disabled — flat appearance, depth ambiguous"
+    },
+    {
+      "type": "bbox",
+      "x": 1076,
+      "y": 40,
+      "width": 820,
+      "height": 680,
+      "label": "EDL enabled — edges darkened, 3D structure immediately legible"
+    },
+    {
+      "type": "circle",
+      "x": 760,
+      "y": 300,
+      "radius": 40,
+      "number": 1,
+      "label": "Building edge — no depth halo without EDL"
+    },
+    {
+      "type": "circle",
+      "x": 1380,
+      "y": 300,
+      "radius": 40,
+      "number": 2,
+      "label": "Same building edge — clear dark halo with EDL enabled"
+    }
+  ]
+}

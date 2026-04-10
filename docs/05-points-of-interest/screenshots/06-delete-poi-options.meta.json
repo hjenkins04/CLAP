@@ -1,0 +1,32 @@
+{
+  "filename": "06-delete-poi-options.png",
+  "title": "Delete POI options — toolbar button and Layers panel context menu",
+  "capture_instructions": "Split or composite view showing two deletion paths. Primary: the toolbar Delete POI button highlighted (hover state). Secondary: the Layers panel sidebar with the POI Marker row three-dot menu open, showing 'Delete' as a menu item. If a composite is not possible, capture the Layers panel context menu open with Delete visible.",
+  "ui_state": "POI present in scene; Layers panel three-dot context menu open on POI Marker row, showing Delete option",
+  "annotations": [
+    {
+      "type": "circle",
+      "x": 810,
+      "y": 20,
+      "radius": 22,
+      "number": 1,
+      "label": "Delete POI toolbar button"
+    },
+    {
+      "type": "bbox",
+      "x": 130,
+      "y": 295,
+      "width": 110,
+      "height": 80,
+      "label": "Layers panel context menu with Delete option"
+    },
+    {
+      "type": "circle",
+      "x": 155,
+      "y": 320,
+      "radius": 14,
+      "number": 2,
+      "label": "Delete menu item in context menu"
+    }
+  ]
+}

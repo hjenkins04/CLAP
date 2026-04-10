@@ -1,0 +1,40 @@
+{
+  "filename": "04-zoom.png",
+  "title": "Zooming in with the scroll wheel — high-detail tile stream",
+  "capture_instructions": "Queens Campus point cloud zoomed into a specific area at ground level or near a building. The zoomed view should show fine detail (individual points, kerb edges, road surface). Higher-resolution tiles should be visible from the stream. Compare with a small inset or annotation showing the overview level. Status bar should show a higher point count due to higher-detail tile loading.",
+  "ui_state": "Grab/Navigate mode active, zoomed into a specific area of the Queens Campus (e.g. a building or road), high-detail view",
+  "annotations": [
+    {
+      "type": "hotkey",
+      "x": 700,
+      "y": 150,
+      "keys": [
+        "Scroll Up"
+      ]
+    },
+    {
+      "type": "circle",
+      "x": 960,
+      "y": 540,
+      "radius": 50,
+      "number": 1,
+      "label": "High-detail points visible after zooming in"
+    },
+    {
+      "type": "arrow",
+      "x1": 960,
+      "y1": 200,
+      "x2": 960,
+      "y2": 450,
+      "label": "Scroll toward this area to zoom in"
+    },
+    {
+      "type": "bbox",
+      "x": 16,
+      "y": 205,
+      "width": 223,
+      "height": 20,
+      "label": "Status bar — higher point count after zoom"
+    }
+  ]
+}

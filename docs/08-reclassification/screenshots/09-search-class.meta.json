@@ -1,0 +1,41 @@
+{
+  "filename": "09-search-class.png",
+  "title": "Typing in the search field to filter the class list",
+  "capture_instructions": "Class picker panel is open. The search field contains the text 'road' (or partial text that filters results). The class list is filtered to show only matching entries — 'Roads (2)' should be visible and highlighted as the first/only result. Arrow key focus may be shown on the highlighted item.",
+  "ui_state": "Class picker open, search field contains 'road', list filtered to matching classes",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 950,
+      "y": 200,
+      "width": 340,
+      "height": 500,
+      "label": "Class picker panel"
+    },
+    {
+      "type": "circle",
+      "x": 1120,
+      "y": 225,
+      "radius": 22,
+      "number": 1,
+      "label": "Search field — 'road' typed here"
+    },
+    {
+      "type": "circle",
+      "x": 1120,
+      "y": 275,
+      "radius": 22,
+      "number": 2,
+      "label": "Filtered result: Roads (2) — highlighted"
+    },
+    {
+      "type": "hotkey",
+      "keys": [
+        "Enter"
+      ],
+      "x": 1310,
+      "y": 275,
+      "label": "Press Enter to reclassify to Roads"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "filename": "07-point-size-slider.png",
+  "title": "Point size slider in the 2D viewport panel",
+  "capture_instructions": "Split-viewport layout. Show the Point Size slider at the top of the 2D panel. The slider should be set to a mid-range value (e.g., 3.0) so the handle position is clearly visible and not at an extreme. The 2D viewport should show points rendered at that size for visual comparison.",
+  "ui_state": "Plan/Profile active, 2D panel with Point Size slider visible at a non-default value",
+  "annotations": [
+    {
+      "type": "circle",
+      "x": 1560,
+      "y": 110,
+      "radius": 26,
+      "number": 1,
+      "label": "Point Size slider (range: 0.5–10.0)"
+    },
+    {
+      "type": "bbox",
+      "x": 1210,
+      "y": 130,
+      "width": 690,
+      "height": 30,
+      "label": "Slider track — drag left to reduce, right to increase"
+    },
+    {
+      "type": "bbox",
+      "x": 1200,
+      "y": 150,
+      "width": 720,
+      "height": 900,
+      "label": "2D viewport — points rendered at current size"
+    }
+  ]
+}

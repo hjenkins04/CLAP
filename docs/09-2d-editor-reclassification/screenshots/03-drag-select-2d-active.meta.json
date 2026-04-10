@@ -1,0 +1,40 @@
+{
+  "filename": "03-drag-select-2d-active.png",
+  "title": "Rubber-band drag selection in progress in the 2D viewport",
+  "capture_instructions": "In the 2D secondary viewport, click and hold to start a drag selection. While still holding the mouse button down, capture the screen so the rubber-band rectangle is visible. Some points inside the rectangle should be highlighted. The same points should also be highlighted in the 3D viewport on the left.",
+  "ui_state": "Reclassify Points active, 2D drag selection in progress, rubber-band rectangle visible in 2D viewport, corresponding points highlighted in 3D viewport",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 1200,
+      "y": 0,
+      "width": 720,
+      "height": 1080,
+      "label": "2D secondary viewport"
+    },
+    {
+      "type": "bbox",
+      "x": 1300,
+      "y": 200,
+      "width": 400,
+      "height": 300,
+      "label": "Rubber-band selection rectangle (drag in progress)"
+    },
+    {
+      "type": "bbox",
+      "x": 256,
+      "y": 0,
+      "width": 960,
+      "height": 1080,
+      "label": "3D viewport — selected points highlighted here too"
+    },
+    {
+      "type": "circle",
+      "x": 720,
+      "y": 400,
+      "radius": 40,
+      "number": 1,
+      "label": "Corresponding highlighted points in 3D view"
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "filename": "06-additive-selection.png",
+  "title": "Additive selection — Ctrl+drag adds more points to the existing selection",
+  "capture_instructions": "Some points are already yellow from a previous drag. A new selection rectangle is being drawn while Ctrl is held. The new rectangle covers an adjacent area of road points that were not previously selected. Both the original yellow selection and the new rectangle should be visible simultaneously.",
+  "ui_state": "Reclassify Points active, Drag-Select mode, Ctrl+drag in progress with existing yellow selection",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 490,
+      "y": 370,
+      "width": 280,
+      "height": 200,
+      "label": "Existing yellow selection (first drag)"
+    },
+    {
+      "type": "bbox",
+      "x": 790,
+      "y": 380,
+      "width": 260,
+      "height": 190,
+      "label": "New selection rectangle (Ctrl+drag — additive)"
+    },
+    {
+      "type": "hotkey",
+      "keys": [
+        "Ctrl",
+        "+",
+        "Drag"
+      ],
+      "x": 920,
+      "y": 320,
+      "label": "Ctrl+drag adds to existing selection"
+    },
+    {
+      "type": "circle",
+      "x": 635,
+      "y": 470,
+      "radius": 30,
+      "number": 1,
+      "label": "Original selection (yellow)"
+    },
+    {
+      "type": "circle",
+      "x": 920,
+      "y": 475,
+      "radius": 30,
+      "number": 2,
+      "label": "New rectangle being added"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "filename": "07-loading-state.png",
+  "title": "Point cloud loading — spinner and progress indicator visible",
+  "capture_instructions": "Capture the application immediately after selecting the Queens Campus (Segmented) point cloud, during the loading phase. A spinner or loading indicator must be visible (either in the sidebar Point Cloud section or overlaid on the viewport). The viewport may show a partial point cloud with low-detail tiles already visible. Status bar may show a low point count or loading text.",
+  "ui_state": "Point cloud loading in progress, spinner visible, Settings tab open",
+  "annotations": [
+    {
+      "type": "circle",
+      "x": 120,
+      "y": 115,
+      "radius": 28,
+      "number": 1,
+      "label": "Loading spinner in Point Cloud section"
+    },
+    {
+      "type": "bbox",
+      "x": 256,
+      "y": 50,
+      "width": 1664,
+      "height": 1030,
+      "label": "Viewport — partial/low-detail point cloud tiles visible"
+    },
+    {
+      "type": "bbox",
+      "x": 16,
+      "y": 205,
+      "width": 223,
+      "height": 20,
+      "label": "Status bar — loading or low point count"
+    }
+  ]
+}

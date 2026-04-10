@@ -1,0 +1,72 @@
+{
+  "filename": "02-empty-viewer.png",
+  "title": "Empty viewer — toolbar and sidebar visible",
+  "capture_instructions": "CLAP is open with no point cloud loaded. The sidebar must be expanded so that the Layers and Settings tabs are visible. The toolbar at the top must be fully visible with all mode buttons. The status bar at the bottom shows no point count.",
+  "ui_state": "No point cloud loaded, sidebar expanded, Grab/Navigate mode active (leftmost toolbar button highlighted)",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 887,
+      "y": 8,
+      "width": 403,
+      "height": 34,
+      "label": "Toolbar — mode buttons"
+    },
+    {
+      "type": "circle",
+      "x": 400,
+      "y": 22,
+      "radius": 18,
+      "number": 1,
+      "label": "Grab/Navigate button (active/highlighted)"
+    },
+    {
+      "type": "bbox",
+      "x": 0,
+      "y": 0,
+      "width": 256,
+      "height": 1080,
+      "label": "Left sidebar panel"
+    },
+    {
+      "type": "circle",
+      "x": 80,
+      "y": 44,
+      "radius": 22,
+      "number": 2,
+      "label": "Layers tab"
+    },
+    {
+      "type": "circle",
+      "x": 160,
+      "y": 44,
+      "radius": 22,
+      "number": 3,
+      "label": "Settings tab"
+    },
+    {
+      "type": "bbox",
+      "x": 1785,
+      "y": 178,
+      "width": 72,
+      "height": 90,
+      "label": "Top-right viewport controls (Virtual Tiles, ROI, World Frame)"
+    },
+    {
+      "type": "bbox",
+      "x": 1740,
+      "y": 8,
+      "width": 172,
+      "height": 168,
+      "label": "View Cube"
+    },
+    {
+      "type": "bbox",
+      "x": 16,
+      "y": 205,
+      "width": 223,
+      "height": 20,
+      "label": "Status bar — 0 points"
+    }
+  ]
+}

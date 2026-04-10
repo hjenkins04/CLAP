@@ -7,11 +7,18 @@ const DEV_URL = 'http://localhost:5173';
 let mainWindow: BrowserWindow | null = null;
 
 export function createWindow(): BrowserWindow {
+  // Resolve icon: in production the ICO sits next to the exe in resources/,
+  // in dev we use the build/ source directly.
+  const iconPath = isDev
+    ? path.join(__dirname, '../../build/icon.png')
+    : path.join(process.resourcesPath, 'icon.png');
+
   mainWindow = new BrowserWindow({
     width: 1600,
     height: 1000,
     minWidth: 1024,
     minHeight: 768,
+    icon: iconPath,
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
       contextIsolation: true,

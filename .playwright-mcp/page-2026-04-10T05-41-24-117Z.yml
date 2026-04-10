@@ -1,0 +1,162 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - img [ref=e7]
+          - generic [ref=e9]: CLAP
+        - button [ref=e10] [cursor=pointer]:
+          - img
+      - generic [ref=e12]:
+        - generic [ref=e14]:
+          - heading "Point Cloud" [level=3] [ref=e15]
+          - generic [ref=e16]:
+            - combobox [ref=e17] [cursor=pointer]:
+              - generic: Queens Campus (Segmented)
+              - img
+            - button "Open" [ref=e147] [cursor=pointer]:
+              - img
+              - text: Open
+          - paragraph [ref=e254]: /pointclouds/queens_campus_res_segmented/
+          - generic [ref=e18]:
+            - img [ref=e19]
+            - generic [ref=e22]: "Visible: 2.0M points"
+        - generic [ref=e23]:
+          - generic [ref=e24]:
+            - button "Layers" [ref=e25] [cursor=pointer]:
+              - img [ref=e26]
+              - text: Layers
+            - button "Settings" [ref=e30] [cursor=pointer]:
+              - img [ref=e31]
+              - text: Settings
+          - generic [ref=e378]:
+            - generic [ref=e379]:
+              - button "Coloring & Points" [ref=e380] [cursor=pointer]:
+                - heading "Coloring & Points" [level=3] [ref=e381]
+                - img [ref=e382]
+              - generic [ref=e384]:
+                - generic [ref=e385]:
+                  - generic [ref=e386]: Color Mode
+                  - combobox [ref=e387]:
+                    - option "RGB"
+                    - option "Height"
+                    - option "Classification" [selected]
+                    - option "Intensity"
+                - generic [ref=e388]:
+                  - generic [ref=e389]: "Point Size: 1.0"
+                  - slider [ref=e390]: "1"
+                - generic [ref=e391]:
+                  - generic [ref=e392]: "Point Budget: 2.0M"
+                  - slider [ref=e393]: "2000000"
+            - generic [ref=e394]:
+              - button "Eye-Dome Lighting" [ref=e395] [cursor=pointer]:
+                - heading "Eye-Dome Lighting" [level=3] [ref=e396]
+                - img [ref=e397]
+              - generic [ref=e459]:
+                - generic [ref=e460]:
+                  - generic [ref=e461]: Enabled
+                  - button [ref=e462] [cursor=pointer]
+                - generic [ref=e464]:
+                  - generic [ref=e465]: "Strength: 0.40"
+                  - slider [disabled] [ref=e466]: "0.4"
+                - generic [ref=e467]:
+                  - generic [ref=e468]: "Radius: 1.4"
+                  - slider [disabled] [ref=e469]: "1.4"
+            - generic [ref=e399]:
+              - button "Camera" [active] [ref=e400] [cursor=pointer]:
+                - heading "Camera" [level=3] [ref=e401]
+                - img [ref=e402]
+              - generic [ref=e471]:
+                - button "Perspective" [ref=e472] [cursor=pointer]
+                - button "Orthographic" [ref=e473] [cursor=pointer]
+            - button "Base Satellite Map" [ref=e405] [cursor=pointer]:
+              - heading "Base Satellite Map" [level=3] [ref=e406]
+              - img [ref=e407]
+            - button "OSM Features" [ref=e410] [cursor=pointer]:
+              - heading "OSM Features" [level=3] [ref=e411]
+              - img [ref=e412]
+            - button "Custom Map" [ref=e415] [cursor=pointer]:
+              - heading "Custom Map" [level=3] [ref=e416]
+              - img [ref=e417]
+            - button "Static Obstacles" [ref=e420] [cursor=pointer]:
+              - heading "Static Obstacles" [level=3] [ref=e421]
+              - img [ref=e422]
+            - button "Polygons" [ref=e425] [cursor=pointer]:
+              - heading "Polygons" [level=3] [ref=e426]
+              - img [ref=e427]
+            - button "Road Extraction" [ref=e430] [cursor=pointer]:
+              - heading "Road Extraction" [level=3] [ref=e431]
+              - img [ref=e432]
+            - button "DEM Surface" [ref=e435] [cursor=pointer]:
+              - heading "DEM Surface" [level=3] [ref=e436]
+              - img [ref=e437]
+            - button "World Frame" [ref=e440] [cursor=pointer]:
+              - heading "World Frame" [level=3] [ref=e441]
+              - img [ref=e442]
+            - button "ROI" [ref=e445] [cursor=pointer]:
+              - heading "ROI" [level=3] [ref=e446]
+              - img [ref=e447]
+            - button "Grid" [ref=e450] [cursor=pointer]:
+              - heading "Grid" [level=3] [ref=e451]
+              - img [ref=e452]
+            - button "Axis Settings" [ref=e455] [cursor=pointer]:
+              - heading "Axis Settings" [level=3] [ref=e456]
+              - img [ref=e457]
+    - main [ref=e106]:
+      - generic [ref=e107]:
+        - generic [ref=e108]:
+          - generic [ref=e109]:
+            - button [ref=e110] [cursor=pointer]:
+              - img
+            - button [ref=e111] [cursor=pointer]:
+              - img
+            - button [ref=e255] [cursor=pointer]:
+              - img
+          - generic [ref=e113]:
+            - button [ref=e114] [cursor=pointer]:
+              - img
+            - button [ref=e115] [cursor=pointer]:
+              - img
+            - button [ref=e117] [cursor=pointer]:
+              - img
+              - img
+            - button [disabled]:
+              - img
+        - generic [ref=e120]:
+          - button [ref=e121] [cursor=pointer]:
+            - img
+          - button [ref=e122] [cursor=pointer]:
+            - img
+          - button [ref=e256] [cursor=pointer]:
+            - img
+          - button [disabled]:
+            - img
+          - button [disabled]:
+            - img
+          - button [ref=e123] [cursor=pointer]:
+            - img
+          - button [ref=e124] [cursor=pointer]:
+            - img
+          - button [ref=e125] [cursor=pointer]:
+            - img
+          - button [ref=e126] [cursor=pointer]:
+            - img
+          - button [ref=e127] [cursor=pointer]:
+            - img
+          - button [ref=e257] [cursor=pointer]:
+            - img
+          - button [ref=e128] [cursor=pointer]:
+            - img
+        - generic [ref=e130]:
+          - button [ref=e131] [cursor=pointer]:
+            - img
+          - button [ref=e132] [cursor=pointer]:
+            - img
+        - generic [ref=e134]:
+          - generic:
+            - button "Reset camera" [ref=e251] [cursor=pointer]:
+              - img [ref=e139]
+            - button "Lock camera orientation" [ref=e252] [cursor=pointer]:
+              - img [ref=e143]
+          - button "2D" [ref=e253] [cursor=pointer]
+  - region "Notifications alt+T"

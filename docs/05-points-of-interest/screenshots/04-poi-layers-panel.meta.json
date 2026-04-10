@@ -1,0 +1,40 @@
+{
+  "filename": "04-poi-layers-panel.png",
+  "title": "POI Marker entry in the Layers panel",
+  "capture_instructions": "Left sidebar is open on the Layers tab. The layers list shows the Queens Campus (Segmented) point cloud entry and, below it, a 'POI Marker' entry. The POI Marker row should display an eye (visibility) icon. If the three-dot context menu icon is visible on hover, hover the mouse over the POI Marker row to reveal it. Viewport shows the point cloud in background.",
+  "ui_state": "Layers tab open in sidebar, POI Marker row visible, mouse hovering the POI Marker row",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 0,
+      "y": 0,
+      "width": 256,
+      "height": 1080,
+      "label": "Left sidebar"
+    },
+    {
+      "type": "circle",
+      "x": 120,
+      "y": 310,
+      "radius": 26,
+      "number": 1,
+      "label": "POI Marker layer row"
+    },
+    {
+      "type": "circle",
+      "x": 210,
+      "y": 310,
+      "radius": 14,
+      "number": 2,
+      "label": "Eye icon — toggle POI visibility"
+    },
+    {
+      "type": "circle",
+      "x": 228,
+      "y": 310,
+      "radius": 10,
+      "number": 3,
+      "label": "Three-dot context menu (Delete POI and other actions)"
+    }
+  ]
+}

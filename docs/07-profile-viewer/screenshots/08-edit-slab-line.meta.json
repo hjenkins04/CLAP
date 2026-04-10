@@ -1,0 +1,43 @@
+{
+  "filename": "08-edit-slab-line.png",
+  "title": "Dragging a slab line vertex handle in the 3D viewport",
+  "capture_instructions": "Split-viewport layout. In the 3D viewport, show the slab center line with both vertex handles visible. Capture a moment where one of the handles is being dragged — the cursor should be over a handle (or show the handle in a highlighted/hover state). The slab line should appear in a slightly different position than expected, indicating a drag is in progress or just completed.",
+  "ui_state": "Plan/Profile active, slab line visible in 3D with vertex handles, one handle being dragged",
+  "annotations": [
+    {
+      "type": "circle",
+      "x": 500,
+      "y": 430,
+      "radius": 22,
+      "number": 1,
+      "label": "Vertex handle — start point (draggable)"
+    },
+    {
+      "type": "circle",
+      "x": 820,
+      "y": 510,
+      "radius": 22,
+      "number": 2,
+      "label": "Vertex handle — end point (draggable)"
+    },
+    {
+      "type": "bbox",
+      "x": 480,
+      "y": 415,
+      "width": 360,
+      "height": 110,
+      "label": "Slab center line"
+    },
+    {
+      "type": "hotkey",
+      "keys": [
+        "Click",
+        "+",
+        "Drag"
+      ],
+      "x": 560,
+      "y": 360,
+      "label": "Click and drag a handle to reposition it"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "filename": "05-slab-depth.png",
+  "title": "Adjusting the slab depth control",
+  "capture_instructions": "Split-viewport layout. Show the slab depth control clearly — it may be in the 2D panel sidebar or a floating panel. Capture a state where the slab depth has been increased to a visible value (e.g., 2.0 m) so the number is readable. Annotate the control and ideally show two states (thin vs. thick slab) by showing the 2D viewport with a moderate depth that has clearly bounded slab edges.",
+  "ui_state": "Plan/Profile active, slab depth control visible and set to a non-default value",
+  "annotations": [
+    {
+      "type": "circle",
+      "x": 1310,
+      "y": 155,
+      "radius": 26,
+      "number": 1,
+      "label": "Slab Depth control (numeric input or slider)"
+    },
+    {
+      "type": "bbox",
+      "x": 1200,
+      "y": 150,
+      "width": 720,
+      "height": 900,
+      "label": "2D view — points inside the slab depth are shown"
+    },
+    {
+      "type": "hotkey",
+      "keys": [
+        "increase depth"
+      ],
+      "x": 1430,
+      "y": 155,
+      "label": "Increase value to widen the slice"
+    }
+  ]
+}

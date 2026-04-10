@@ -1,0 +1,40 @@
+{
+  "filename": "06-intensity-mode.png",
+  "title": "Queens Campus in Intensity (grayscale) color mode",
+  "capture_instructions": "Intensity selected in Color Mode section. Same broad camera angle as previous screenshots. The viewport should appear in grayscale. Road markings (crosswalks, lane lines) should be visibly brighter white than surrounding asphalt. Traffic signs appear as bright hotspots. Dark areas indicate absorptive or wet surfaces.",
+  "ui_state": "Settings tab, Color Mode = Intensity, Queens Campus loaded, grayscale viewport visible",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 16,
+      "y": 341,
+      "width": 213,
+      "height": 31,
+      "label": "Intensity option selected"
+    },
+    {
+      "type": "arrow",
+      "x1": 860,
+      "y1": 490,
+      "x2": 820,
+      "y2": 460,
+      "label": "Road markings — high intensity (bright white)"
+    },
+    {
+      "type": "arrow",
+      "x1": 950,
+      "y1": 440,
+      "x2": 970,
+      "y2": 420,
+      "label": "Traffic sign — retroreflective hotspot"
+    },
+    {
+      "type": "arrow",
+      "x1": 640,
+      "y1": 540,
+      "x2": 680,
+      "y2": 510,
+      "label": "Dark asphalt — low return intensity"
+    }
+  ]
+}

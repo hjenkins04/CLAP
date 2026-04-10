@@ -1,0 +1,48 @@
+{
+  "filename": "02-roi-shape-picker.png",
+  "title": "ROI shape type picker — 3D Box, Cylinder, 2D Rectangle, 2D Polygon",
+  "capture_instructions": "The ROI button has been clicked and the shape-type picker panel is open near the top-right of the viewport. All four shape options are visible: 3D Box, Cylinder, 2D Rectangle, 2D Polygon. None is selected/highlighted yet (hover state on 3D Box is acceptable).",
+  "ui_state": "ROI shape picker open, no shape selected, cursor hovering 3D Box option",
+  "annotations": [
+    {
+      "type": "bbox",
+      "x": 1700,
+      "y": 44,
+      "width": 210,
+      "height": 160,
+      "label": "Shape type picker panel"
+    },
+    {
+      "type": "circle",
+      "x": 1750,
+      "y": 72,
+      "radius": 16,
+      "number": 1,
+      "label": "3D Box"
+    },
+    {
+      "type": "circle",
+      "x": 1820,
+      "y": 72,
+      "radius": 16,
+      "number": 2,
+      "label": "Cylinder"
+    },
+    {
+      "type": "circle",
+      "x": 1750,
+      "y": 130,
+      "radius": 16,
+      "number": 3,
+      "label": "2D Rectangle"
+    },
+    {
+      "type": "circle",
+      "x": 1820,
+      "y": 130,
+      "radius": 16,
+      "number": 4,
+      "label": "2D Polygon"
+    }
+  ]
+}

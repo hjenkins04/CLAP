@@ -1,6 +1,12 @@
 {
   "name": "clap-app",
   "version": "0.1.0",
+  "description": "Cloud LiDAR Annotation Platform",
+  "author": {
+    "name": "Your Company",
+    "email": "support@your-company.com"
+  },
+  "license": "UNLICENSED",
   "private": true,
   "type": "module",
   "main": "dist-electron/main/index.js",
@@ -15,8 +21,10 @@
     "electron:start": "cross-env NODE_ENV=development electron .",
     "electron:wait": "wait-on http://localhost:5173 && npm run electron:compile && npm run electron:start",
     "electron:dev": "concurrently -n vite,electron -c blue,green \"vite dev\" \"npm run electron:wait\"",
-    "electron:build": "vite build && npm run electron:compile && electron-builder",
+    "electron:build": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false vite build && npm run electron:compile && electron-builder --win",
+    "electron:build:publish": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false GH_TOKEN=$GH_TOKEN vite build && npm run electron:compile && electron-builder --win --publish always",
     "electron:preview": "npm run electron:compile && cross-env NODE_ENV=production electron .",
+    "icons:generate": "electron-icon-builder --input=build/icon-source.png --output=build",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -37,6 +45,8 @@
     "@tanstack/react-router": "^1.141.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "electron-log": "^5.4.3",
+    "electron-updater": "^6.8.3",
     "lucide-react": "^0.561.0",
     "maplibre-gl": "^5.21.1",
     "osmtogeojson": "^3.0.0-beta.5",
@@ -61,6 +71,7 @@
     "cross-env": "^7.0.3",
     "electron": "^39.2.7",
     "electron-builder": "^26.0.12",
+    "electron-icon-builder": "^2.0.1",
     "eslint": "^9.8.0",
     "jsdom": "~22.1.0",
     "prettier": "^2.6.2",
@@ -72,23 +83,51 @@
     "wait-on": "^9.0.3"
   },
   "build": {
-    "appId": "com.clap.app",
+    "appId": "com.your-company.clap",
     "productName": "CLAP",
+    "copyright": "Copyright © 2025 Your Company. All rights reserved.",
     "directories": {
-      "output": "release"
+      "output": "release",
+      "buildResources": "build"
     },
     "files": [
       "dist/**/*",
-      "dist-electron/**/*"
+      "dist-electron/**/*",
+      "!dist-electron/**/*.map"
     ],
-    "linux": {
-      "target": "AppImage"
-    },
     "win": {
-      "target": "nsis"
+      "target": [
+        { "target": "nsis", "arch": ["x64"] }
+      ],
+      "artifactName": "${productName}-Setup-${version}.${ext}",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "${productName}",
+      "runAfterFinish": true,
+      "menuCategory": true,
+      "deleteAppDataOnUninstall": false
     },
     "mac": {
-      "target": "dmg"
+      "target": [{ "target": "dmg", "arch": ["x64", "arm64"] }],
+      "category": "public.app-category.productivity",
+      "artifactName": "${productName}-${version}-mac.${ext}",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false
+    },
+    "linux": {
+      "target": [{ "target": "AppImage", "arch": ["x64"] }],
+      "artifactName": "${productName}-${version}-linux.${ext}"
+    },
+    "publish": {
+      "provider": "generic",
+      "url": "https://releases.your-company.com/clap/"
     }
   }
 }

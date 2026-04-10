@@ -1,10 +1,12 @@
 import { app, BrowserWindow } from 'electron';
 import { createWindow } from './window';
 import { registerIpcHandlers, removeIpcHandlers } from './ipc';
+import { initAutoUpdater } from './auto-updater';
 
 app.whenReady().then(() => {
   registerIpcHandlers();
-  createWindow();
+  const win = createWindow();
+  initAutoUpdater(win);
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

@@ -19,6 +19,35 @@ export class SecondaryViewport {
   private containerEl: HTMLElement | null = null;
   private frustumSize = 100;
 
+  private readonly _onWheel = (e: WheelEvent): void => {
+    if (!e.ctrlKey || !e.shiftKey) return;
+    // Intercept Ctrl+Shift+scroll → pan the camera (trackpad-friendly).
+    // stopImmediatePropagation prevents OrbitControls from also processing it as zoom.
+    e.preventDefault();
+    e.stopImmediatePropagation();
+
+    const el = this.renderer.domElement;
+    const frustumWidth = this.camera.right - this.camera.left;
+    const frustumHeight = this.camera.top - this.camera.bottom;
+    const scaleX = frustumWidth / el.clientWidth;
+    const scaleY = frustumHeight / el.clientHeight;
+
+    // Compute camera's right and up vectors in world space.
+    const camDir = new Vector3();
+    this.camera.getWorldDirection(camDir);
+    const camRight = new Vector3().crossVectors(camDir, this.camera.up).normalize();
+    const camScreenUp = new Vector3().crossVectors(camRight, camDir).normalize();
+
+    // Natural-scroll convention: content follows the finger.
+    const panOffset = new Vector3();
+    panOffset.addScaledVector(camRight, -e.deltaX * scaleX);
+    panOffset.addScaledVector(camScreenUp, e.deltaY * scaleY);
+
+    this.controls.target.add(panOffset);
+    this.camera.position.add(panOffset);
+    this.controls.update();
+  };
+
   constructor() {
     this.renderer = new WebGLRenderer({ antialias: true, alpha: true });
     this.renderer.setPixelRatio(window.devicePixelRatio);
@@ -40,6 +69,12 @@ export class SecondaryViewport {
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.1;
     this.controls.zoomSpeed = 1.5;
+
+    // Register with capture=true so this handler runs before OrbitControls' listener.
+    this.renderer.domElement.addEventListener('wheel', this._onWheel, {
+      capture: true,
+      passive: false,
+    });
   }
 
   /** Mount the renderer canvas into the given container element. */
@@ -107,6 +142,7 @@ export class SecondaryViewport {
   }
 
   dispose(): void {
+    this.renderer.domElement.removeEventListener('wheel', this._onWheel, { capture: true });
     this.controls.dispose();
     this.renderer.dispose();
     this.detach();

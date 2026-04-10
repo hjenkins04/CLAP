@@ -28,8 +28,9 @@ export function createWindow(): BrowserWindow {
   if (isDev) {
     mainWindow.loadURL(DEV_URL);
   } else {
+    // __dirname = dist-electron/main/ → go up two levels to reach the app root
     mainWindow.loadFile(
-      path.join(__dirname, '../dist/clap-app/index.html')
+      path.join(__dirname, '../../dist/clap-app/index.html')
     );
   }
 

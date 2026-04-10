@@ -35,6 +35,7 @@ export default defineConfig(() => ({
       brotliSize: true,
     }),
   ],
+  base: './',
   build: {
     outDir: './dist/clap-app',
     emptyOutDir: true,

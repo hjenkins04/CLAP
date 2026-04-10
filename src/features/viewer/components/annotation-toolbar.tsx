@@ -15,6 +15,8 @@ import {
 import { useState } from 'react';
 import { useViewerModeStore } from '@/app/stores';
 import { saveGeometryAnnotations } from '../services/geometry-annotations-io';
+import { usePolyAnnotStore } from '../plugins/polygon-annotation/polygon-annotation-store';
+import { useStaticObstacleStore } from '../plugins/static-obstacle/static-obstacle-store';
 import { useSnapStore } from '../modules/snap/snap-store';
 import { SNAP_MODE_LABELS } from '../modules/snap/snap-types';
 import type { SnapMode } from '../modules/snap/snap-types';
@@ -28,6 +30,10 @@ const SNAP_MODES: SnapMode[] = ['vertex', 'edge', 'face', 'pointcloud', 'dem'];
 
 export function AnnotationToolbar({ engine }: AnnotationToolbarProps) {
   const [saving, setSaving] = useState(false);
+
+  const polyDirty = usePolyAnnotStore((s) => s.isDirty);
+  const obsDirty  = useStaticObstacleStore((s) => s.isDirty);
+  const isDirty   = polyDirty || obsDirty;
 
   const { mode, enterPolygonAnnotationMode, enterStaticObstacleMode, exitMode } =
     useViewerModeStore();
@@ -45,7 +51,11 @@ export function AnnotationToolbar({ engine }: AnnotationToolbarProps) {
     const basePath = engine.getEditor().getBasePath();
     if (!basePath) return;
     setSaving(true);
-    try { await saveGeometryAnnotations(basePath); }
+    try {
+      await saveGeometryAnnotations(basePath);
+      usePolyAnnotStore.getState().markClean();
+      useStaticObstacleStore.getState().markClean();
+    }
     catch (err) { console.error('[CLAP] Failed to save geometry annotations:', err); }
     finally { setSaving(false); }
   };
@@ -145,7 +155,7 @@ export function AnnotationToolbar({ engine }: AnnotationToolbarProps) {
               variant="ghost"
               size="icon"
               className="h-7 w-7"
-              disabled={saving || !engine?.getEditor()?.getBasePath()}
+              disabled={saving || !isDirty || !engine?.getEditor()?.getBasePath()}
               onClick={handleSave}
             >
               {saving

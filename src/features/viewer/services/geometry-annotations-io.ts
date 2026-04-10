@@ -43,38 +43,51 @@ async function writeFile(path: string, data: ArrayBuffer): Promise<void> {
 
 /**
  * Reads geometry-annotations.bin from `basePath` and populates both stores.
- * Safe to call even if the file doesn't exist yet.
+ * Always clears both stores first so stale data from a previously loaded
+ * project never bleeds into the new one (even if the new project has no file).
  */
 export async function loadGeometryAnnotations(basePath: string): Promise<void> {
+  // Clear both stores unconditionally — ensures a clean slate when switching
+  // projects, regardless of whether the new project has a bin file.
+  usePolyAnnotStore.setState({
+    layers: [],
+    annotations: [],
+    labelCounters: {},
+    activeLayerId: null,
+    isDirty: false,
+  });
+  useStaticObstacleStore.setState({
+    layers: [],
+    annotations: [],
+    labelCounters: {},
+    activeLayerId: null,
+    isDirty: false,
+  });
+
   const path = `${basePath}${FILENAME}`;
   const buffer = await readFile(path);
-  if (!buffer) return; // first run — no file yet
+  if (!buffer) return; // new project — no file yet, stores stay empty
 
   const data = deserializeGeometryAnnotations(buffer);
   if (!data) return;
 
   // Replace polygon annotation store contents
-  usePolyAnnotStore.setState((s) => ({
+  usePolyAnnotStore.setState({
     layers: data.polygons.layers,
     annotations: data.polygons.annotations,
     labelCounters: data.polygons.labelCounters,
-    // Preserve activeLayerId if the layer still exists, else pick first
-    activeLayerId:
-      data.polygons.layers.find((l) => l.id === s.activeLayerId)?.id ??
-      data.polygons.layers[0]?.id ??
-      null,
-  }));
+    activeLayerId: data.polygons.layers[0]?.id ?? null,
+    isDirty: false,
+  });
 
   // Replace static obstacle store contents
-  useStaticObstacleStore.setState((s) => ({
+  useStaticObstacleStore.setState({
     layers: data.obstacles.layers,
     annotations: data.obstacles.annotations,
     labelCounters: data.obstacles.labelCounters,
-    activeLayerId:
-      data.obstacles.layers.find((l) => l.id === s.activeLayerId)?.id ??
-      data.obstacles.layers[0]?.id ??
-      null,
-  }));
+    activeLayerId: data.obstacles.layers[0]?.id ?? null,
+    isDirty: false,
+  });
 }
 
 /**

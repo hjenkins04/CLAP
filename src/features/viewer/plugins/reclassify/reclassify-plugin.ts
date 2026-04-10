@@ -183,6 +183,7 @@ export class ReclassifyPlugin implements ViewerPlugin {
     }
     this.polygonEngine?.dispose();
     this.polygonEngine = null;
+    useReclassifyStore.getState().clearPolygonConfirm();
     if (restoreCursor && this.ctx) this.ctx.domElement.style.cursor = '';
   }
 
@@ -190,10 +191,13 @@ export class ReclassifyPlugin implements ViewerPlugin {
     if (this.polygonConfirmFn) {
       this.ctx?.domElement.removeEventListener('keydown', this.polygonConfirmFn);
     }
+    const confirmFn = (): void => {
+      this.confirmPolygonSelection(shape);
+    };
     const fn = (e: KeyboardEvent): void => {
       if (e.key === 'Enter') {
         e.stopPropagation();
-        this.confirmPolygonSelection(shape);
+        confirmFn();
       } else if (e.key === 'Escape') {
         this.stopPolygonDraw(false);
         useReclassifyStore.getState().setActiveTool('drag-select');
@@ -201,6 +205,8 @@ export class ReclassifyPlugin implements ViewerPlugin {
     };
     this.polygonConfirmFn = fn;
     this.ctx?.domElement.addEventListener('keydown', fn);
+    // Expose confirm button to React UI
+    useReclassifyStore.getState().setPolygonConfirm(true, '3d', confirmFn);
   }
 
   private confirmPolygonSelection(shape: PolygonShape): void {

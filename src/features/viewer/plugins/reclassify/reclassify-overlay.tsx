@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { Button } from '@clap/design-system';
 import { useHotkey } from '@tanstack/react-hotkeys';
 import { useViewerModeStore } from '@/app/stores';
@@ -16,6 +16,9 @@ export function ReclassifyOverlay({ engine }: ReclassifyOverlayProps) {
   const selectedCount = useReclassifyStore((s) => s.selectedCount);
   const phase = useReclassifyStore((s) => s.phase);
   const activeTool = useReclassifyStore((s) => s.activeTool);
+  const polygonConfirmReady = useReclassifyStore((s) => s.polygonConfirmReady);
+  const polygonConfirmSource = useReclassifyStore((s) => s.polygonConfirmSource);
+  const triggerPolygonConfirm = useReclassifyStore((s) => s._triggerPolygonConfirm);
 
   const plugin = engine?.getPlugin<ReclassifyPlugin>('reclassify');
   const isActive = mode === 'reclassify';
@@ -43,6 +46,8 @@ export function ReclassifyOverlay({ engine }: ReclassifyOverlayProps) {
     plugin?.clearSelection();
   };
 
+  const show3dConfirm = polygonConfirmReady && polygonConfirmSource === '3d';
+
   return (
     <>
       {/* Instruction bar */}
@@ -50,11 +55,36 @@ export function ReclassifyOverlay({ engine }: ReclassifyOverlayProps) {
         <div className="rounded-md bg-card/90 px-3 py-1.5 text-xs text-muted-foreground shadow-sm backdrop-blur-sm">
           {phase === 'selected'
             ? `${selectedCount.toLocaleString()} point${selectedCount !== 1 ? 's' : ''} selected — pick a class to reclassify`
-            : activeTool === 'polygon'
-              ? 'Click to place vertices · click first vertex or double-click to close · Enter to confirm · Esc to cancel'
-              : 'Drag to select points · Alt+drag to deselect · Esc to exit'}
+            : show3dConfirm
+              ? 'Polygon drawn — confirm selection or adjust vertices'
+              : activeTool === 'polygon'
+                ? 'Click to place vertices · click first vertex to close'
+                : 'Drag to select points · Alt+drag to deselect · Esc to exit'}
         </div>
       </div>
+
+      {/* Confirm button — shown in 3D viewport after polygon is drawn */}
+      {show3dConfirm && (
+        <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 rounded-lg border border-border bg-card/90 px-3 py-1.5 shadow-sm backdrop-blur-sm">
+          <Button
+            variant="default"
+            size="sm"
+            className="h-6 gap-1 text-xs"
+            onClick={() => triggerPolygonConfirm?.()}
+          >
+            <Check className="h-3 w-3" />
+            Confirm selection
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 text-xs text-muted-foreground"
+            onClick={() => useReclassifyStore.getState().setActiveTool('drag-select')}
+          >
+            Cancel
+          </Button>
+        </div>
+      )}
 
       {/* Bottom action bar when points are selected */}
       {selectedCount > 0 && (

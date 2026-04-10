@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { X, Minus, Plus, ArrowLeftRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Check, X, Minus, Plus, ArrowLeftRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button, Separator } from '@clap/design-system';
 import { usePlanProfileStore } from './plan-profile-store';
 import { useScanFilterStore } from '../scan-filter/scan-filter-store';
 import { usePolyAnnotStore } from '../polygon-annotation/polygon-annotation-store';
+import { useReclassifyStore } from '../reclassify/reclassify-store';
+import { useViewerModeStore } from '@/app/stores';
 import type { PlanProfilePlugin } from './plan-profile-plugin';
 import type { ViewerEngine } from '../../services/viewer-engine';
 
@@ -47,6 +49,12 @@ export function SecondaryViewportPanel({ engine }: SecondaryViewportPanelProps) 
 
   const plugin = engine?.getPlugin<PlanProfilePlugin>('plan-profile');
   const navigate = useCallback((delta: number) => plugin?.navigateFollow(delta), [plugin]);
+
+  const viewerMode = useViewerModeStore((s) => s.mode);
+  const polygonConfirmReady = useReclassifyStore((s) => s.polygonConfirmReady);
+  const polygonConfirmSource = useReclassifyStore((s) => s.polygonConfirmSource);
+  const triggerPolygonConfirm = useReclassifyStore((s) => s._triggerPolygonConfirm);
+  const show2dConfirm = viewerMode === 'reclassify' && polygonConfirmReady && polygonConfirmSource === '2d';
 
   // Attach/detach the secondary renderer when the panel becomes active
   useEffect(() => {
@@ -311,6 +319,30 @@ export function SecondaryViewportPanel({ engine }: SecondaryViewportPanelProps) 
           <span className="text-[10px] text-muted-foreground">
             Orange dots: click or drag-select to add vertices · Blue dots: click/drag to select, then drag gizmo to move
           </span>
+        </div>
+      )}
+
+      {/* Reclassify polygon confirm bar */}
+      {show2dConfirm && (
+        <div className="flex shrink-0 items-center justify-center gap-2 border-b border-border bg-yellow-50/40 dark:bg-yellow-950/20 px-3 py-1.5">
+          <span className="text-[10px] text-muted-foreground">Polygon ready —</span>
+          <Button
+            size="sm"
+            variant="default"
+            className="h-6 gap-1 px-2 text-[11px]"
+            onClick={() => triggerPolygonConfirm?.()}
+          >
+            <Check className="h-3 w-3" />
+            Confirm selection
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-6 px-2 text-[11px] text-muted-foreground"
+            onClick={() => useReclassifyStore.getState().setActiveTool('drag-select')}
+          >
+            Cancel
+          </Button>
         </div>
       )}
 

@@ -74,6 +74,10 @@ interface StaticObstacleState {
   // Label counters (persisted)
   labelCounters: Record<string, number>;
 
+  // Dirty tracking
+  isDirty: boolean;
+  markClean: () => void;
+
   discardPending: () => void;
 }
 
@@ -90,6 +94,7 @@ export const useStaticObstacleStore = create<StaticObstacleState>()(
         set((s) => ({
           layers: [...s.layers, { id, name, visible: true, color }],
           activeLayerId: s.activeLayerId ?? id,
+          isDirty: true,
         }));
         return id;
       },
@@ -101,16 +106,19 @@ export const useStaticObstacleStore = create<StaticObstacleState>()(
           activeLayerId: s.activeLayerId === id
             ? (s.layers.find((l) => l.id !== id)?.id ?? null)
             : s.activeLayerId,
+          isDirty: true,
         })),
 
       renameLayer: (id, name) =>
         set((s) => ({
           layers: s.layers.map((l) => l.id === id ? { ...l, name } : l),
+          isDirty: true,
         })),
 
       setLayerVisible: (id, visible) =>
         set((s) => ({
           layers: s.layers.map((l) => l.id === id ? { ...l, visible } : l),
+          isDirty: true,
         })),
 
       setActiveLayer: (id) => set({ activeLayerId: id }),
@@ -163,15 +171,17 @@ export const useStaticObstacleStore = create<StaticObstacleState>()(
           classifyDraft: null,
           attributeDraft: {},
           phase: 'drawing',
+          isDirty: true,
         });
       },
 
       deleteAnnotation: (id) =>
-        set((s) => ({ annotations: s.annotations.filter((a) => a.id !== id) })),
+        set((s) => ({ annotations: s.annotations.filter((a) => a.id !== id), isDirty: true })),
 
       setAnnotationVisible: (id, visible) =>
         set((s) => ({
           annotations: s.annotations.map((a) => a.id === id ? { ...a, visible } : a),
+          isDirty: true,
         })),
 
       // ── Phase ────────────────────────────────────────────────────────────
@@ -203,6 +213,10 @@ export const useStaticObstacleStore = create<StaticObstacleState>()(
       // ── Label counters ────────────────────────────────────────────────────
       labelCounters: {},
 
+      // ── Dirty tracking ────────────────────────────────────────────────────
+      isDirty: false,
+      markClean: () => set({ isDirty: false }),
+
       discardPending: () =>
         set({
           pendingBox: null,
@@ -214,11 +228,13 @@ export const useStaticObstacleStore = create<StaticObstacleState>()(
     }),
     {
       name: 'clap-plugin-static-obstacle',
-      partialize: (s) => ({
-        layers: s.layers,
-        annotations: s.annotations,
-        labelCounters: s.labelCounters,
-      }),
+      // Annotations are loaded from geometry-annotations.bin when a project is
+      // opened — persisting them to localStorage causes stale data to appear
+      // before the user selects a project.  Version bump clears any previously
+      // stored annotation data from localStorage.
+      version: 1,
+      migrate: () => ({}),
+      partialize: () => ({}),
     },
   ),
 );

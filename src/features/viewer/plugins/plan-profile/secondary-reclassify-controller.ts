@@ -227,8 +227,21 @@ export class SecondaryReclassifyController {
     });
   }
 
-  activate(): void {
+  // Temporarily suppress controls while the pointer is held during a drag-select
+  // so the rubber-band rect doesn't compete with camera pan. Released on pointerup.
+  private readonly onPointerDown = (e: PointerEvent): void => {
+    // Only suppress controls for left-click — right-click pans the 2D camera.
+    if (e.button !== 0) return;
     this.secondaryVp.controls.enabled = false;
+  };
+  private readonly onPointerUp = (): void => {
+    this.secondaryVp.controls.enabled = true;
+  };
+
+  activate(): void {
+    // Controls stay enabled; they are only suppressed while a drag is in progress.
+    this.secondaryVp.renderer.domElement.addEventListener('pointerdown', this.onPointerDown);
+    window.addEventListener('pointerup', this.onPointerUp);
 
     // Subscribe to tool changes
     this.unsubTool = useReclassifyStore.subscribe((s, prev) => {
@@ -241,11 +254,13 @@ export class SecondaryReclassifyController {
   }
 
   deactivate(): void {
+    this.secondaryVp.renderer.domElement.removeEventListener('pointerdown', this.onPointerDown);
+    window.removeEventListener('pointerup', this.onPointerUp);
+    this.secondaryVp.controls.enabled = true;
     this.unsubTool?.();
     this.unsubTool = null;
     this.stopPolygonDraw();
     this.dragSelect.deactivate();
-    this.secondaryVp.controls.enabled = true;
     this.clearSelection();
   }
 
@@ -268,17 +283,29 @@ export class SecondaryReclassifyController {
     if (this.polygonDraw) return;
     this.polygonDraw = new SecondaryPolygonDraw(
       this.secondaryVp.renderer.domElement,
-      (ndcPolygon) => this.confirmPolygonSelection(ndcPolygon),
-      () => useReclassifyStore.getState().setActiveTool('drag-select'),
+      (ndcPolygon) => {
+        // Polygon is drawn — expose Confirm button in the 2D panel
+        useReclassifyStore.getState().setPolygonConfirm(
+          true,
+          '2d',
+          () => this.confirmPolygonSelection(ndcPolygon),
+        );
+      },
+      () => {
+        useReclassifyStore.getState().clearPolygonConfirm();
+        useReclassifyStore.getState().setActiveTool('drag-select');
+      },
     );
   }
 
   private stopPolygonDraw(): void {
     this.polygonDraw?.dispose();
     this.polygonDraw = null;
+    useReclassifyStore.getState().clearPolygonConfirm();
   }
 
   private confirmPolygonSelection(ndcPolygon: [number, number][]): void {
+    useReclassifyStore.getState().clearPolygonConfirm();
     this.evaluateNodesPolygon(ndcPolygon);
   }
 

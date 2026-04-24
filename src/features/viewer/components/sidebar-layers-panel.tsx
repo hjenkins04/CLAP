@@ -26,6 +26,7 @@ import { useOsmFeaturesStore, OSM_LAYER_KEYS, type OsmLayerKey } from '../plugin
 import { useStaticObstacleStore } from '../plugins/static-obstacle';
 import { usePolyAnnotStore } from '../plugins/polygon-annotation';
 import { Pentagon } from 'lucide-react';
+import { HdMapLayersSection } from '../plugins/hd-map/hd-map-element-browser';
 
 // ── Shared row components ────────────────────────────────────────────
 
@@ -293,6 +294,12 @@ export function SidebarLayersPanel() {
           })}
         </>
       )}
+
+      {/* HD Map element browser */}
+      <h3 className="mt-3 mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        HD Map
+      </h3>
+      <HdMapLayersSection />
     </div>
   );
 }

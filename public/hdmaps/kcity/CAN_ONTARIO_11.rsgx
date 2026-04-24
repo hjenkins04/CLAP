@@ -1,0 +1,109 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<?rsgx 3.1 2025-08-04 ?>
+<region id="107" name="CAN_ONTARIO" xmlns="http://www.gm.ca/hdlm">
+  <road id="87247" name="Queen's University Test Track">
+    <segment id="21067080" numLanes="1" successors="21067088" predecessors="21067071" leftNeighbors="None" rightNeighbors="None" maneuver="Left Turn" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="21067088" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <signs>
+        <sign id="18834958" type="Vertical Stack Red Yellow Green With Indicator Traffic Light" azimuth="260.1514306233237" lat="44.26331194" long="-76.51556734" elevation="58.699">
+          <assignment lanes="1" startXsectionId="2" endXsectionId="2"/>
+        </sign>
+      </signs>
+      <objects>
+        <object id="29777746" type="Stop Bar" lat="44.26328783" long="-76.51574912" elevation="52.660">
+          <edge closed="true">
+            <point lat="44.26332931" long="-76.51574604" elevation="52.660"/>
+            <point lat="44.26332787" long="-76.51575229" elevation="52.650"/>
+            <point lat="44.26332787" long="-76.51575229" elevation="52.650"/>
+            <point lat="44.26324709" long="-76.51575210" elevation="52.800"/>
+          </edge>
+        </object>
+        <object id="29777747" type="Pedestrian Crossing" lat="44.26328984" long="-76.51571676" elevation="52.670">
+          <edge closed="true">
+            <point lat="44.26333206" long="-76.51573330" elevation="52.670"/>
+            <point lat="44.26333206" long="-76.51573330" elevation="52.670"/>
+            <point lat="44.26335602" long="-76.51570233" elevation="52.620"/>
+            <point lat="44.26322995" long="-76.51570124" elevation="52.860"/>
+          </edge>
+        </object>
+      </objects>
+      <intersectionReference intersectionId="2351707"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:26.299856Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="87247" name="Queen's University Test Track">
+    <segment id="21067081" numLanes="1" successors="21067087" predecessors="21067076" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="21067087" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:25.376939Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="87247" name="Queen's University Test Track">
+    <segment id="21067082" numLanes="1" successors="21067093" predecessors="7945199 21067085" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="21067093" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:26.299856Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="87247" name="Queen's University Test Track">
+    <segment id="21067083" numLanes="1" successors="21067089" predecessors="21067079" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="21067089" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <signs>
+        <sign id="18585687" type="Vertical Stack Red Yellow Green Traffic Light" azimuth="359.12691617932455" lat="44.26321229" long="-76.51566622" elevation="58.771">
+          <assignment lanes="1" startXsectionId="0" endXsectionId="0"/>
+        </sign>
+      </signs>
+      <objects>
+        <object id="29777743" type="Pedestrian Crossing" lat="44.26336447" long="-76.51564268" elevation="52.640">
+          <edge closed="true">
+            <point lat="44.26335183" long="-76.51569336" elevation="52.640"/>
+            <point lat="44.26335183" long="-76.51569336" elevation="52.640"/>
+            <point lat="44.26337520" long="-76.51569311" elevation="52.610"/>
+            <point lat="44.26337695" long="-76.51559200" elevation="52.520"/>
+          </edge>
+        </object>
+        <object id="29777744" type="Pedestrian Crossing" lat="44.26321886" long="-76.51563993" elevation="52.890">
+          <edge closed="true">
+            <point lat="44.26320713" long="-76.51568960" elevation="52.890"/>
+            <point lat="44.26320713" long="-76.51568960" elevation="52.890"/>
+            <point lat="44.26320712" long="-76.51559048" elevation="52.870"/>
+            <point lat="44.26323098" long="-76.51559076" elevation="52.830"/>
+            <point lat="44.26323013" long="-76.51569071" elevation="52.850"/>
+          </edge>
+        </object>
+      </objects>
+      <intersectionReference intersectionId="2351707"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:25.376939Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="87247" name="Queen's University Test Track">
+    <segment id="21067084" numLanes="1" successors="21067101" predecessors="21067086" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="21067101" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <intersectionReference intersectionId="2344648"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:26.299856Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="87247" name="Queen's University Test Track">
+    <segment id="21067085" numLanes="1" successors="21067082" predecessors="7946327" leftNeighbors="None" rightNeighbors="None" maneuver="Right Turn" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="21067082" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <intersectionReference intersectionId="2344648"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:26.299856Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+</region>

@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "name": "KCity — GM HD Map",
+  "region": "CAN_ONTARIO",
+  "numTiles": 15,
+  "tilesDir": "/hdmaps/kcity",
+  "utmZone": 18,
+  "utmHemisphere": "N",
+  "utmOriginEasting": 378923.0495,
+  "utmOriginNorthing": 4902337.3695,
+  "elevationOffsetDefault": 51.3
+}

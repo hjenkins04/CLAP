@@ -1,0 +1,88 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<?rsgx 3.1 2025-08-04 ?>
+<region id="107" name="CAN_ONTARIO" xmlns="http://www.gm.ca/hdlm">
+  <road id="220139" name="Steve Fonyo Drive">
+    <segment id="7830881" numLanes="1" successors="7831099" predecessors="None" leftNeighbors="None" rightNeighbors="None" maneuver="Left Turn" class="Unclassified">
+      <laneMap>
+        <map laneId="1" toSegmentId="7831099" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <intersectionReference intersectionId="227390"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:26.299856Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="97484" name="Sir John A. Macdonald Parkway">
+    <segment id="7830884" numLanes="2" successors="None" predecessors="7830894 7830895" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="Secondary">
+      <country code="CAN"/>
+      <intersectionReference intersectionId="2299251"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:26.299856Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="220139" name="Steve Fonyo Drive">
+    <segment id="7830887" numLanes="1" successors="7831088 7831357" predecessors="None" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="Unclassified">
+      <laneMap>
+        <map laneId="1" toSegmentId="7831088" toLaneId="1"/>
+        <map laneId="1" toSegmentId="7831357" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:25.376939Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="220139" name="Steve Fonyo Drive">
+    <segment id="7830894" numLanes="2" successors="7830884" predecessors="7830848" leftNeighbors="None" rightNeighbors="None" maneuver="Left Turn" class="Unclassified; Secondary">
+      <laneMap>
+        <map laneId="1" toSegmentId="7830884" toLaneId="1"/>
+        <map laneId="2" toSegmentId="7830884" toLaneId="2"/>
+      </laneMap>
+      <country code="CAN"/>
+      <objects>
+        <object id="18584554" type="Stop Bar" lat="44.26213506" long="-76.51967363" elevation="51.500">
+          <edge closed="true">
+            <point lat="44.26215637" long="-76.51967895" elevation="51.500"/>
+            <point lat="44.26215629" long="-76.51967069" elevation="51.490"/>
+            <point lat="44.26211312" long="-76.51966845" elevation="51.460"/>
+            <point lat="44.26211390" long="-76.51967643" elevation="51.450"/>
+          </edge>
+        </object>
+        <object id="18584555" type="Pedestrian Crossing" lat="44.26214918" long="-76.51964281" elevation="51.310">
+          <edge closed="true">
+            <point lat="44.26221093" long="-76.51966485" elevation="51.310"/>
+            <point lat="44.26221910" long="-76.51963141" elevation="51.280"/>
+            <point lat="44.26207733" long="-76.51962208" elevation="51.460"/>
+            <point lat="44.26208550" long="-76.51965393" elevation="51.480"/>
+          </edge>
+        </object>
+      </objects>
+      <intersectionReference intersectionId="2299251"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:26.299856Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="97484" name="Sir John A. Macdonald Parkway">
+    <segment id="7830895" numLanes="2" successors="7830884" predecessors="None" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="Secondary">
+      <laneMap>
+        <map laneId="1" toSegmentId="7830884" toLaneId="1"/>
+        <map laneId="2" toSegmentId="7830884" toLaneId="2"/>
+      </laneMap>
+      <country code="CAN"/>
+      <objects>
+        <object id="18587190" type="Pedestrian Crossing" lat="44.26202747" long="-76.51939574" elevation="51.650">
+          <edge closed="true">
+            <point lat="44.26201035" long="-76.51955735" elevation="51.650"/>
+            <point lat="44.26203225" long="-76.51957164" elevation="51.590"/>
+            <point lat="44.26204500" long="-76.51921852" elevation="51.620"/>
+            <point lat="44.26202145" long="-76.51923782" elevation="51.680"/>
+          </edge>
+        </object>
+      </objects>
+      <intersectionReference intersectionId="2299251"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:26.299856Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="220139" name="Steve Fonyo Drive">
+    <segment id="7831088" numLanes="1" successors="None" predecessors="7830887" leftNeighbors="None" rightNeighbors="None" maneuver="Right Turn" class="Unclassified">
+      <country code="CAN"/>
+      <intersectionReference intersectionId="227390"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:26.299856Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+</region>

@@ -1,0 +1,892 @@
+[
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "High Cross-Track Slope",
+    "start_xs_id": "0",
+    "end_xs_id": "25",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "109",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "93",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "High Cross-Track Slope",
+    "start_xs_id": "0",
+    "end_xs_id": "20",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "High Cross-Track Slope",
+    "start_xs_id": "0",
+    "end_xs_id": "36",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "High Cross-Track Slope",
+    "start_xs_id": "0",
+    "end_xs_id": "9",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "52",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "High Cross-Track Slope",
+    "start_xs_id": "0",
+    "end_xs_id": "21",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "16",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "High Cross-Track Slope",
+    "start_xs_id": "0",
+    "end_xs_id": "26",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "High Cross-Track Slope",
+    "start_xs_id": "0",
+    "end_xs_id": "41",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "High Cross-Track Slope",
+    "start_xs_id": "0",
+    "end_xs_id": "12",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "14",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "31",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "14",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "High Cross-Track Slope",
+    "start_xs_id": "0",
+    "end_xs_id": "14",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "High Cross-Track Slope",
+    "start_xs_id": "0",
+    "end_xs_id": "14",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "44",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "High Cross-Track Slope",
+    "start_xs_id": "0",
+    "end_xs_id": "16",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "18",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "28",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "18",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "9",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "High Cross-Track Slope",
+    "start_xs_id": "0",
+    "end_xs_id": "18",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "12",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "9",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "44",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "162",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "162",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "High Cross-Track Slope",
+    "start_xs_id": "0",
+    "end_xs_id": "13",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "18",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "27",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "14",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "High Cross-Track Slope",
+    "start_xs_id": "0",
+    "end_xs_id": "12",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "18",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "9",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "High Cross-Track Slope",
+    "start_xs_id": "0",
+    "end_xs_id": "11",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "High Cross-Track Slope",
+    "start_xs_id": "0",
+    "end_xs_id": "14",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "High Cross-Track Slope",
+    "start_xs_id": "0",
+    "end_xs_id": "17",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "44",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "10",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "High Cross-Track Slope",
+    "start_xs_id": "0",
+    "end_xs_id": "21",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "17",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "61",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "High Cross-Track Slope",
+    "start_xs_id": "0",
+    "end_xs_id": "41",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "35",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "High Cross-Track Slope",
+    "start_xs_id": "0",
+    "end_xs_id": "21",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "25",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "52",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "High Cross-Track Slope",
+    "start_xs_id": "0",
+    "end_xs_id": "26",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "61",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "93",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "109",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "15",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "High Cross-Track Slope",
+    "start_xs_id": "0",
+    "end_xs_id": "48",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "7",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "7",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "High Cross-Track Slope",
+    "start_xs_id": "0",
+    "end_xs_id": "44",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "40",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "High Cross-Track Slope",
+    "start_xs_id": "0",
+    "end_xs_id": "25",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "25",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "High Cross-Track Slope",
+    "start_xs_id": "0",
+    "end_xs_id": "26",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "High Cross-Track Slope",
+    "start_xs_id": "0",
+    "end_xs_id": "19",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "36",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "29",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "27",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "35",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "High Cross-Track Slope",
+    "start_xs_id": "0",
+    "end_xs_id": "22",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "151",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "High Cross-Track Slope",
+    "start_xs_id": "0",
+    "end_xs_id": "19",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "High Cross-Track Slope",
+    "start_xs_id": "0",
+    "end_xs_id": "22",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "98",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "High Cross-Track Slope",
+    "start_xs_id": "0",
+    "end_xs_id": "22",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "151",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "High Cross-Track Slope",
+    "start_xs_id": "0",
+    "end_xs_id": "22",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "98",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "26",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "29",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "17",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "33",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "35",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "17",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "29",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "33",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "35",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "26",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "11",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "31",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  },
+  {
+    "segment_id": "",
+    "lanes": "All",
+    "type": "Map Valid",
+    "start_xs_id": "0",
+    "end_xs_id": "57",
+    "flag": "",
+    "confidence": "",
+    "description": ""
+  }
+]

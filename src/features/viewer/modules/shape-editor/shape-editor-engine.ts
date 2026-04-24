@@ -437,6 +437,7 @@ export class ShapeEditorEngine {
         this.selCtrl.activate(this._subMode);
         if (this._selection.shapes.size > 0) {
           this.transformCtrl.activate(this._transformMode);
+          this.transformCtrl.updateAnchorToSelection();
         }
         this.rebuildAllHandles();
         break;

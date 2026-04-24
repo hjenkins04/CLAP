@@ -28,9 +28,7 @@ export function createWindow(): BrowserWindow {
     show: false,
   });
 
-  mainWindow.once('ready-to-show', () => {
-    mainWindow?.show();
-  });
+  // `show` is controlled externally (splash screen calls mainWindow.show())
 
   if (isDev) {
     mainWindow.loadURL(DEV_URL);

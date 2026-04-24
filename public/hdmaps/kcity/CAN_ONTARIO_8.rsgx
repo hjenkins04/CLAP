@@ -1,0 +1,94 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<?rsgx 3.1 2025-08-04 ?>
+<region id="107" name="CAN_ONTARIO" xmlns="http://www.gm.ca/hdlm">
+  <road id="4015" name="Unknown">
+    <segment id="7950853" numLanes="1" successors="7950865" predecessors="7950866 21067099" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="7950865" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:25.376939Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="4015" name="Unknown">
+    <segment id="7950865" numLanes="1" successors="7945189" predecessors="7950853" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="7945189" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:25.376939Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="4015" name="Unknown">
+    <segment id="7950866" numLanes="1" successors="7950853" predecessors="7945207" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="7950853" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <objects>
+        <object id="18585622" type="Stop Bar" lat="44.26459176" long="-76.51688567" elevation="50.530">
+          <edge closed="true">
+            <point lat="44.26458957" long="-76.51691058" elevation="50.530"/>
+            <point lat="44.26458957" long="-76.51691058" elevation="50.530"/>
+            <point lat="44.26459347" long="-76.51691065" elevation="50.530"/>
+            <point lat="44.26459427" long="-76.51686149" elevation="50.570"/>
+          </edge>
+        </object>
+        <object id="18585672" type="Stop Bar" lat="44.26432902" long="-76.51682574" elevation="51.060">
+          <edge closed="true">
+            <point lat="44.26432632" long="-76.51685120" elevation="51.060"/>
+            <point lat="44.26432437" long="-76.51680146" elevation="50.930"/>
+            <point lat="44.26433211" long="-76.51680090" elevation="50.920"/>
+            <point lat="44.26433333" long="-76.51685107" elevation="51.030"/>
+          </edge>
+        </object>
+        <object id="29752554" type="Pedestrian Crossing" lat="44.26456929" long="-76.51685789" elevation="50.500">
+          <edge closed="true">
+            <point lat="44.26455736" long="-76.51691510" elevation="50.500"/>
+            <point lat="44.26457934" long="-76.51691592" elevation="50.480"/>
+            <point lat="44.26458179" long="-76.51681061" elevation="50.410"/>
+            <point lat="44.26455986" long="-76.51679107" elevation="50.390"/>
+          </edge>
+        </object>
+        <object id="29752555" type="Pedestrian Crossing" lat="44.26435071" long="-76.51684636" elevation="50.900">
+          <edge closed="true">
+            <point lat="44.26433816" long="-76.51690549" elevation="50.900"/>
+            <point lat="44.26433953" long="-76.51679231" elevation="50.840"/>
+            <point lat="44.26436230" long="-76.51678016" elevation="50.760"/>
+            <point lat="44.26436206" long="-76.51690562" elevation="50.840"/>
+          </edge>
+        </object>
+      </objects>
+      <intersectionReference intersectionId="2351706"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:25.376939Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="4015" name="Unknown">
+    <segment id="7950872" numLanes="1" successors="7945211 7950842" predecessors="7830849" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="7945211" toLaneId="1"/>
+        <map laneId="1" toSegmentId="7950842" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:25.376939Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="4015" name="Unknown">
+    <segment id="7951000" numLanes="1" successors="7951012" predecessors="21067102" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="7951012" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:25.376939Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="4015" name="Unknown">
+    <segment id="7951012" numLanes="1" successors="7951016" predecessors="7951000" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="7951016" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:25.376939Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+</region>

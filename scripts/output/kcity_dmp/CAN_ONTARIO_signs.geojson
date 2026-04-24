@@ -1,0 +1,383 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.51970929,
+          44.26211064,
+          57.09
+        ]
+      },
+      "properties": {
+        "road_id": "220139",
+        "road_name": "Steve Fonyo Drive",
+        "segment_id": "7830858",
+        "sign_id": "18585695",
+        "type": "Vertical Stack Red Yellow Green Traffic Light",
+        "sub_type": "",
+        "confidence": "",
+        "heading": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.51971378,
+          44.2621947,
+          57.18
+        ]
+      },
+      "properties": {
+        "road_id": "220139",
+        "road_name": "Steve Fonyo Drive",
+        "segment_id": "7830858",
+        "sign_id": "18585696",
+        "type": "Vertical Stack Red Yellow Green Traffic Light",
+        "sub_type": "",
+        "confidence": "",
+        "heading": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.51908337,
+          44.26221537,
+          57.038
+        ]
+      },
+      "properties": {
+        "road_id": "220139",
+        "road_name": "Steve Fonyo Drive",
+        "segment_id": "7830858",
+        "sign_id": "18834022",
+        "type": "Vertical Stack Red Yellow Green Traffic Light",
+        "sub_type": "",
+        "confidence": "",
+        "heading": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.51908009,
+          44.26215414,
+          57.09
+        ]
+      },
+      "properties": {
+        "road_id": "220139",
+        "road_name": "Steve Fonyo Drive",
+        "segment_id": "7830858",
+        "sign_id": "18834023",
+        "type": "Vertical Stack Red Yellow Green Traffic Light",
+        "sub_type": "",
+        "confidence": "",
+        "heading": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.51756023,
+          44.26234436,
+          54.613
+        ]
+      },
+      "properties": {
+        "road_id": "4015",
+        "road_name": "Unknown",
+        "segment_id": "7830859",
+        "sign_id": "18834071",
+        "type": "Stop Sign",
+        "sub_type": "",
+        "confidence": "",
+        "heading": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.51970929,
+          44.26211064,
+          57.09
+        ]
+      },
+      "properties": {
+        "road_id": "220139",
+        "road_name": "Steve Fonyo Drive",
+        "segment_id": "7830866",
+        "sign_id": "18585695",
+        "type": "Vertical Stack Red Yellow Green Traffic Light",
+        "sub_type": "",
+        "confidence": "",
+        "heading": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.51971378,
+          44.2621947,
+          57.18
+        ]
+      },
+      "properties": {
+        "road_id": "220139",
+        "road_name": "Steve Fonyo Drive",
+        "segment_id": "7830866",
+        "sign_id": "18585696",
+        "type": "Vertical Stack Red Yellow Green Traffic Light",
+        "sub_type": "",
+        "confidence": "",
+        "heading": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.51556734,
+          44.26331194,
+          58.699
+        ]
+      },
+      "properties": {
+        "road_id": "87247",
+        "road_name": "Queen's University Test Track",
+        "segment_id": "21067080",
+        "sign_id": "18834958",
+        "type": "Vertical Stack Red Yellow Green With Indicator Traffic Light",
+        "sub_type": "",
+        "confidence": "",
+        "heading": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.51566622,
+          44.26321229,
+          58.771
+        ]
+      },
+      "properties": {
+        "road_id": "87247",
+        "road_name": "Queen's University Test Track",
+        "segment_id": "21067083",
+        "sign_id": "18585687",
+        "type": "Vertical Stack Red Yellow Green Traffic Light",
+        "sub_type": "",
+        "confidence": "",
+        "heading": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.5156249,
+          44.26336316,
+          58.492
+        ]
+      },
+      "properties": {
+        "road_id": "87247",
+        "road_name": "Queen's University Test Track",
+        "segment_id": "21067092",
+        "sign_id": "18585688",
+        "type": "Vertical Stack Red Yellow Green Traffic Light",
+        "sub_type": "",
+        "confidence": "",
+        "heading": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.51556734,
+          44.26331194,
+          58.699
+        ]
+      },
+      "properties": {
+        "road_id": "87247",
+        "road_name": "Queen's University Test Track",
+        "segment_id": "21067095",
+        "sign_id": "18834958",
+        "type": "Vertical Stack Red Yellow Green With Indicator Traffic Light",
+        "sub_type": "",
+        "confidence": "",
+        "heading": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.51970929,
+          44.26211064,
+          57.09
+        ]
+      },
+      "properties": {
+        "road_id": "220139",
+        "road_name": "Steve Fonyo Drive",
+        "segment_id": "7831095",
+        "sign_id": "18585695",
+        "type": "Vertical Stack Red Yellow Green Traffic Light",
+        "sub_type": "",
+        "confidence": "",
+        "heading": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.51971378,
+          44.2621947,
+          57.18
+        ]
+      },
+      "properties": {
+        "road_id": "220139",
+        "road_name": "Steve Fonyo Drive",
+        "segment_id": "7831095",
+        "sign_id": "18585696",
+        "type": "Vertical Stack Red Yellow Green Traffic Light",
+        "sub_type": "",
+        "confidence": "",
+        "heading": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.51733464,
+          44.26278447,
+          54.911
+        ]
+      },
+      "properties": {
+        "road_id": "4015",
+        "road_name": "Unknown",
+        "segment_id": "7950842",
+        "sign_id": "18834072",
+        "type": "Stop Sign",
+        "sub_type": "",
+        "confidence": "",
+        "heading": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.51693635,
+          44.26458852,
+          52.933
+        ]
+      },
+      "properties": {
+        "road_id": "4015",
+        "road_name": "Unknown",
+        "segment_id": "7951016",
+        "sign_id": "18585923",
+        "type": "Stop Sign",
+        "sub_type": "",
+        "confidence": "",
+        "heading": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.51734652,
+          44.26300425,
+          54.689
+        ]
+      },
+      "properties": {
+        "road_id": "4015",
+        "road_name": "Unknown",
+        "segment_id": "7951022",
+        "sign_id": "18585751",
+        "type": "Stop Sign",
+        "sub_type": "",
+        "confidence": "",
+        "heading": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.51673269,
+          44.26453774,
+          52.337
+        ]
+      },
+      "properties": {
+        "road_id": "87247",
+        "road_name": "Queen's University Test Track",
+        "segment_id": "21067073",
+        "sign_id": "18585922",
+        "type": "Stop Sign",
+        "sub_type": "",
+        "confidence": "",
+        "heading": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.51673269,
+          44.26453774,
+          52.337
+        ]
+      },
+      "properties": {
+        "road_id": "87247",
+        "road_name": "Queen's University Test Track",
+        "segment_id": "21067073",
+        "sign_id": "18585922",
+        "type": "Stop Sign",
+        "sub_type": "",
+        "confidence": "",
+        "heading": ""
+      }
+    }
+  ]
+}

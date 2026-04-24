@@ -1,0 +1,129 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<?rsgx 3.1 2025-08-04 ?>
+<region id="107" name="CAN_ONTARIO" xmlns="http://www.gm.ca/hdlm">
+  <road id="4015" name="Unknown">
+    <segment id="7951016" numLanes="1" successors="7946322" predecessors="7951012" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="7946322" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <signs>
+        <sign id="18585923" type="Stop Sign" azimuth="8.524297303302063" lat="44.26458852" long="-76.51693635" elevation="52.933">
+          <assignment lanes="1" startXsectionId="3" endXsectionId="3"/>
+        </sign>
+      </signs>
+      <objects>
+        <object id="18585622" type="Stop Bar" lat="44.26459176" long="-76.51688567" elevation="50.530">
+          <edge closed="true">
+            <point lat="44.26458957" long="-76.51691058" elevation="50.530"/>
+            <point lat="44.26458966" long="-76.51686263" elevation="50.580"/>
+            <point lat="44.26458957" long="-76.51691058" elevation="50.530"/>
+            <point lat="44.26459427" long="-76.51686149" elevation="50.570"/>
+          </edge>
+        </object>
+        <object id="29752554" type="Pedestrian Crossing" lat="44.26456929" long="-76.51685789" elevation="50.410">
+          <edge closed="true">
+            <point lat="44.26458179" long="-76.51681061" elevation="50.410"/>
+            <point lat="44.26455736" long="-76.51691510" elevation="50.500"/>
+            <point lat="44.26457934" long="-76.51691592" elevation="50.480"/>
+            <point lat="44.26455986" long="-76.51679107" elevation="50.390"/>
+          </edge>
+        </object>
+        <object id="29752555" type="Pedestrian Crossing" lat="44.26435071" long="-76.51684636" elevation="50.900">
+          <edge closed="true">
+            <point lat="44.26433816" long="-76.51690549" elevation="50.900"/>
+            <point lat="44.26433816" long="-76.51690549" elevation="50.900"/>
+            <point lat="44.26433953" long="-76.51679231" elevation="50.840"/>
+            <point lat="44.26436230" long="-76.51678016" elevation="50.760"/>
+          </edge>
+        </object>
+      </objects>
+      <intersectionReference intersectionId="2351706"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:25.376939Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="4015" name="Unknown">
+    <segment id="7951019" numLanes="1" successors="7830859" predecessors="7946309 7951022" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="7830859" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:25.376939Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="4015" name="Unknown">
+    <segment id="7951022" numLanes="1" successors="7951019" predecessors="7946322" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="7951019" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <signs>
+        <sign id="18585751" type="Stop Sign" azimuth="44.71780973162354" lat="44.26300425" long="-76.51734652" elevation="54.689">
+          <assignment lanes="1" startXsectionId="1" endXsectionId="1"/>
+        </sign>
+      </signs>
+      <objects>
+        <object id="18585649" type="Stop Bar" lat="44.26299353" long="-76.51730979" elevation="52.400">
+          <edge closed="true">
+            <point lat="44.26299739" long="-76.51732947" elevation="52.400"/>
+            <point lat="44.26300164" long="-76.51732685" elevation="52.400"/>
+            <point lat="44.26298939" long="-76.51728968" elevation="52.470"/>
+            <point lat="44.26298547" long="-76.51729254" elevation="52.470"/>
+          </edge>
+        </object>
+      </objects>
+      <intersectionReference intersectionId="2352391"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:25.376939Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="4015" name="Unknown">
+    <segment id="21067071" numLanes="2" successors="21067080 21067095" predecessors="None" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="21067080" toLaneId="1"/>
+        <map laneId="2" toSegmentId="21067095" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:25.376939Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="87247" name="Queen's University Test Track">
+    <segment id="21067072" numLanes="1" successors="21067077 21067074" predecessors="21067094" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="None">
+      <laneMap>
+        <map laneId="0" toSegmentId="21067074" toLaneId="1"/>
+        <map laneId="1" toSegmentId="21067074" toLaneId="2"/>
+        <map laneId="1" toSegmentId="21067077" toLaneId="1"/>
+        <transitionMap laneId="1" toSegmentId="21067074" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:25.376939Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="87247" name="Queen's University Test Track">
+    <segment id="21067073" numLanes="2" successors="21067099 21067100" predecessors="21067074 21067098" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="21067100" toLaneId="1"/>
+        <map laneId="2" toSegmentId="21067099" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <signs>
+        <sign id="18585922" type="Stop Sign" azimuth="114.68697635679149" lat="44.26453774" long="-76.51673269" elevation="52.337">
+          <assignment lanes="2" startXsectionId="56" endXsectionId="56"/>
+        </sign>
+        <sign id="18585922" type="Stop Sign" azimuth="114.68697635679149" lat="44.26453774" long="-76.51673269" elevation="52.337">
+          <assignment lanes="1" startXsectionId="57" endXsectionId="57"/>
+        </sign>
+      </signs>
+      <objects>
+        <object id="29777741" type="Stop Bar" lat="44.26446102" long="-76.51676417" elevation="50.680">
+          <edge closed="true">
+            <point lat="44.26438784" long="-76.51675842" elevation="50.680"/>
+            <point lat="44.26438739" long="-76.51676572" elevation="50.690"/>
+            <point lat="44.26453843" long="-76.51676972" elevation="50.360"/>
+            <point lat="44.26453428" long="-76.51676284" elevation="50.360"/>
+          </edge>
+        </object>
+      </objects>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:26.299856Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+</region>

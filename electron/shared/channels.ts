@@ -5,6 +5,7 @@ export const IpcChannels = {
   GET_PLATFORM: 'get-platform',
   OPEN_FILE_DIALOG: 'open-file-dialog',
   OPEN_POINTCLOUD_DIALOG: 'open-pointcloud-dialog',
+  OPEN_HDMAP_DIALOG: 'open-hdmap-dialog',
   READ_FILE: 'read-file',
   READ_FILE_RANGE: 'read-file-range',
   WRITE_FILE: 'write-file',

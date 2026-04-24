@@ -1,0 +1,126 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<?rsgx 3.1 2025-08-04 ?>
+<region id="107" name="CAN_ONTARIO" xmlns="http://www.gm.ca/hdlm">
+  <road id="87247" name="Queen's University Test Track">
+    <segment id="7945212" numLanes="1" successors="21067078 21067098" predecessors="7945209" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="None">
+      <laneMap>
+        <map laneId="0" toSegmentId="21067098" toLaneId="1"/>
+        <map laneId="1" toSegmentId="21067078" toLaneId="1"/>
+        <map laneId="1" toSegmentId="21067098" toLaneId="2"/>
+        <transitionMap laneId="1" toSegmentId="21067098" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:25.376939Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="87247" name="Queen's University Test Track">
+    <segment id="7946309" numLanes="1" successors="7951019" predecessors="21067089" leftNeighbors="None" rightNeighbors="None" maneuver="Left Turn" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="7951019" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <objects>
+        <object id="29783497" type="Stop Bar" lat="44.26287324" long="-76.51723146" elevation="52.220">
+          <edge closed="true">
+            <point lat="44.26289718" long="-76.51722285" elevation="52.220"/>
+            <point lat="44.26285149" long="-76.51724757" elevation="52.320"/>
+            <point lat="44.26284961" long="-76.51723955" elevation="52.320"/>
+            <point lat="44.26289606" long="-76.51721519" elevation="52.210"/>
+          </edge>
+        </object>
+      </objects>
+      <intersectionReference intersectionId="2352391"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:26.299856Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="4015" name="Unknown">
+    <segment id="7946322" numLanes="1" successors="7946325 7951022" predecessors="7951016 21067100" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="7946325" toLaneId="1"/>
+        <map laneId="1" toSegmentId="7951022" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <objects>
+        <object id="29752556" type="RR Crossing Marking" lat="44.26396468" long="-76.51686107" elevation="51.720">
+          <edge closed="true">
+            <point lat="44.26394071" long="-76.51688192" elevation="51.720"/>
+            <point lat="44.26398811" long="-76.51688307" elevation="51.660"/>
+            <point lat="44.26398865" long="-76.51684022" elevation="51.710"/>
+            <point lat="44.26394125" long="-76.51683907" elevation="51.780"/>
+          </edge>
+        </object>
+        <object id="29752557" type="Stop Bar" lat="44.26351707" long="-76.51699479" elevation="52.870">
+          <edge closed="true">
+            <point lat="44.26352095" long="-76.51702116" elevation="52.870"/>
+            <point lat="44.26352834" long="-76.51701668" elevation="52.860"/>
+            <point lat="44.26351319" long="-76.51696841" elevation="52.960"/>
+            <point lat="44.26350580" long="-76.51697290" elevation="52.970"/>
+          </edge>
+        </object>
+        <object id="29752558" type="Stop Bar" lat="44.26342807" long="-76.51699119" elevation="53.030">
+          <edge closed="true">
+            <point lat="44.26343112" long="-76.51701508" elevation="53.030"/>
+            <point lat="44.26343819" long="-76.51701029" elevation="53.030"/>
+            <point lat="44.26342496" long="-76.51696741" elevation="52.970"/>
+            <point lat="44.26341792" long="-76.51697161" elevation="52.980"/>
+          </edge>
+        </object>
+      </objects>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:25.376939Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="87247" name="Queen's University Test Track">
+    <segment id="7946325" numLanes="1" successors="21067090" predecessors="7946322" leftNeighbors="None" rightNeighbors="None" maneuver="Left Turn" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="21067090" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <objects>
+        <object id="29783497" type="Stop Bar" lat="44.26287324" long="-76.51723146" elevation="52.220">
+          <edge closed="true">
+            <point lat="44.26289718" long="-76.51722285" elevation="52.220"/>
+            <point lat="44.26289606" long="-76.51721519" elevation="52.210"/>
+            <point lat="44.26284961" long="-76.51723955" elevation="52.320"/>
+            <point lat="44.26285149" long="-76.51724757" elevation="52.320"/>
+          </edge>
+        </object>
+      </objects>
+      <intersectionReference intersectionId="2352391"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:26.299856Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="87247" name="Queen's University Test Track">
+    <segment id="7946327" numLanes="1" successors="21067085" predecessors="21067077" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="21067085" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:25.376939Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="4015" name="Unknown">
+    <segment id="7950842" numLanes="1" successors="7945207" predecessors="7950872" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="7945207" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <signs>
+        <sign id="18834072" type="Stop Sign" azimuth="227.50636660077657" lat="44.26278447" long="-76.51733464" elevation="54.911">
+          <assignment lanes="1" startXsectionId="4" endXsectionId="4"/>
+        </sign>
+      </signs>
+      <objects>
+        <object id="18585480" type="Stop Bar" lat="44.26279999" long="-76.51737643" elevation="52.520">
+          <edge closed="true">
+            <point lat="44.26280458" long="-76.51739828" elevation="52.520"/>
+            <point lat="44.26279141" long="-76.51735882" elevation="52.440"/>
+            <point lat="44.26279518" long="-76.51735451" elevation="52.430"/>
+            <point lat="44.26280846" long="-76.51739310" elevation="52.520"/>
+          </edge>
+        </object>
+      </objects>
+      <intersectionReference intersectionId="2352391"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:25.376939Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+</region>

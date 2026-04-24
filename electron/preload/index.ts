@@ -11,6 +11,7 @@ const IpcChannels = {
   WRITE_FILE: 'write-file',
   SAVE_DIRECTORY_DIALOG: 'save-directory-dialog',
   OPEN_POINTCLOUD_DIALOG: 'open-pointcloud-dialog',
+  OPEN_HDMAP_DIALOG: 'open-hdmap-dialog',
 } as const;
 
 type IpcChannel = (typeof IpcChannels)[keyof typeof IpcChannels];
@@ -38,6 +39,7 @@ const INVOKE_CHANNELS: IpcChannel[] = [
   IpcChannels.WRITE_FILE,
   IpcChannels.SAVE_DIRECTORY_DIALOG,
   IpcChannels.OPEN_POINTCLOUD_DIALOG,
+  IpcChannels.OPEN_HDMAP_DIALOG,
 ];
 
 const electronAPI: ElectronAPI = {

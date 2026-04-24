@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "description": "Cloud LiDAR Annotation Platform",
   "author": {
-    "name": "Your Company",
-    "email": "support@your-company.com"
+    "name": "xonixdevelopment",
+    "email": "support@xonixdevelopment.com"
   },
   "license": "UNLICENSED",
   "private": true,
@@ -83,9 +83,9 @@
     "wait-on": "^9.0.3"
   },
   "build": {
-    "appId": "com.your-company.clap",
+    "appId": "com.xonixdevelopment.clap",
     "productName": "CLAP",
-    "copyright": "Copyright © 2025 Your Company. All rights reserved.",
+    "copyright": "Copyright © 2025 xonixdevelopment. All rights reserved.",
     "directories": {
       "output": "release",
       "buildResources": "build"
@@ -127,7 +127,7 @@
     },
     "publish": {
       "provider": "generic",
-      "url": "https://releases.your-company.com/clap/"
+      "url": "https://releases.xonixdevelopment.com/clap/"
     }
   }
 }

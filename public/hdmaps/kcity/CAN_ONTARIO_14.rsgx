@@ -1,0 +1,64 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<?rsgx 3.1 2025-08-04 ?>
+<region id="107" name="CAN_ONTARIO" xmlns="http://www.gm.ca/hdlm">
+  <road id="87247" name="Queen's University Test Track">
+    <segment id="21067098" numLanes="2" successors="21067073" predecessors="7945212" leftNeighbors="None" rightNeighbors="None" maneuver="Right Turn" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="21067073" toLaneId="1"/>
+        <map laneId="2" toSegmentId="21067073" toLaneId="2"/>
+      </laneMap>
+      <country code="CAN"/>
+      <intersectionReference intersectionId="2351705"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:26.299856Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="87247" name="Queen's University Test Track">
+    <segment id="21067099" numLanes="1" successors="7950853" predecessors="21067073" leftNeighbors="None" rightNeighbors="None" maneuver="Right Turn" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="7950853" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <intersectionReference intersectionId="2351706"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:26.299856Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="87247" name="Queen's University Test Track">
+    <segment id="21067100" numLanes="1" successors="7946322" predecessors="21067073" leftNeighbors="None" rightNeighbors="None" maneuver="Left Turn" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="7946322" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <intersectionReference intersectionId="2351706"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:26.299856Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="87247" name="Queen's University Test Track">
+    <segment id="21067101" numLanes="1" successors="21067086 21067091" predecessors="7945189 21067084" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="21067086" toLaneId="1"/>
+        <map laneId="1" toSegmentId="21067091" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:26.299856Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="4015" name="Unknown">
+    <segment id="21067102" numLanes="1" successors="7951000" predecessors="21067091" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="7951000" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <objects>
+        <object id="29752552" type="Pedestrian Crossing" lat="44.26510315" long="-76.51691400" elevation="50.220">
+          <edge closed="true">
+            <point lat="44.26509154" long="-76.51693172" elevation="50.220"/>
+            <point lat="44.26511401" long="-76.51693336" elevation="50.210"/>
+            <point lat="44.26511420" long="-76.51689588" elevation="50.280"/>
+            <point lat="44.26509284" long="-76.51689442" elevation="50.290"/>
+          </edge>
+        </object>
+      </objects>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:26.299856Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+</region>

@@ -42,11 +42,13 @@ import json
 import math
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
 import threading
 import time
+from concurrent.futures import ProcessPoolExecutor
 
 import laspy
 import numpy as np
@@ -168,7 +170,9 @@ def utm_to_lnglat(easting: float, northing: float, zone: int, hemisphere: str) -
 # ---------------------------------------------------------------------------
 
 def pretransform_las(las_path: str, output_path: str,
-                     fixed_origin: tuple[float, float] | None = None) -> tuple[dict | None, tuple[float, float]]:
+                     fixed_origin: tuple[float, float] | None = None,
+                     forced_utm: tuple[int, str] | None = None,
+                     quiet: bool = False) -> tuple[dict | None, tuple[float, float]]:
     """Center the point cloud and reorder axes to Three.js Y-up convention.
 
     Regardless of CRS, the output LAS always uses:
@@ -182,6 +186,11 @@ def pretransform_las(las_path: str, output_path: str,
     For any other CRS (or none): origin is the point-cloud centroid in its
     native XY plane; no geo reference is available, so None is returned.
     The viewer will load the cloud in local coordinates without a world frame.
+
+    Args:
+        forced_utm: (zone, hemisphere) to use when the LAS file has no embedded
+                    CRS but you know it is UTM (e.g. kcity_world.las has raw
+                    UTM18N coords but no VLRs). Overrides VLR detection.
 
     Returns (crs_info dict or None, (origin_x, origin_y)).
     """
@@ -198,21 +207,34 @@ def pretransform_las(las_path: str, output_path: str,
                 break
 
         utm_info = parse_utm_crs(wkt) if wkt else None
+
+        # If the caller explicitly specified a UTM zone (for LAS files that have
+        # raw UTM coords but no embedded CRS VLRs), use that instead.
+        if utm_info is None and forced_utm is not None:
+            zone, hemisphere = forced_utm
+            epsg = 32600 + zone if hemisphere.upper() == 'N' else 32700 + zone
+            utm_info = (zone, hemisphere.upper(), epsg)
+            if not quiet:
+                tqdm.write(f"  [crs] UTM zone forced via --utm-zone/--utm-hemisphere")
+
         crs_info = None
 
         if utm_info:
             zone, hemisphere, epsg = utm_info
             if fixed_origin:
                 origin_x, origin_y = fixed_origin
-                tqdm.write(f"  [crs] UTM Zone {zone}{hemisphere} (EPSG:{epsg})")
-                tqdm.write(f"  [crs] Origin (fixed): easting={origin_x:.3f}, northing={origin_y:.3f}")
+                if not quiet:
+                    tqdm.write(f"  [crs] UTM Zone {zone}{hemisphere} (EPSG:{epsg})")
+                    tqdm.write(f"  [crs] Origin (fixed): easting={origin_x:.3f}, northing={origin_y:.3f}")
             else:
                 origin_x = (hdr.mins[0] + hdr.maxs[0]) / 2.0
                 origin_y = (hdr.mins[1] + hdr.maxs[1]) / 2.0
-                tqdm.write(f"  [crs] UTM Zone {zone}{hemisphere} (EPSG:{epsg})")
-                tqdm.write(f"  [crs] Origin: easting={origin_x:.1f}, northing={origin_y:.1f}")
+                if not quiet:
+                    tqdm.write(f"  [crs] UTM Zone {zone}{hemisphere} (EPSG:{epsg})")
+                    tqdm.write(f"  [crs] Origin: easting={origin_x:.1f}, northing={origin_y:.1f}")
             ref_lng, ref_lat = utm_to_lnglat(origin_x, origin_y, zone, hemisphere)
-            tqdm.write(f"  [crs] Ref lat/lng: ({ref_lat:.7f}, {ref_lng:.7f})")
+            if not quiet:
+                tqdm.write(f"  [crs] Ref lat/lng: ({ref_lat:.7f}, {ref_lng:.7f})")
             crs_info = {
                 'type': 'utm',
                 'zone': zone,
@@ -227,11 +249,12 @@ def pretransform_las(las_path: str, output_path: str,
             else:
                 origin_x = (hdr.mins[0] + hdr.maxs[0]) / 2.0
                 origin_y = (hdr.mins[1] + hdr.maxs[1]) / 2.0
-            if wkt:
-                tqdm.write(f"  [crs] CRS present but not UTM — using local coordinates")
-            else:
-                tqdm.write(f"  [crs] No CRS found — using local coordinates")
-            tqdm.write(f"  [crs] Centering at ({origin_x:.1f}, {origin_y:.1f})")
+            if not quiet:
+                if wkt:
+                    tqdm.write(f"  [crs] CRS present but not UTM - using local coordinates")
+                else:
+                    tqdm.write(f"  [crs] No CRS found - using local coordinates")
+                tqdm.write(f"  [crs] Centering at ({origin_x:.1f}, {origin_y:.1f})")
 
         # ── Build output header ──────────────────────────────────────────
         out_header = laspy.LasHeader(
@@ -250,7 +273,7 @@ def pretransform_las(las_path: str, output_path: str,
 
         # ── Stream-transform in chunks (avoids loading full file into RAM) ──
         # Bar is created before LasWriter so it appears immediately
-        with tqdm(total=total, desc="  Pre-transform", **_BAR_OPTS) as bar:
+        with tqdm(total=total, desc="  Pre-transform", disable=quiet, **_BAR_OPTS) as bar:
             with laspy.LasWriter(open(output_path, 'wb'), header=out_header) as writer:
                 for chunk in reader.chunk_iterator(_CHUNK):
                     # Use decoded float coordinates (laspy lowercase accessors respect the
@@ -282,8 +305,140 @@ def pretransform_las(las_path: str, output_path: str,
                     writer.write_points(out_pts.points)
                     bar.update(len(chunk))
 
-        tqdm.write(f"  [crs] Pre-transformed LAS written: {output_path}")
+        if not quiet:
+            tqdm.write(f"  [crs] Pre-transformed LAS written: {output_path}")
         return crs_info, (origin_x, origin_y)
+
+
+# ---------------------------------------------------------------------------
+# Batch mode helpers — shared-origin planning and parallel per-tile pretransform
+# ---------------------------------------------------------------------------
+
+def plan_shared_origin(
+    files: list[str],
+    forced_utm: tuple[int, str] | None,
+    fixed_origin: tuple[float, float] | None = None,
+) -> tuple[dict | None, tuple[float, float]]:
+    """Scan headers of all tiles, compute a shared UTM origin and CRS info.
+
+    The shared origin is the center of the union bbox across all tiles, so
+    every tile — pretransformed against this origin — ends up in a single
+    consistent local ENU frame. CRS is taken from the first tile that has a
+    WKT VLR, or from forced_utm if none does.
+
+    When fixed_origin is given, that is used instead of the computed centroid
+    (still pairs it with the detected CRS).
+
+    Returns (crs_info or None, (origin_easting, origin_northing)).
+    """
+    # CRS detection: first tile with a WKT VLR wins
+    wkt = None
+    for path in files:
+        with laspy.open(path) as f:
+            for vlr in f.header.vlrs:
+                if hasattr(vlr, 'string') and vlr.record_id == 2112:
+                    wkt = vlr.string
+                    break
+        if wkt:
+            break
+
+    utm_info = parse_utm_crs(wkt) if wkt else None
+    if utm_info is None and forced_utm is not None:
+        zone, hemisphere = forced_utm
+        epsg = 32600 + zone if hemisphere.upper() == 'N' else 32700 + zone
+        utm_info = (zone, hemisphere.upper(), epsg)
+
+    # Compute union bbox across all headers
+    x_min = math.inf
+    y_min = math.inf
+    x_max = -math.inf
+    y_max = -math.inf
+    with tqdm(total=len(files), desc="  Scanning headers", unit=" file",
+              file=sys.stdout, dynamic_ncols=True) as bar:
+        for path in files:
+            with laspy.open(path) as f:
+                hdr = f.header
+                if hdr.point_count <= 0:
+                    bar.update(1)
+                    continue
+                x_min = min(x_min, float(hdr.mins[0]))
+                y_min = min(y_min, float(hdr.mins[1]))
+                x_max = max(x_max, float(hdr.maxs[0]))
+                y_max = max(y_max, float(hdr.maxs[1]))
+            bar.update(1)
+
+    if fixed_origin is not None:
+        origin_x, origin_y = fixed_origin
+    else:
+        origin_x = (x_min + x_max) / 2.0
+        origin_y = (y_min + y_max) / 2.0
+
+    crs_info = None
+    if utm_info:
+        zone, hemisphere, epsg = utm_info
+        ref_lng, ref_lat = utm_to_lnglat(origin_x, origin_y, zone, hemisphere)
+        crs_info = {
+            'type': 'utm',
+            'zone': zone,
+            'hemisphere': hemisphere,
+            'epsg': epsg,
+            'origin': {'easting': origin_x, 'northing': origin_y, 'elevation': 0.0},
+            'refLngLat': {'lng': ref_lng, 'lat': ref_lat},
+        }
+    return crs_info, (origin_x, origin_y)
+
+
+def _pretransform_worker(job: tuple[str, str, tuple[float, float], tuple[int, str] | None]) -> tuple[str, int]:
+    """Worker for parallel pretransform. Returns (input_path, point_count)."""
+    in_path, out_path, origin, forced_utm = job
+    pretransform_las(
+        in_path, out_path,
+        fixed_origin=origin,
+        forced_utm=forced_utm,
+        quiet=True,
+    )
+    # Point count from the output header — cheap, just a header read
+    with laspy.open(out_path) as f:
+        pts = int(f.header.point_count)
+    return in_path, pts
+
+
+def parallel_pretransform(
+    files: list[str],
+    out_dir: str,
+    shared_origin: tuple[float, float],
+    forced_utm: tuple[int, str] | None,
+    max_workers: int | None = None,
+) -> list[str]:
+    """Pretransform every tile in parallel against a shared origin.
+
+    Writes `<out_dir>/<basename>.las` per input tile. LAZ inputs are written
+    as LAS (pretransform_las always writes LAS). Returns the list of output
+    paths in input order.
+    """
+    os.makedirs(out_dir, exist_ok=True)
+
+    jobs: list[tuple[str, str, tuple[float, float], tuple[int, str] | None]] = []
+    out_paths: list[str] = []
+    for path in files:
+        base = os.path.basename(path)
+        stem, ext = os.path.splitext(base)
+        out_name = stem + '.las'  # always LAS output
+        out_path = os.path.join(out_dir, out_name)
+        jobs.append((path, out_path, shared_origin, forced_utm))
+        out_paths.append(out_path)
+
+    n_workers = max_workers if max_workers is not None else min(os.cpu_count() or 4, 8)
+
+    with tqdm(total=len(jobs), desc="  Pre-transform tiles", unit=" tile",
+              file=sys.stdout, dynamic_ncols=True,
+              bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt}  [{elapsed}<{remaining}]") as bar:
+        with ProcessPoolExecutor(max_workers=n_workers) as pool:
+            for in_path, pts in pool.map(_pretransform_worker, jobs):
+                bar.set_postfix(file=os.path.basename(in_path), pts=f"{pts:,}", refresh=False)
+                bar.update(1)
+
+    return out_paths
 
 
 # ---------------------------------------------------------------------------
@@ -308,7 +463,7 @@ def extract_trajectory(las_path: str, output_dir: str) -> None:
         extra_names = {d.name for d in _safe_extra_dims(reader.header.point_format)}
         missing = required_dims - extra_names
         if missing:
-            tqdm.write(f"  [trajectory] Skipping — missing extra dimensions: {', '.join(missing)}")
+            tqdm.write(f"  [trajectory] Skipping - missing extra dimensions: {', '.join(missing)}")
             return
 
         _CHUNK = 5_000_000
@@ -335,7 +490,7 @@ def extract_trajectory(las_path: str, output_dir: str) -> None:
                 bar.update(len(chunk))
 
     if not pose_x:
-        tqdm.write("  [trajectory] No pose points found (is_pose == 1) — skipping trajectory.json")
+        tqdm.write("  [trajectory] No pose points found (is_pose == 1) - skipping trajectory.json")
         return
 
     xs  = np.concatenate(pose_x)
@@ -404,7 +559,7 @@ def find_las_files(input_path: str) -> list[str]:
 
 def merge_las_files(files: list[str], output_path: str) -> str:
     if len(files) == 1:
-        print(f"[1/3] Single input file — no merge needed")
+        print(f"[1/3] Single input file - no merge needed")
         print(f"      {files[0]}")
         return files[0]
 
@@ -578,7 +733,7 @@ def generate_dem(las_path: str, output_path: str, cell_size: float = 1.0) -> Non
     elev  = np.concatenate(elev_parts)
 
     if step > 1:
-        tqdm.write(f"      Subsampled {step}x → {len(east):,} points for CSF")
+        tqdm.write(f"      Subsampled {step}x -> {len(east):,} points for CSF")
 
     tqdm.write(f"      East  range: [{east.min():.1f}, {east.max():.1f}]")
     tqdm.write(f"      North range: [{north.min():.1f}, {north.max():.1f}]")
@@ -666,7 +821,16 @@ def generate_dem(las_path: str, output_path: str, cell_size: float = 1.0) -> Non
 # Step 3 — Potree conversion
 # ---------------------------------------------------------------------------
 
-def convert_to_potree(las_path: str, output_dir: str, encoding: str = "UNCOMPRESSED") -> None:
+def convert_to_potree(las_path, output_dir: str, encoding: str = "UNCOMPRESSED") -> None:
+    """Convert LAS input to Potree format.
+
+    `las_path` may be:
+      - a single .las file path (legacy single-file flow)
+      - a directory containing .las files (batch flow, resolved to a file list)
+      - an explicit list of .las file paths (batch flow)
+
+    PotreeConverter 2.x builds one octree from all provided files.
+    """
     print(f"[3/3] Converting to Potree format...")
 
     if not os.path.isfile(POTREE_CONVERTER):
@@ -677,15 +841,33 @@ def convert_to_potree(las_path: str, output_dir: str, encoding: str = "UNCOMPRES
         print("  3. Build it: cd ../PotreeConverter && mkdir build && cd build && cmake .. && cmake --build . --config Release")
         sys.exit(1)
 
-    with laspy.LasReader(open(las_path, 'rb')) as reader:
+    # Resolve input into an explicit list of file paths
+    if isinstance(las_path, (list, tuple)):
+        file_list = list(las_path)
+    elif os.path.isdir(las_path):
+        file_list = sorted(glob.glob(os.path.join(las_path, "*.las")))
+        if not file_list:
+            print(f"Error: no .las files found in directory {las_path}")
+            sys.exit(1)
+    else:
+        file_list = [las_path]
+
+    if len(file_list) > 1:
+        tqdm.write(f"      Source: {len(file_list)} LAS files")
+    sample_path = file_list[0]
+
+    with laspy.LasReader(open(sample_path, 'rb')) as reader:
         extra_dims = [dim.name for dim in _safe_extra_dims(reader.header.point_format)]
         all_dims = list(reader.header.point_format.dimension_names)
     tqdm.write(f"      Input attributes: {len(all_dims)} dimensions")
     if extra_dims:
         tqdm.write(f"      Extra dimensions: {', '.join(extra_dims)}")
 
-    cmd = [POTREE_CONVERTER, las_path, "-o", output_dir, "--encoding", encoding]
-    tqdm.write(f"      Running: {' '.join(cmd)}")
+    cmd = [POTREE_CONVERTER, *file_list, "-o", output_dir, "--encoding", encoding]
+    if len(file_list) == 1:
+        tqdm.write(f"      Running: {' '.join(cmd)}")
+    else:
+        tqdm.write(f"      Running: {POTREE_CONVERTER} <{len(file_list)} files> -o {output_dir} --encoding {encoding}")
     t0 = time.time()
 
     # Stream PotreeConverter output line-by-line so progress is visible in real time
@@ -730,12 +912,239 @@ def convert_to_potree(las_path: str, output_dir: str, encoding: str = "UNCOMPRES
 
 
 # ---------------------------------------------------------------------------
+# Stats summary
+# ---------------------------------------------------------------------------
+
+def _build_stats(input_path: str, output_dir: str,
+                 origin_x: float, origin_y: float,
+                 crs_info: dict | None, elapsed: float) -> dict:
+    """Collect verification stats from every pipeline artefact into one dict."""
+    stats: dict = {"elapsed_s": round(elapsed, 1)}
+
+    # ── Input LAS ──────────────────────────────────────────────────────────
+    try:
+        with laspy.open(input_path) as f:
+            h = f.header
+            stats["input"] = {
+                "file": os.path.basename(input_path),
+                "points": h.point_count,
+                "las_version": str(h.version),
+                "point_format": h.point_format.id,
+                "crs_vlr_present": any(vlr.record_id == 2112 for vlr in h.vlrs),
+                "raw_bounds": {
+                    "x": [round(h.mins[0], 4), round(h.maxs[0], 4)],
+                    "y": [round(h.mins[1], 4), round(h.maxs[1], 4)],
+                    "z": [round(h.mins[2], 4), round(h.maxs[2], 4)],
+                },
+            }
+    except Exception as e:
+        stats["input"] = {"error": str(e)}
+
+    # ── Pre-transform origin ────────────────────────────────────────────────
+    stats["pretransform"] = {
+        "origin_easting":  round(origin_x, 4),
+        "origin_northing": round(origin_y, 4),
+        "axis_mapping": {
+            "three_js_X": "LAS_X - origin_easting  (East offset)",
+            "three_js_Y": "LAS_Z                   (Elevation, up)",
+            "three_js_Z": "LAS_Y - origin_northing (North offset)",
+        },
+    }
+
+    # ── CRS ────────────────────────────────────────────────────────────────
+    crs_path = os.path.join(output_dir, "crs.json")
+    if crs_info:
+        stats["crs"] = {
+            "written": os.path.isfile(crs_path),
+            "epsg": crs_info.get("epsg"),
+            "zone": f"{crs_info.get('zone')}{crs_info.get('hemisphere')}",
+            "origin_easting":  crs_info["origin"]["easting"],
+            "origin_northing": crs_info["origin"]["northing"],
+            "ref_lat_lng": crs_info.get("refLngLat"),
+        }
+    else:
+        stats["crs"] = {"written": False, "note": "No UTM CRS detected - local coordinates only"}
+
+    # ── Potree metadata.json ────────────────────────────────────────────────
+    meta_path = os.path.join(output_dir, "metadata.json")
+    if os.path.isfile(meta_path):
+        try:
+            with open(meta_path) as f:
+                meta = json.load(f)
+            # Use position attribute min/max for actual data bounds.
+            # boundingBox is the padded *cubic* octree bbox (all axes == largest
+            # extent) and must NOT be used for sanity checks.
+            pos_attr = next((a for a in meta.get("attributes", []) if a["name"] == "position"), None)
+            mn = pos_attr["min"] if pos_attr else [None, None, None]
+            mx = pos_attr["max"] if pos_attr else [None, None, None]
+            attrs = [a["name"] for a in meta.get("attributes", [])]
+            stats["potree"] = {
+                "points": meta.get("points"),
+                "bounds_note": "Actual point data bounds (position attribute, not cubic octree bbox)",
+                "three_js_bounds": {
+                    "X_east_m":  [round(mn[0], 3), round(mx[0], 3)] if mn[0] is not None else None,
+                    "Y_elev_m":  [round(mn[1], 3), round(mx[1], 3)] if mn[1] is not None else None,
+                    "Z_north_m": [round(mn[2], 3), round(mx[2], 3)] if mn[2] is not None else None,
+                },
+                "offset": meta.get("offset"),
+                "scale":  meta.get("scale"),
+                "attributes": attrs,
+            }
+            # Sanity checks
+            checks = {}
+            if mn[1] is not None and mx[1] is not None:
+                elev_range = mx[1] - mn[1]
+                checks["Y_is_elevation"] = {
+                    "range_m": round(elev_range, 1),
+                    "ok": elev_range < 500,  # elevation span <500m; if Y=Northing it would be thousands
+                    "note": "PASS - Y axis is elevation (Three.js up)" if elev_range < 500
+                            else "FAIL - Y range too large; axes may be swapped (Y=Northing?)",
+                }
+            if mn[2] is not None and mx[2] is not None:
+                north_range = mx[2] - mn[2]
+                checks["Z_is_northing"] = {
+                    "range_m": round(north_range, 1),
+                    "ok": north_range < 50000,
+                    "note": "PASS - Z axis is northing offset" if north_range < 50000
+                            else "FAIL - Z range implausibly large",
+                }
+            # Check that potree offset is local, not raw UTM (hundreds of thousands)
+            if meta.get("offset"):
+                off = meta["offset"]
+                checks["offset_not_absolute_utm"] = {
+                    "offset": [round(v, 3) for v in off],
+                    "ok": all(abs(v) < 10000 for v in off),
+                    "note": "PASS - offset looks local (not raw UTM)" if all(abs(v) < 10000 for v in off)
+                            else "FAIL - offset looks like raw UTM coords; preprocess.py may not have run",
+                }
+            stats["potree"]["sanity_checks"] = checks
+        except Exception as e:
+            stats["potree"] = {"error": str(e)}
+    else:
+        stats["potree"] = {"note": "metadata.json not found (--skip-potree?)"}
+
+    # ── DEM ────────────────────────────────────────────────────────────────
+    dem_path = os.path.join(output_dir, "dem.json")
+    if os.path.isfile(dem_path):
+        try:
+            size_mb = os.path.getsize(dem_path) / 1024 / 1024
+            with open(dem_path) as f:
+                dem = json.load(f)
+            elev = dem.get("elevation", [[]])
+            flat = [v for row in elev for v in row if v is not None]
+            stats["dem"] = {
+                "file_mb": round(size_mb, 2),
+                "cell_size_m": dem.get("cellSize"),
+                "grid": f"{dem.get('cols')}x{dem.get('rows')}",
+                "x_range_m": [dem.get("xMin"), dem.get("xMax")],
+                "z_range_m": [dem.get("yMin"), dem.get("yMax")],   # DEM yMin/yMax = North axis
+                "elevation_min_m": round(min(flat), 3) if flat else None,
+                "elevation_max_m": round(max(flat), 3) if flat else None,
+                "elevation_mean_m": round(sum(flat) / len(flat), 3) if flat else None,
+                "note": "DEM X=East, DEM Y=North (Three.js Z), elevation=Three.js Y",
+            }
+        except Exception as e:
+            stats["dem"] = {"error": str(e)}
+    else:
+        stats["dem"] = {"note": "dem.json not found (--skip-dem?)"}
+
+    # ── Alignment cross-check ───────────────────────────────────────────────
+    # Verify that the potree origin matches the crs.json origin. Mismatch here
+    # is exactly what causes HD map / point cloud drift in the viewer.
+    cross: dict = {}
+    if crs_info and stats.get("potree", {}).get("offset"):
+        off = stats["potree"]["offset"]
+        crs_e = crs_info["origin"]["easting"]
+        crs_n = crs_info["origin"]["northing"]
+        cross["potree_offset_vs_crs_origin"] = {
+            "potree_bbox_min_X": round(off[0], 4),
+            "potree_bbox_min_Z": round(off[2], 4),
+            "crs_origin_easting":  round(crs_e, 4),
+            "crs_origin_northing": round(crs_n, 4),
+            "note": "potree bbox min is local (centred) — not directly comparable to crs origin; "
+                    "both must share the same subtracted origin to be aligned",
+        }
+    # HD map alignment check only applies to the KCity dataset (UTM18N). Other
+    # datasets (different UTM zones / regions) would always show spurious
+    # "DRIFT" against this hardcoded origin, so gate it on zone 18N.
+    if crs_info and crs_info.get("zone") == 18 and crs_info.get("hemisphere") == 'N':
+        hd_map_origin_e = 378923.0495
+        hd_map_origin_n = 4902337.3695
+        delta_e = abs(crs_info["origin"]["easting"]  - hd_map_origin_e)
+        delta_n = abs(crs_info["origin"]["northing"] - hd_map_origin_n)
+        cross["hd_map_alignment"] = {
+            "hd_map_origin_easting":  hd_map_origin_e,
+            "hd_map_origin_northing": hd_map_origin_n,
+            "this_origin_easting":    round(crs_info["origin"]["easting"],  4),
+            "this_origin_northing":   round(crs_info["origin"]["northing"], 4),
+            "delta_easting_m":  round(delta_e, 4),
+            "delta_northing_m": round(delta_n, 4),
+            "aligned": delta_e < 0.01 and delta_n < 0.01,
+            "note": "ALIGNED - HD map and point cloud share the same UTM origin" if (delta_e < 0.01 and delta_n < 0.01)
+                    else f"DRIFT - {delta_e:.2f}m E, {delta_n:.2f}m N offset vs hd-map/projection.ts constants",
+        }
+    stats["alignment_check"] = cross
+
+    return stats
+
+
+def _print_stats(stats: dict) -> None:
+    """Print a concise human-readable summary of the stats dict."""
+    print()
+    print("=" * 60)
+    print("VERIFICATION SUMMARY")
+    print("=" * 60)
+
+    inp = stats.get("input", {})
+    if "points" in inp:
+        print(f"  Input:   {inp['file']}  ({inp['points']:,} pts, LAS {inp['las_version']})")
+        rb = inp.get("raw_bounds", {})
+        print(f"  Raw X:   {rb.get('x')}  (Easting)")
+        print(f"  Raw Y:   {rb.get('y')}  (Northing)")
+        print(f"  Raw Z:   {rb.get('z')}  (Elevation ASL)")
+        print(f"  CRS VLR: {'YES' if inp.get('crs_vlr_present') else 'NO (--utm-zone required)'}")
+
+    pt = stats.get("pretransform", {})
+    print(f"  Origin:  E={pt.get('origin_easting')}  N={pt.get('origin_northing')}")
+
+    crs = stats.get("crs", {})
+    if crs.get("written"):
+        print(f"  CRS:     EPSG:{crs.get('epsg')}  Zone {crs.get('zone')}  written=YES")
+    else:
+        print(f"  CRS:     {crs.get('note', 'not written')}")
+
+    po = stats.get("potree", {})
+    if "three_js_bounds" in po:
+        b = po["three_js_bounds"]
+        print(f"  Three.js X (East m):  {b.get('X_east_m')}")
+        print(f"  Three.js Y (Elev m):  {b.get('Y_elev_m')}")
+        print(f"  Three.js Z (North m): {b.get('Z_north_m')}")
+        for name, chk in po.get("sanity_checks", {}).items():
+            ok = "OK" if chk.get("ok") else "!!"
+            print(f"  [{ok}] {chk.get('note', name)}")
+
+    dem = stats.get("dem", {})
+    if "elevation_mean_m" in dem:
+        print(f"  DEM:     {dem['grid']} cells @ {dem['cell_size_m']}m  "
+              f"elev {dem['elevation_min_m']}..{dem['elevation_max_m']}m "
+              f"(mean {dem['elevation_mean_m']}m)")
+
+    ac = stats.get("alignment_check", {})
+    hd = ac.get("hd_map_alignment", {})
+    if hd:
+        tag = "OK" if hd.get("aligned") else "!!"
+        print(f"  [{tag}] HD map alignment: {hd.get('note')}")
+
+    print("=" * 60)
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
 def main():
     parser = argparse.ArgumentParser(
-        description="CLAP Preprocessing Pipeline — convert LAS/LAZ to Potree + DEM",
+        description="CLAP Preprocessing Pipeline - convert LAS/LAZ to Potree + DEM",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
@@ -750,6 +1159,20 @@ def main():
                         help="Fix the UTM easting origin instead of using the cloud centroid")
     parser.add_argument("--origin-northing", type=float, default=None,
                         help="Fix the UTM northing origin instead of using the cloud centroid")
+    parser.add_argument("--utm-zone", type=int, default=None,
+                        help="Force UTM zone number (e.g. 18) when the LAS file has no embedded CRS VLRs")
+    parser.add_argument("--utm-hemisphere", choices=["N", "S"], default="N",
+                        help="UTM hemisphere to use with --utm-zone (default: N)")
+    parser.add_argument(
+        "--batch", action="store_true",
+        help="Multi-tile mode: skip the merge step, pretransform each tile in parallel "
+             "against a shared UTM origin, then hand the directory to PotreeConverter. "
+             "Implies --skip-dem and --skip-trajectory (not supported on multi-tile inputs yet).",
+    )
+    parser.add_argument(
+        "--workers", type=int, default=None,
+        help="Number of parallel workers for --batch pre-transform (default: min(cpu_count, 8))",
+    )
     parser.add_argument(
         "--potree-converter",
         default=None,
@@ -778,6 +1201,88 @@ def main():
     # Step 1 — Find / Merge
     las_files = find_las_files(args.input_path)
 
+    # Resolve common config values used by both batch and legacy flows
+    fixed_origin = None
+    if args.origin_easting is not None and args.origin_northing is not None:
+        fixed_origin = (args.origin_easting, args.origin_northing)
+    forced_utm = (args.utm_zone, args.utm_hemisphere) if args.utm_zone is not None else None
+
+    # ── Batch flow: skip merge, parallel per-tile pretransform, dir → Potree ──
+    if args.batch:
+        if len(las_files) < 2:
+            print("Error: --batch needs 2+ LAS files. For a single file, run without --batch.")
+            sys.exit(1)
+
+        # Batch mode is incompatible with DEM and trajectory (they are single-file).
+        # Force-skip with a notice so the user knows.
+        if not args.skip_dem:
+            print("Note: --batch implies --skip-dem (multi-tile DEM is not supported).")
+            args.skip_dem = True
+        if not args.skip_trajectory:
+            print("Note: --batch implies --skip-trajectory (multi-tile trajectory not supported).")
+            args.skip_trajectory = True
+        print()
+
+        # Step 1 — Plan: scan headers, compute union bbox, shared origin, CRS
+        print(f"[1/3] Planning shared origin from {len(las_files)} tiles...")
+        crs_info, (origin_x, origin_y) = plan_shared_origin(
+            las_files, forced_utm, fixed_origin=fixed_origin,
+        )
+        if crs_info:
+            print(f"      UTM Zone {crs_info['zone']}{crs_info['hemisphere']} (EPSG:{crs_info['epsg']})")
+            print(f"      Shared origin: E={origin_x:.3f}, N={origin_y:.3f}")
+            print(f"      Ref lat/lng: ({crs_info['refLngLat']['lat']:.7f}, {crs_info['refLngLat']['lng']:.7f})")
+        else:
+            print(f"      No UTM CRS detected — local origin: ({origin_x:.1f}, {origin_y:.1f})")
+            print(f"      (Pass --utm-zone to attach a geo reference if these LAS files are UTM without VLRs.)")
+        print()
+
+        # Step 2 — Parallel pre-transform
+        pretransform_dir = tempfile.mkdtemp(prefix="clap_pretransformed_")
+        n_workers = args.workers if args.workers else min(os.cpu_count() or 4, 8)
+        print(f"[2/3] Parallel pre-transform ({len(las_files)} tiles, {n_workers} workers)")
+        print(f"      Temp dir: {pretransform_dir}")
+        try:
+            parallel_pretransform(
+                las_files, pretransform_dir, (origin_x, origin_y),
+                forced_utm, max_workers=n_workers,
+            )
+            print()
+
+            # Step 3 — PotreeConverter on the whole directory
+            if not args.skip_potree:
+                convert_to_potree(pretransform_dir, output_dir, encoding=args.potree_encoding)
+            else:
+                print("[3/3] Skipping Potree conversion")
+            print()
+
+            # Write crs.json so the viewer auto-configures the geo world frame
+            if crs_info:
+                crs_path = os.path.join(output_dir, "crs.json")
+                with open(crs_path, "w") as f:
+                    json.dump(crs_info, f, indent=2)
+                print(f"CRS written:    {crs_path}")
+
+            # Always write origin.json so downstream tools (HD map projection,
+            # re-runs with --origin-easting/northing) share the same origin.
+            origin_path = os.path.join(output_dir, "origin.json")
+            with open(origin_path, "w") as f:
+                json.dump({"originX": origin_x, "originY": origin_y}, f, indent=2)
+            print(f"Origin written: {origin_path}  (easting={origin_x:.3f}, northing={origin_y:.3f})")
+        finally:
+            shutil.rmtree(pretransform_dir, ignore_errors=True)
+
+        elapsed = time.time() - t_start
+        print("=" * 60)
+        print(f"Done! Total time: {elapsed:.1f}s")
+        print(f"Output: {output_dir}")
+        print()
+        print(f"To load in CLAP viewer, set the point cloud path to:")
+        print(f"  /pointclouds/{args.output_name}/")
+        print("=" * 60)
+        return
+
+    # ── Legacy flow: merge (if needed) + single pretransform ────────────────
     merged_path = None
     cleanup_merged = False
     if len(las_files) > 1:
@@ -786,7 +1291,7 @@ def main():
         cleanup_merged = True
     else:
         merged_path = las_files[0]
-        print(f"[1/3] Single input file — no merge needed")
+        print(f"[1/3] Single input file - no merge needed")
         print(f"      {merged_path}")
     print()
 
@@ -794,15 +1299,13 @@ def main():
     # Returns crs_info dict if UTM CRS detected (enables geo world frame), else None.
     print("Pre-processing: transforming to Three.js Y-up local ENU...")
     pretransformed_path = os.path.join(tempfile.gettempdir(), "clap_pretransformed.las")
-    fixed_origin = None
-    if args.origin_easting is not None and args.origin_northing is not None:
-        fixed_origin = (args.origin_easting, args.origin_northing)
-    crs_info, (origin_x, origin_y) = pretransform_las(merged_path, pretransformed_path, fixed_origin=fixed_origin)
+    crs_info, (origin_x, origin_y) = pretransform_las(merged_path, pretransformed_path,
+                                                       fixed_origin=fixed_origin, forced_utm=forced_utm)
     work_path = pretransformed_path
     if crs_info:
-        print(f"  UTM detected — crs.json will be written for geo world frame auto-setup")
+        print(f"  UTM detected - crs.json will be written for geo world frame auto-setup")
     else:
-        print(f"  No geo reference — cloud will load in local coordinates (world frame must be set manually)")
+        print(f"  No geo reference - cloud will load in local coordinates (world frame must be set manually)")
     print()
 
     try:
@@ -843,6 +1346,23 @@ def main():
         with open(origin_path, "w") as f:
             json.dump({"originX": origin_x, "originY": origin_y}, f, indent=2)
         print(f"Origin written: {origin_path}  (easting={origin_x:.3f}, northing={origin_y:.3f})")
+
+        # Write stats.json — a human-readable verification summary covering every
+        # stage of the pipeline so post-run alignment can be confirmed at a glance.
+        elapsed_so_far = time.time() - t_start
+        stats = _build_stats(
+            input_path=merged_path,
+            output_dir=output_dir,
+            origin_x=origin_x,
+            origin_y=origin_y,
+            crs_info=crs_info,
+            elapsed=elapsed_so_far,
+        )
+        stats_path = os.path.join(output_dir, "stats.json")
+        with open(stats_path, "w") as f:
+            json.dump(stats, f, indent=2)
+        print(f"Stats written:  {stats_path}")
+        _print_stats(stats)
 
     finally:
         if cleanup_merged and merged_path and os.path.isfile(merged_path):

@@ -1,0 +1,22 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<?fasx 3.1 2025-08-04 ?>
+<gmfa xmlns="http://www.gm.ca/hdlm">
+  <segment id="7831129">
+    <gmfaSection lanes="All" type="Map Valid" startXsectionId="0" endXsectionId="15"/>
+  </segment>
+  <segment id="7831152">
+    <gmfaSection lanes="All" type="High Cross-Track Slope" startXsectionId="0" endXsectionId="48"/>
+  </segment>
+  <segment id="7831174">
+    <gmfaSection lanes="All" type="Map Valid" startXsectionId="0" endXsectionId="7"/>
+  </segment>
+  <segment id="7831175">
+    <gmfaSection lanes="All" type="Map Valid" startXsectionId="0" endXsectionId="7"/>
+  </segment>
+  <segment id="7831245">
+    <gmfaSection lanes="All" type="High Cross-Track Slope" startXsectionId="0" endXsectionId="44"/>
+  </segment>
+  <segment id="7831249">
+    <gmfaSection lanes="All" type="Map Valid" startXsectionId="0" endXsectionId="40"/>
+  </segment>
+</gmfa>

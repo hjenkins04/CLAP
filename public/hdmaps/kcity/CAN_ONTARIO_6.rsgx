@@ -1,0 +1,82 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<?rsgx 3.1 2025-08-04 ?>
+<region id="107" name="CAN_ONTARIO" xmlns="http://www.gm.ca/hdlm">
+  <road id="87247" name="Queen's University Test Track">
+    <segment id="7945199" numLanes="1" successors="21067082" predecessors="7945192" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="21067082" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <intersectionReference intersectionId="2344648"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:26.299856Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="87247" name="Queen's University Test Track">
+    <segment id="7945200" numLanes="1" successors="7945192" predecessors="7945194" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="7945192" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:26.299856Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="87247" name="Queen's University Test Track">
+    <segment id="7945206" numLanes="1" successors="7945207" predecessors="21067089" leftNeighbors="None" rightNeighbors="None" maneuver="Right Turn" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="7945207" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <objects>
+        <object id="29783497" type="Stop Bar" lat="44.26287324" long="-76.51723146" elevation="52.220">
+          <edge closed="true">
+            <point lat="44.26289718" long="-76.51722285" elevation="52.220"/>
+            <point lat="44.26289718" long="-76.51722285" elevation="52.220"/>
+            <point lat="44.26289606" long="-76.51721519" elevation="52.210"/>
+            <point lat="44.26284961" long="-76.51723955" elevation="52.320"/>
+          </edge>
+        </object>
+      </objects>
+      <intersectionReference intersectionId="2352391"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:26.299856Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="4015" name="Unknown">
+    <segment id="7945207" numLanes="1" successors="7950866" predecessors="7945206 7950842" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="7950866" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <objects>
+        <object id="29752558" type="Stop Bar" lat="44.26342807" long="-76.51699119" elevation="53.030">
+          <edge closed="true">
+            <point lat="44.26343112" long="-76.51701508" elevation="53.030"/>
+            <point lat="44.26343819" long="-76.51701029" elevation="53.030"/>
+            <point lat="44.26342496" long="-76.51696741" elevation="52.970"/>
+            <point lat="44.26341792" long="-76.51697161" elevation="52.980"/>
+          </edge>
+        </object>
+      </objects>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:25.376939Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="87247" name="Queen's University Test Track">
+    <segment id="7945209" numLanes="1" successors="7945212" predecessors="7945192" leftNeighbors="None" rightNeighbors="None" maneuver="Right Turn" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="7945212" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <intersectionReference intersectionId="2344648"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:26.299856Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="87247" name="Queen's University Test Track">
+    <segment id="7945211" numLanes="1" successors="21067090" predecessors="7950872" leftNeighbors="None" rightNeighbors="None" maneuver="Right Turn" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="21067090" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <intersectionReference intersectionId="2352391"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:26.299856Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+</region>

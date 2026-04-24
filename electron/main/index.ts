@@ -1,11 +1,16 @@
 import { app, BrowserWindow } from 'electron';
 import { createWindow } from './window';
+import { createSplashWindow, attachSplash } from './splash';
 import { registerIpcHandlers, removeIpcHandlers } from './ipc';
 import { initAutoUpdater } from './auto-updater';
 
 app.whenReady().then(() => {
+  // Show splash immediately, then set up the main window in parallel
+  const splash = createSplashWindow();
+
   registerIpcHandlers();
   const win = createWindow();
+  attachSplash(splash, win);
   initAutoUpdater(win);
 
   app.on('activate', () => {

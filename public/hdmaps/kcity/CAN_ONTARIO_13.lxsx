@@ -1,0 +1,1142 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<?lxsx 3.1 2025-08-04 ?>
+<segments xmlns="http://www.gm.ca/hdlm">
+  <segment id="21067092">
+    <xSection id="0">
+      <leftEdge type="Inferred" width="0.000" lat="44.26320187" long="-76.51564154" elevation="52.950"/>
+      <point id="1" curvature="0.001887" heading="358.86" lat="44.26320187" long="-76.51564154" elevation="52.950"/>
+      <point id="2" curvature="-0.002436" heading="359.49" lat="44.26320221" long="-76.51559825" elevation="52.900"/>
+      <lane id="1" pointId="1" class="Intersection Lane; Non-Divided Non-Controlled Access Road Lane" width="3.457" alongSlope="-1.0" crossSlope="0.8" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Bike/Pedestrian" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.602" lat="44.26320227" long="-76.51559072" elevation="52.880"/>
+    </xSection>
+    <xSection id="1">
+      <leftEdge type="Inferred" width="0.000" lat="44.26321119" long="-76.51564179" elevation="52.933"/>
+      <point id="1" curvature="0.001887" heading="358.97" lat="44.26321119" long="-76.51564179" elevation="52.933"/>
+      <point id="2" curvature="-0.001989" heading="359.36" lat="44.26321149" long="-76.51559838" elevation="52.870"/>
+      <lane id="1" pointId="1" class="Intersection Lane; Non-Divided Non-Controlled Access Road Lane" width="3.467" alongSlope="-1.0" crossSlope="1.0" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+          <crossing type="At Grade Bike/Pedestrian" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.598" lat="44.26321155" long="-76.51559089" elevation="52.873"/>
+    </xSection>
+    <xSection id="2">
+      <leftEdge type="Inferred" width="0.000" lat="44.26322050" long="-76.51564201" elevation="52.915"/>
+      <point id="1" curvature="0.001887" heading="359.08" lat="44.26322050" long="-76.51564201" elevation="52.915"/>
+      <point id="2" curvature="-0.001541" heading="359.25" lat="44.26322078" long="-76.51559854" elevation="52.844"/>
+      <lane id="1" pointId="1" class="Intersection Lane; Non-Divided Non-Controlled Access Road Lane" width="3.472" alongSlope="-1.0" crossSlope="1.2" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+          <crossing type="At Grade Bike/Pedestrian" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.598" lat="44.26322083" long="-76.51559105" elevation="52.865"/>
+    </xSection>
+    <xSection id="3">
+      <leftEdge type="Inferred" width="0.000" lat="44.26322982" long="-76.51564220" elevation="52.898"/>
+      <point id="1" curvature="0.001887" heading="359.19" lat="44.26322982" long="-76.51564220" elevation="52.898"/>
+      <point id="2" curvature="-0.001094" heading="359.18" lat="44.26323007" long="-76.51559871" elevation="52.821"/>
+      <lane id="1" pointId="1" class="Intersection Lane; Non-Divided Non-Controlled Access Road Lane" width="3.473" alongSlope="-0.9" crossSlope="1.3" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+          <crossing type="At Grade Bike/Pedestrian" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.601" lat="44.26323012" long="-76.51559120" elevation="52.856"/>
+    </xSection>
+    <xSection id="4">
+      <leftEdge type="Inferred" width="0.000" lat="44.26323913" long="-76.51564237" elevation="52.881"/>
+      <point id="1" curvature="0.001887" heading="359.31" lat="44.26323913" long="-76.51564237" elevation="52.881"/>
+      <point id="2" curvature="-0.000648" heading="359.13" lat="44.26323936" long="-76.51559891" elevation="52.802"/>
+      <lane id="1" pointId="1" class="Intersection Lane; Non-Divided Non-Controlled Access Road Lane" width="3.472" alongSlope="-0.9" crossSlope="1.3" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.606" lat="44.26323941" long="-76.51559134" elevation="52.845"/>
+    </xSection>
+    <xSection id="5">
+      <leftEdge type="Inferred" width="0.000" lat="44.26324845" long="-76.51564252" elevation="52.864"/>
+      <point id="1" curvature="0.001887" heading="359.42" lat="44.26324845" long="-76.51564252" elevation="52.864"/>
+      <point id="2" curvature="-0.000201" heading="359.10" lat="44.26324865" long="-76.51559911" elevation="52.785"/>
+      <lane id="1" pointId="1" class="Intersection Lane; Non-Divided Non-Controlled Access Road Lane" width="3.467" alongSlope="-0.9" crossSlope="1.3" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.612" lat="44.26324870" long="-76.51559147" elevation="52.833"/>
+    </xSection>
+    <xSection id="6">
+      <leftEdge type="Inferred" width="0.000" lat="44.26325776" long="-76.51564263" elevation="52.847"/>
+      <point id="1" curvature="0.001887" heading="359.53" lat="44.26325776" long="-76.51564263" elevation="52.847"/>
+      <point id="2" curvature="0.000246" heading="359.10" lat="44.26325794" long="-76.51559931" elevation="52.770"/>
+      <lane id="1" pointId="1" class="Intersection Lane; Non-Divided Non-Controlled Access Road Lane" width="3.460" alongSlope="-0.9" crossSlope="1.3" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.618" lat="44.26325798" long="-76.51559159" elevation="52.819"/>
+    </xSection>
+    <xSection id="7">
+      <leftEdge type="Inferred" width="0.000" lat="44.26326708" long="-76.51564273" elevation="52.830"/>
+      <point id="1" curvature="0.001888" heading="359.64" lat="44.26326708" long="-76.51564273" elevation="52.830"/>
+      <point id="2" curvature="0.000692" heading="359.13" lat="44.26326724" long="-76.51559951" elevation="52.757"/>
+      <lane id="1" pointId="1" class="Intersection Lane; Non-Divided Non-Controlled Access Road Lane" width="3.452" alongSlope="-0.9" crossSlope="1.2" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.625" lat="44.26326727" long="-76.51559170" elevation="52.804"/>
+    </xSection>
+    <xSection id="8">
+      <leftEdge type="Inferred" width="0.000" lat="44.26327639" long="-76.51564280" elevation="52.813"/>
+      <point id="1" curvature="0.001888" heading="359.75" lat="44.26327639" long="-76.51564280" elevation="52.813"/>
+      <point id="2" curvature="0.001139" heading="359.18" lat="44.26327653" long="-76.51559970" elevation="52.744"/>
+      <lane id="1" pointId="1" class="Intersection Lane; Non-Divided Non-Controlled Access Road Lane" width="3.442" alongSlope="-0.9" crossSlope="1.1" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.632" lat="44.26327656" long="-76.51559180" elevation="52.788"/>
+    </xSection>
+    <xSection id="9">
+      <leftEdge type="Inferred" width="0.000" lat="44.26328571" long="-76.51564284" elevation="52.796"/>
+      <point id="1" curvature="0.001888" heading="359.87" lat="44.26328571" long="-76.51564284" elevation="52.796"/>
+      <point id="2" curvature="0.001585" heading="359.26" lat="44.26328582" long="-76.51559988" elevation="52.733"/>
+      <lane id="1" pointId="1" class="Intersection Lane; Non-Divided Non-Controlled Access Road Lane" width="3.431" alongSlope="-0.9" crossSlope="1.0" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.638" lat="44.26328585" long="-76.51559190" elevation="52.771"/>
+    </xSection>
+    <xSection id="10">
+      <leftEdge type="Inferred" width="0.000" lat="44.26329502" long="-76.51564286" elevation="52.779"/>
+      <point id="1" curvature="0.001888" heading="359.98" lat="44.26329502" long="-76.51564286" elevation="52.779"/>
+      <point id="2" curvature="0.002032" heading="359.37" lat="44.26329511" long="-76.51560003" elevation="52.722"/>
+      <lane id="1" pointId="1" class="Intersection Lane; Non-Divided Non-Controlled Access Road Lane" width="3.420" alongSlope="-0.9" crossSlope="1.0" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.644" lat="44.26329514" long="-76.51559198" elevation="52.752"/>
+    </xSection>
+    <xSection id="11">
+      <leftEdge type="Inferred" width="0.000" lat="44.26330433" long="-76.51564285" elevation="52.763"/>
+      <point id="1" curvature="0.001888" heading="0.09" lat="44.26330433" long="-76.51564285" elevation="52.763"/>
+      <point id="2" curvature="0.002479" heading="359.50" lat="44.26330442" long="-76.51560016" elevation="52.710"/>
+      <lane id="1" pointId="1" class="Intersection Lane; Non-Divided Non-Controlled Access Road Lane" width="3.409" alongSlope="-0.9" crossSlope="0.9" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.648" lat="44.26330444" long="-76.51559205" elevation="52.731"/>
+    </xSection>
+    <xSection id="12">
+      <leftEdge type="Inferred" width="0.000" lat="44.26331365" long="-76.51564282" elevation="52.746"/>
+      <point id="1" curvature="0.001887" heading="0.20" lat="44.26331365" long="-76.51564282" elevation="52.746"/>
+      <point id="2" curvature="0.002927" heading="359.67" lat="44.26331373" long="-76.51560025" elevation="52.698"/>
+      <lane id="1" pointId="1" class="Intersection Lane; Non-Divided Non-Controlled Access Road Lane" width="3.399" alongSlope="-0.9" crossSlope="0.8" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.650" lat="44.26331375" long="-76.51559212" elevation="52.710"/>
+    </xSection>
+    <xSection id="13">
+      <leftEdge type="Inferred" width="0.000" lat="44.26332296" long="-76.51564276" elevation="52.729"/>
+      <point id="1" curvature="0.001887" heading="0.31" lat="44.26332296" long="-76.51564276" elevation="52.729"/>
+      <point id="2" curvature="0.003375" heading="359.85" lat="44.26332304" long="-76.51560031" elevation="52.684"/>
+      <lane id="1" pointId="1" class="Intersection Lane; Non-Divided Non-Controlled Access Road Lane" width="3.390" alongSlope="-0.9" crossSlope="0.8" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.650" lat="44.26332305" long="-76.51559217" elevation="52.687"/>
+    </xSection>
+    <xSection id="14">
+      <leftEdge type="Inferred" width="0.000" lat="44.26333227" long="-76.51564268" elevation="52.712"/>
+      <point id="1" curvature="0.001887" heading="0.42" lat="44.26333227" long="-76.51564268" elevation="52.712"/>
+      <point id="2" curvature="0.003822" heading="0.07" lat="44.26333234" long="-76.51560032" elevation="52.669"/>
+      <lane id="1" pointId="1" class="Intersection Lane; Non-Divided Non-Controlled Access Road Lane" width="3.383" alongSlope="-0.9" crossSlope="0.7" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.647" lat="44.26333236" long="-76.51559222" elevation="52.662"/>
+    </xSection>
+    <xSection id="15">
+      <leftEdge type="Inferred" width="0.000" lat="44.26334159" long="-76.51564257" elevation="52.696"/>
+      <point id="1" curvature="0.001887" heading="0.54" lat="44.26334159" long="-76.51564257" elevation="52.696"/>
+      <point id="2" curvature="0.004270" heading="0.30" lat="44.26334165" long="-76.51560028" elevation="52.651"/>
+      <lane id="1" pointId="1" class="Intersection Lane; Non-Divided Non-Controlled Access Road Lane" width="3.377" alongSlope="-0.9" crossSlope="0.7" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.641" lat="44.26334166" long="-76.51559225" elevation="52.637"/>
+    </xSection>
+    <xSection id="16">
+      <leftEdge type="Inferred" width="0.000" lat="44.26335090" long="-76.51564243" elevation="52.679"/>
+      <point id="1" curvature="0.001887" heading="0.65" lat="44.26335090" long="-76.51564243" elevation="52.679"/>
+      <point id="2" curvature="0.004718" heading="0.57" lat="44.26335096" long="-76.51560018" elevation="52.631"/>
+      <lane id="1" pointId="1" class="Intersection Lane; Non-Divided Non-Controlled Access Road Lane" width="3.374" alongSlope="-0.9" crossSlope="0.8" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+          <crossing type="At Grade Bike/Pedestrian" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.631" lat="44.26335097" long="-76.51559228" elevation="52.610"/>
+    </xSection>
+    <xSection id="17">
+      <leftEdge type="Inferred" width="0.000" lat="44.26336021" long="-76.51564227" elevation="52.663"/>
+      <point id="1" curvature="0.001887" heading="0.76" lat="44.26336021" long="-76.51564227" elevation="52.663"/>
+      <point id="2" curvature="0.005165" heading="0.86" lat="44.26336026" long="-76.51560002" elevation="52.608"/>
+      <lane id="1" pointId="1" class="Intersection Lane; Non-Divided Non-Controlled Access Road Lane" width="3.375" alongSlope="-0.9" crossSlope="0.9" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+          <crossing type="At Grade Bike/Pedestrian" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.617" lat="44.26336027" long="-76.51559230" elevation="52.581"/>
+    </xSection>
+    <xSection id="18">
+      <leftEdge type="Inferred" width="0.000" lat="44.26336953" long="-76.51564209" elevation="52.646"/>
+      <point id="1" curvature="0.001887" heading="0.87" lat="44.26336953" long="-76.51564209" elevation="52.646"/>
+      <point id="2" curvature="0.005611" heading="1.18" lat="44.26336957" long="-76.51559979" elevation="52.581"/>
+      <lane id="1" pointId="1" class="Intersection Lane; Non-Divided Non-Controlled Access Road Lane" width="3.379" alongSlope="-0.9" crossSlope="1.1" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Bike/Pedestrian" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.598" lat="44.26336958" long="-76.51559230" elevation="52.551"/>
+    </xSection>
+  </segment>
+  <segment id="21067093">
+    <xSection id="0">
+      <leftEdge type="Inferred" width="0.611" lat="44.26510433" long="-76.51652465" elevation="50.100"/>
+      <point id="1" curvature="-0.068039" heading="245.92" lat="44.26510939" long="-76.51652764" elevation="50.080"/>
+      <point id="2" curvature="-0.041744" heading="243.00" lat="44.26516163" long="-76.51655853" elevation="49.990"/>
+      <lane id="1" pointId="1" class="Non-Controlled Access Divided Road Lane" width="6.308" alongSlope="1.9" crossSlope="0.8" speedLimit="20" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.304" lat="44.26516415" long="-76.51656002" elevation="49.980"/>
+    </xSection>
+    <xSection id="1">
+      <leftEdge type="Inferred" width="0.593" lat="44.26510127" long="-76.51653386" elevation="50.127"/>
+      <point id="1" curvature="-0.064427" heading="242.74" lat="44.26510606" long="-76.51653711" elevation="50.108"/>
+      <point id="2" curvature="-0.040917" heading="240.24" lat="44.26515661" long="-76.51657139" elevation="50.034"/>
+      <lane id="1" pointId="1" class="Non-Controlled Access Divided Road Lane" width="6.249" alongSlope="1.4" crossSlope="0.7" speedLimit="20" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.310" lat="44.26515912" long="-76.51657309" elevation="50.027"/>
+    </xSection>
+    <xSection id="2">
+      <leftEdge type="Inferred" width="0.575" lat="44.26509787" long="-76.51654284" elevation="50.146"/>
+      <point id="1" curvature="-0.060487" heading="239.74" lat="44.26510239" long="-76.51654634" elevation="50.129"/>
+      <point id="2" curvature="-0.040158" heading="237.50" lat="44.26515112" long="-76.51658400" elevation="50.056"/>
+      <lane id="1" pointId="1" class="Non-Controlled Access Divided Road Lane" width="6.194" alongSlope="1.0" crossSlope="0.7" speedLimit="20" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.307" lat="44.26515353" long="-76.51658586" elevation="50.049"/>
+    </xSection>
+    <xSection id="3">
+      <leftEdge type="Inferred" width="0.556" lat="44.26509419" long="-76.51655157" elevation="50.156"/>
+      <point id="1" curvature="-0.056360" heading="236.93" lat="44.26509842" long="-76.51655528" elevation="50.143"/>
+      <point id="2" curvature="-0.039484" heading="234.81" lat="44.26514519" long="-76.51659628" elevation="50.063"/>
+      <lane id="1" pointId="1" class="Non-Controlled Access Divided Road Lane" width="6.142" alongSlope="0.6" crossSlope="0.8" speedLimit="20" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.298" lat="44.26514746" long="-76.51659827" elevation="50.053"/>
+    </xSection>
+    <xSection id="4">
+      <leftEdge type="Inferred" width="0.538" lat="44.26509025" long="-76.51656003" elevation="50.160"/>
+      <point id="1" curvature="-0.052164" heading="234.32" lat="44.26509419" long="-76.51656394" elevation="50.152"/>
+      <point id="2" curvature="-0.039043" heading="232.15" lat="44.26513885" long="-76.51660819" elevation="50.061"/>
+      <lane id="1" pointId="1" class="Non-Controlled Access Divided Road Lane" width="6.093" alongSlope="0.2" crossSlope="0.9" speedLimit="20" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.289" lat="44.26514097" long="-76.51661029" elevation="50.051"/>
+    </xSection>
+    <xSection id="5">
+      <leftEdge type="Inferred" width="0.522" lat="44.26508605" long="-76.51656822" elevation="50.159"/>
+      <point id="1" curvature="-0.047985" heading="231.91" lat="44.26508971" long="-76.51657231" elevation="50.154"/>
+      <point id="2" curvature="-0.039566" heading="229.49" lat="44.26513213" long="-76.51661970" elevation="50.056"/>
+      <lane id="1" pointId="1" class="Non-Controlled Access Divided Road Lane" width="6.045" alongSlope="-0.2" crossSlope="0.9" speedLimit="20" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.284" lat="44.26513412" long="-76.51662193" elevation="50.049"/>
+    </xSection>
+    <xSection id="6">
+      <leftEdge type="Inferred" width="0.510" lat="44.26508155" long="-76.51657610" elevation="50.153"/>
+      <point id="1" curvature="-0.043920" heading="229.73" lat="44.26508496" long="-76.51658038" elevation="50.152"/>
+      <point id="2" curvature="-0.040640" heading="226.77" lat="44.26512503" long="-76.51663077" elevation="50.052"/>
+      <lane id="1" pointId="1" class="Non-Controlled Access Divided Road Lane" width="6.002" alongSlope="-0.4" crossSlope="1.0" speedLimit="20" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.282" lat="44.26512691" long="-76.51663314" elevation="50.050"/>
+    </xSection>
+    <xSection id="7">
+      <leftEdge type="Inferred" width="0.497" lat="44.26507685" long="-76.51658376" elevation="50.145"/>
+      <point id="1" curvature="-0.048747" heading="227.53" lat="44.26507998" long="-76.51658820" elevation="50.146"/>
+      <point id="2" curvature="-0.038351" heading="224.03" lat="44.26511754" long="-76.51664132" elevation="50.049"/>
+      <lane id="1" pointId="1" class="Non-Controlled Access Divided Road Lane" width="5.951" alongSlope="-0.5" crossSlope="0.9" speedLimit="20" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.279" lat="44.26511930" long="-76.51664381" elevation="50.050"/>
+    </xSection>
+    <xSection id="8">
+      <leftEdge type="Inferred" width="0.484" lat="44.26507192" long="-76.51659120" elevation="50.137"/>
+      <point id="1" curvature="-0.057388" heading="225.00" lat="44.26507478" long="-76.51659576" elevation="50.139"/>
+      <point id="2" curvature="-0.028888" heading="221.78" lat="44.26510973" long="-76.51665137" elevation="50.049"/>
+      <lane id="1" pointId="1" class="Non-Controlled Access Divided Road Lane" width="5.900" alongSlope="-0.4" crossSlope="0.9" speedLimit="20" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.275" lat="44.26511137" long="-76.51665396" elevation="50.048"/>
+    </xSection>
+    <xSection id="9">
+      <leftEdge type="Inferred" width="0.466" lat="44.26506675" long="-76.51659840" elevation="50.132"/>
+      <point id="1" curvature="-0.065480" heading="222.04" lat="44.26506932" long="-76.51660301" elevation="50.132"/>
+      <point id="2" curvature="-0.025291" heading="220.10" lat="44.26510171" long="-76.51666103" elevation="50.050"/>
+      <lane id="1" pointId="1" class="Non-Controlled Access Divided Road Lane" width="5.867" alongSlope="-0.2" crossSlope="0.8" speedLimit="20" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.271" lat="44.26510321" long="-76.51666371" elevation="50.049"/>
+    </xSection>
+    <xSection id="10">
+      <leftEdge type="Inferred" width="0.443" lat="44.26506131" long="-76.51660534" elevation="50.130"/>
+      <point id="1" curvature="-0.068938" heading="218.73" lat="44.26506357" long="-76.51660990" elevation="50.129"/>
+      <point id="2" curvature="-0.046192" heading="217.90" lat="44.26509349" long="-76.51667034" elevation="50.051"/>
+      <lane id="1" pointId="1" class="Non-Controlled Access Divided Road Lane" width="5.861" alongSlope="0.1" crossSlope="0.8" speedLimit="20" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.270" lat="44.26509487" long="-76.51667313" elevation="50.057"/>
+    </xSection>
+    <xSection id="11">
+      <leftEdge type="Inferred" width="0.416" lat="44.26505553" long="-76.51661186" elevation="50.134"/>
+      <point id="1" curvature="-0.064984" heading="215.47" lat="44.26505748" long="-76.51661630" elevation="50.130"/>
+      <point id="2" curvature="-0.082499" heading="213.61" lat="44.26508493" long="-76.51667901" elevation="50.051"/>
+      <lane id="1" pointId="1" class="Non-Controlled Access Divided Road Lane" width="5.864" alongSlope="0.2" crossSlope="0.8" speedLimit="20" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.269" lat="44.26508619" long="-76.51668188" elevation="50.067"/>
+    </xSection>
+    <xSection id="12">
+      <leftEdge type="Inferred" width="0.386" lat="44.26504944" long="-76.51661797" elevation="50.140"/>
+      <point id="1" curvature="-0.061278" heading="212.40" lat="44.26505109" long="-76.51662223" elevation="50.134"/>
+      <point id="2" curvature="-0.091138" heading="207.34" lat="44.26507588" long="-76.51668650" elevation="50.049"/>
+      <lane id="1" pointId="1" class="Non-Controlled Access Divided Road Lane" width="5.826" alongSlope="0.2" crossSlope="0.8" speedLimit="20" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.261" lat="44.26507699" long="-76.51668937" elevation="50.070"/>
+    </xSection>
+    <xSection id="13">
+      <leftEdge type="Inferred" width="0.369" lat="44.26504303" long="-76.51662356" elevation="50.146"/>
+      <point id="1" curvature="-0.057859" heading="209.48" lat="44.26504444" long="-76.51662774" elevation="50.138"/>
+      <point id="2" curvature="-0.057959" heading="202.18" lat="44.26506638" long="-76.51669261" elevation="50.045"/>
+      <lane id="1" pointId="1" class="Non-Controlled Access Divided Road Lane" width="5.726" alongSlope="0.1" crossSlope="0.9" speedLimit="20" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.250" lat="44.26506734" long="-76.51669543" elevation="50.066"/>
+    </xSection>
+    <xSection id="14">
+      <leftEdge type="Inferred" width="0.373" lat="44.26503628" long="-76.51662854" elevation="50.150"/>
+      <point id="1" curvature="-0.058658" heading="206.60" lat="44.26503755" long="-76.51663285" elevation="50.140"/>
+      <point id="2" curvature="-0.025873" heading="199.57" lat="44.26505666" long="-76.51669770" elevation="50.041"/>
+      <lane id="1" pointId="1" class="Non-Controlled Access Divided Road Lane" width="5.597" alongSlope="-0.0" crossSlope="1.0" speedLimit="20" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.251" lat="44.26505751" long="-76.51670061" elevation="50.059"/>
+    </xSection>
+    <xSection id="15">
+      <leftEdge type="Inferred" width="0.399" lat="44.26502868" long="-76.51663313" elevation="50.150"/>
+      <point id="1" curvature="-0.066062" heading="203.32" lat="44.26502995" long="-76.51663780" elevation="50.139"/>
+      <point id="2" curvature="-0.025016" heading="198.27" lat="44.26504740" long="-76.51670211" elevation="50.039"/>
+      <lane id="1" pointId="1" class="Non-Controlled Access Divided Road Lane" width="5.490" alongSlope="0.0" crossSlope="1.0" speedLimit="20" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.253" lat="44.26504821" long="-76.51670507" elevation="50.053"/>
+    </xSection>
+    <xSection id="16">
+      <leftEdge type="Inferred" width="0.419" lat="44.26502092" long="-76.51663713" elevation="50.151"/>
+      <point id="1" curvature="-0.073808" heading="199.57" lat="44.26502215" long="-76.51664210" elevation="50.140"/>
+      <point id="2" curvature="-0.036090" heading="196.31" lat="44.26503808" long="-76.51670616" elevation="50.040"/>
+      <lane id="1" pointId="1" class="Non-Controlled Access Divided Road Lane" width="5.414" alongSlope="0.2" crossSlope="1.1" speedLimit="20" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.248" lat="44.26503880" long="-76.51670909" elevation="50.050"/>
+    </xSection>
+    <xSection id="17">
+      <leftEdge type="Inferred" width="0.405" lat="44.26501309" long="-76.51664080" elevation="50.154"/>
+      <point id="1" curvature="-0.069183" heading="195.55" lat="44.26501419" long="-76.51664564" elevation="50.143"/>
+      <point id="2" curvature="-0.032609" heading="194.06" lat="44.26502866" long="-76.51670970" elevation="50.042"/>
+      <lane id="1" pointId="1" class="Non-Controlled Access Divided Road Lane" width="5.363" alongSlope="0.5" crossSlope="1.1" speedLimit="20" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.240" lat="44.26502930" long="-76.51671257" elevation="50.053"/>
+    </xSection>
+    <xSection id="18">
+      <leftEdge type="Inferred" width="0.362" lat="44.26500517" long="-76.51664410" elevation="50.157"/>
+      <point id="1" curvature="-0.048617" heading="192.36" lat="44.26500606" long="-76.51664846" elevation="50.151"/>
+      <point id="2" curvature="-0.023464" heading="192.32" lat="44.26501915" long="-76.51671279" elevation="50.046"/>
+      <lane id="1" pointId="1" class="Non-Controlled Access Divided Road Lane" width="5.340" alongSlope="0.4" crossSlope="1.1" speedLimit="20" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.234" lat="44.26501972" long="-76.51671561" elevation="50.057"/>
+    </xSection>
+    <xSection id="19">
+      <leftEdge type="Inferred" width="0.306" lat="44.26499716" long="-76.51664700" elevation="50.160"/>
+      <point id="1" curvature="-0.028496" heading="190.37" lat="44.26499783" long="-76.51665071" elevation="50.158"/>
+      <point id="2" curvature="-0.014407" heading="191.15" lat="44.26500958" long="-76.51671554" elevation="50.048"/>
+      <lane id="1" pointId="1" class="Non-Controlled Access Divided Road Lane" width="5.340" alongSlope="0.1" crossSlope="1.2" speedLimit="20" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.232" lat="44.26501009" long="-76.51671836" elevation="50.059"/>
+    </xSection>
+    <xSection id="20">
+      <leftEdge type="Inferred" width="0.265" lat="44.26498905" long="-76.51664945" elevation="50.158"/>
+      <point id="1" curvature="-0.017492" heading="189.23" lat="44.26498956" long="-76.51665268" elevation="50.160"/>
+      <point id="2" curvature="-0.023963" heading="190.12" lat="44.26499997" long="-76.51671807" elevation="50.050"/>
+      <lane id="1" pointId="1" class="Non-Controlled Access Divided Road Lane" width="5.349" alongSlope="-0.2" crossSlope="1.2" speedLimit="20" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.235" lat="44.26500043" long="-76.51672093" elevation="50.057"/>
+    </xSection>
+    <xSection id="21">
+      <leftEdge type="Inferred" width="0.241" lat="44.26498088" long="-76.51665150" elevation="50.153"/>
+      <point id="1" curvature="-0.010941" heading="188.50" lat="44.26498129" long="-76.51665447" elevation="50.156"/>
+      <point id="2" curvature="-0.060131" heading="187.64" lat="44.26499033" long="-76.51672022" elevation="50.050"/>
+      <lane id="1" pointId="1" class="Non-Controlled Access Divided Road Lane" width="5.346" alongSlope="-0.4" crossSlope="1.1" speedLimit="20" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.233" lat="44.26499072" long="-76.51672309" elevation="50.052"/>
+    </xSection>
+    <xSection id="22">
+      <leftEdge type="Inferred" width="0.230" lat="44.26497269" long="-76.51665330" elevation="50.147"/>
+      <point id="1" curvature="-0.005348" heading="188.07" lat="44.26497302" long="-76.51665614" elevation="50.149"/>
+      <point id="2" curvature="-0.048247" heading="183.91" lat="44.26498059" long="-76.51672157" elevation="50.050"/>
+      <lane id="1" pointId="1" class="Non-Controlled Access Divided Road Lane" width="5.293" alongSlope="-0.5" crossSlope="1.1" speedLimit="20" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.229" lat="44.26498092" long="-76.51672441" elevation="50.050"/>
+    </xSection>
+    <xSection id="23">
+      <leftEdge type="Inferred" width="0.224" lat="44.26496446" long="-76.51665498" elevation="50.141"/>
+      <point id="1" curvature="-0.002927" heading="187.90" lat="44.26496472" long="-76.51665776" elevation="50.141"/>
+      <point id="2" curvature="0.010997" heading="182.55" lat="44.26497082" long="-76.51672227" elevation="50.050"/>
+      <lane id="1" pointId="1" class="Non-Controlled Access Divided Road Lane" width="5.196" alongSlope="-0.4" crossSlope="1.0" speedLimit="20" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.227" lat="44.26497108" long="-76.51672508" elevation="50.050"/>
+    </xSection>
+    <xSection id="24">
+      <leftEdge type="Inferred" width="0.217" lat="44.26495621" long="-76.51665664" elevation="50.137"/>
+      <point id="1" curvature="-0.007085" heading="187.68" lat="44.26495641" long="-76.51665934" elevation="50.134"/>
+      <point id="2" curvature="0.021565" heading="183.84" lat="44.26496107" long="-76.51672301" elevation="50.050"/>
+      <lane id="1" pointId="1" class="Non-Controlled Access Divided Road Lane" width="5.111" alongSlope="-0.2" crossSlope="0.9" speedLimit="20" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.222" lat="44.26496128" long="-76.51672577" elevation="50.049"/>
+    </xSection>
+    <xSection id="25">
+      <leftEdge type="Inferred" width="0.207" lat="44.26494793" long="-76.51665827" elevation="50.136"/>
+      <point id="1" curvature="-0.016426" heading="187.07" lat="44.26494807" long="-76.51666086" elevation="50.131"/>
+      <point id="2" curvature="0.001612" heading="184.65" lat="44.26495138" long="-76.51672403" elevation="50.050"/>
+      <lane id="1" pointId="1" class="Non-Controlled Access Divided Road Lane" width="5.059" alongSlope="0.1" crossSlope="0.9" speedLimit="20" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.222" lat="44.26495152" long="-76.51672681" elevation="50.045"/>
+    </xSection>
+    <xSection id="26">
+      <leftEdge type="Inferred" width="0.193" lat="44.26493963" long="-76.51665979" elevation="50.139"/>
+      <point id="1" curvature="-0.025788" heading="185.95" lat="44.26493970" long="-76.51666220" elevation="50.133"/>
+      <point id="2" curvature="-0.021110" heading="184.08" lat="44.26494169" long="-76.51672509" elevation="50.050"/>
+      <lane id="1" pointId="1" class="Non-Controlled Access Divided Road Lane" width="5.027" alongSlope="0.6" crossSlope="0.9" speedLimit="20" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.225" lat="44.26494178" long="-76.51672791" elevation="50.039"/>
+    </xSection>
+    <xSection id="27">
+      <leftEdge type="Inferred" width="0.174" lat="44.26493128" long="-76.51666109" elevation="50.147"/>
+      <point id="1" curvature="-0.035127" heading="184.33" lat="44.26493131" long="-76.51666328" elevation="50.142"/>
+      <point id="2" curvature="-0.043787" heading="182.10" lat="44.26493200" long="-76.51672586" elevation="50.050"/>
+      <lane id="1" pointId="1" class="Non-Controlled Access Divided Road Lane" width="4.999" alongSlope="1.1" crossSlope="1.0" speedLimit="20" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.224" lat="44.26493203" long="-76.51672865" elevation="50.034"/>
+    </xSection>
+  </segment>
+  <segment id="21067094">
+    <xSection id="0">
+      <leftEdge type="Inferred" width="0.000" lat="44.26406742" long="-76.51564318" elevation="51.040"/>
+      <point id="1" curvature="-0.005790" heading="0.42" lat="44.26406742" long="-76.51564318" elevation="51.040"/>
+      <point id="2" curvature="-0.000320" heading="0.12" lat="44.26406727" long="-76.51560322" elevation="51.010"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.191" alongSlope="-2.3" crossSlope="0.5" speedLimit="30" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.595" lat="44.26406724" long="-76.51559577" elevation="51.000"/>
+    </xSection>
+    <xSection id="1">
+      <leftEdge type="Inferred" width="0.000" lat="44.26407683" long="-76.51564312" elevation="50.998"/>
+      <point id="1" curvature="-0.003937" heading="0.13" lat="44.26407683" long="-76.51564312" elevation="50.998"/>
+      <point id="2" curvature="-0.000354" heading="0.10" lat="44.26407670" long="-76.51560320" elevation="50.983"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.188" alongSlope="-2.0" crossSlope="0.3" speedLimit="30" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.583" lat="44.26407667" long="-76.51559589" elevation="50.998"/>
+    </xSection>
+    <xSection id="2">
+      <leftEdge type="Inferred" width="0.000" lat="44.26408623" long="-76.51564311" elevation="50.962"/>
+      <point id="1" curvature="-0.002090" heading="359.95" lat="44.26408623" long="-76.51564311" elevation="50.962"/>
+      <point id="2" curvature="-0.000388" heading="0.07" lat="44.26408611" long="-76.51560318" elevation="50.953"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.189" alongSlope="-1.8" crossSlope="0.2" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.572" lat="44.26408610" long="-76.51559602" elevation="50.988"/>
+    </xSection>
+    <xSection id="3">
+      <leftEdge type="Inferred" width="0.000" lat="44.26409564" long="-76.51564313" elevation="50.929"/>
+      <point id="1" curvature="-0.000244" heading="359.88" lat="44.26409564" long="-76.51564313" elevation="50.929"/>
+      <point id="2" curvature="-0.000421" heading="0.05" lat="44.26409553" long="-76.51560316" elevation="50.920"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.192" alongSlope="-1.7" crossSlope="0.2" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.562" lat="44.26409552" long="-76.51559615" elevation="50.971"/>
+    </xSection>
+    <xSection id="4">
+      <leftEdge type="Inferred" width="0.000" lat="44.26410504" long="-76.51564316" elevation="50.898"/>
+      <point id="1" curvature="0.001601" heading="359.92" lat="44.26410504" long="-76.51564316" elevation="50.898"/>
+      <point id="2" curvature="-0.000455" heading="0.02" lat="44.26410495" long="-76.51560315" elevation="50.884"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.194" alongSlope="-1.9" crossSlope="0.2" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.553" lat="44.26410495" long="-76.51559627" elevation="50.948"/>
+    </xSection>
+    <xSection id="5">
+      <leftEdge type="Inferred" width="0.000" lat="44.26411445" long="-76.51564316" elevation="50.864"/>
+      <point id="1" curvature="0.003445" heading="0.07" lat="44.26411445" long="-76.51564316" elevation="50.864"/>
+      <point id="2" curvature="-0.000489" heading="0.00" lat="44.26411437" long="-76.51560315" elevation="50.846"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.195" alongSlope="-2.1" crossSlope="0.3" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.545" lat="44.26411437" long="-76.51559639" elevation="50.918"/>
+    </xSection>
+    <xSection id="6">
+      <leftEdge type="Inferred" width="0.000" lat="44.26412385" long="-76.51564312" elevation="50.824"/>
+      <point id="1" curvature="0.003720" heading="0.31" lat="44.26412385" long="-76.51564312" elevation="50.824"/>
+      <point id="2" curvature="-0.000522" heading="359.96" lat="44.26412378" long="-76.51560316" elevation="50.806"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.191" alongSlope="-2.4" crossSlope="0.3" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.538" lat="44.26412380" long="-76.51559649" elevation="50.884"/>
+    </xSection>
+    <xSection id="7">
+      <leftEdge type="Inferred" width="0.000" lat="44.26413325" long="-76.51564302" elevation="50.781"/>
+      <point id="1" curvature="0.003080" heading="0.51" lat="44.26413325" long="-76.51564302" elevation="50.781"/>
+      <point id="2" curvature="-0.000556" heading="359.93" lat="44.26413320" long="-76.51560317" elevation="50.765"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.182" alongSlope="-2.4" crossSlope="0.3" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.532" lat="44.26413322" long="-76.51559658" elevation="50.844"/>
+    </xSection>
+    <xSection id="8">
+      <leftEdge type="Inferred" width="0.000" lat="44.26414265" long="-76.51564289" elevation="50.738"/>
+      <point id="1" curvature="0.002438" heading="0.67" lat="44.26414265" long="-76.51564289" elevation="50.738"/>
+      <point id="2" curvature="-0.000590" heading="359.90" lat="44.26414260" long="-76.51560319" elevation="50.723"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.170" alongSlope="-2.2" crossSlope="0.3" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.527" lat="44.26414262" long="-76.51559665" elevation="50.800"/>
+    </xSection>
+    <xSection id="9">
+      <leftEdge type="Inferred" width="0.000" lat="44.26415205" long="-76.51564272" elevation="50.698"/>
+      <point id="1" curvature="0.001796" heading="0.80" lat="44.26415205" long="-76.51564272" elevation="50.698"/>
+      <point id="2" curvature="-0.000623" heading="359.86" lat="44.26415196" long="-76.51560321" elevation="50.681"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.154" alongSlope="-1.8" crossSlope="0.3" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.525" lat="44.26415197" long="-76.51559670" elevation="50.752"/>
+    </xSection>
+    <xSection id="10">
+      <leftEdge type="Inferred" width="0.000" lat="44.26416145" long="-76.51564252" elevation="50.664"/>
+      <point id="1" curvature="0.001486" heading="0.90" lat="44.26416145" long="-76.51564252" elevation="50.664"/>
+      <point id="2" curvature="-0.000656" heading="359.82" lat="44.26416132" long="-76.51560325" elevation="50.639"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.136" alongSlope="-1.5" crossSlope="0.5" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.525" lat="44.26416131" long="-76.51559672" elevation="50.701"/>
+    </xSection>
+    <xSection id="11">
+      <leftEdge type="Inferred" width="0.000" lat="44.26417085" long="-76.51564231" elevation="50.636"/>
+      <point id="1" curvature="0.001264" heading="0.98" lat="44.26417085" long="-76.51564231" elevation="50.636"/>
+      <point id="2" curvature="-0.000690" heading="359.78" lat="44.26417068" long="-76.51560329" elevation="50.597"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.116" alongSlope="-1.4" crossSlope="0.7" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.528" lat="44.26417066" long="-76.51559671" elevation="50.647"/>
+    </xSection>
+    <xSection id="12">
+      <leftEdge type="Inferred" width="0.000" lat="44.26418025" long="-76.51564208" elevation="50.611"/>
+      <point id="1" curvature="0.001042" heading="1.05" lat="44.26418025" long="-76.51564208" elevation="50.611"/>
+      <point id="2" curvature="-0.000723" heading="359.74" lat="44.26418004" long="-76.51560335" elevation="50.555"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.093" alongSlope="-1.3" crossSlope="1.0" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.535" lat="44.26418001" long="-76.51559666" elevation="50.590"/>
+    </xSection>
+    <xSection id="13">
+      <leftEdge type="Inferred" width="0.000" lat="44.26418964" long="-76.51564183" elevation="50.587"/>
+      <point id="1" curvature="0.000820" heading="1.10" lat="44.26418964" long="-76.51564183" elevation="50.587"/>
+      <point id="2" curvature="-0.000756" heading="359.70" lat="44.26418940" long="-76.51560341" elevation="50.515"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.069" alongSlope="-1.4" crossSlope="1.3" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.546" lat="44.26418936" long="-76.51559658" elevation="50.531"/>
+    </xSection>
+    <xSection id="14">
+      <leftEdge type="Inferred" width="0.000" lat="44.26419904" long="-76.51564158" elevation="50.561"/>
+      <point id="1" curvature="0.000599" heading="1.15" lat="44.26419904" long="-76.51564158" elevation="50.561"/>
+      <point id="2" curvature="-0.000790" heading="359.65" lat="44.26419876" long="-76.51560349" elevation="50.477"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.043" alongSlope="-1.7" crossSlope="1.6" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.561" lat="44.26419871" long="-76.51559646" elevation="50.471"/>
+    </xSection>
+  </segment>
+  <segment id="21067095">
+    <xSection id="0">
+      <leftEdge type="Inferred" width="0.000" lat="44.26328665" long="-76.51577885" elevation="52.790"/>
+      <point id="1" curvature="0.057591" heading="88.43" lat="44.26328665" long="-76.51577885" elevation="52.790"/>
+      <point id="2" curvature="0.114358" heading="87.26" lat="44.26325465" long="-76.51577861" elevation="52.790"/>
+      <lane id="1" pointId="1" class="Intersection Lane; Turn Lane; Turn Maneuver Lane" width="3.556" alongSlope="-0.6" crossSlope="-0.0" speedLimit="30" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.319" lat="44.26325178" long="-76.51577859" elevation="52.800"/>
+    </xSection>
+    <xSection id="1">
+      <leftEdge type="Inferred" width="0.000" lat="44.26328643" long="-76.51576347" elevation="52.777"/>
+      <point id="1" curvature="0.084613" heading="93.56" lat="44.26328643" long="-76.51576347" elevation="52.777"/>
+      <point id="2" curvature="0.110171" heading="92.74" lat="44.26325455" long="-76.51576789" elevation="52.798"/>
+      <lane id="1" pointId="1" class="Intersection Lane; Turn Lane; Turn Maneuver Lane" width="3.561" alongSlope="-0.3" crossSlope="-0.3" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Stop Bar" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.324" lat="44.26325165" long="-76.51576829" elevation="52.792"/>
+    </xSection>
+    <xSection id="2">
+      <leftEdge type="Inferred" width="0.000" lat="44.26328509" long="-76.51574813" elevation="52.770"/>
+      <point id="1" curvature="0.092739" heading="100.05" lat="44.26328509" long="-76.51574813" elevation="52.770"/>
+      <point id="2" curvature="0.106888" heading="98.03" lat="44.26325378" long="-76.51575729" elevation="52.800"/>
+      <lane id="1" pointId="1" class="Intersection Lane; Turn Lane; Turn Maneuver Lane" width="3.555" alongSlope="0.0" crossSlope="-0.5" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Bike/Pedestrian" elevation="3.960"/>
+          <crossing type="At Grade Stop Bar" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.336" lat="44.26325082" long="-76.51575815" elevation="52.796"/>
+    </xSection>
+    <xSection id="3">
+      <leftEdge type="Inferred" width="0.000" lat="44.26328257" long="-76.51573308" elevation="52.770"/>
+      <point id="1" curvature="0.079953" heading="106.09" lat="44.26328257" long="-76.51573308" elevation="52.770"/>
+      <point id="2" curvature="0.105680" heading="103.23" lat="44.26325238" long="-76.51574681" elevation="52.807"/>
+      <lane id="1" pointId="1" class="Intersection Lane; Turn Lane; Turn Maneuver Lane" width="3.529" alongSlope="-0.0" crossSlope="-0.6" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Bike/Pedestrian" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.356" lat="44.26324933" long="-76.51574820" elevation="52.804"/>
+    </xSection>
+    <xSection id="4">
+      <leftEdge type="Inferred" width="0.000" lat="44.26327902" long="-76.51571848" elevation="52.769"/>
+      <point id="1" curvature="0.077870" heading="111.66" lat="44.26327902" long="-76.51571848" elevation="52.769"/>
+      <point id="2" curvature="0.107842" heading="108.47" lat="44.26325033" long="-76.51573647" elevation="52.819"/>
+      <lane id="1" pointId="1" class="Intersection Lane; Turn Lane; Turn Maneuver Lane" width="3.496" alongSlope="0.3" crossSlope="-0.8" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Bike/Pedestrian" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.384" lat="44.26324718" long="-76.51573844" elevation="52.811"/>
+    </xSection>
+    <xSection id="5">
+      <leftEdge type="Inferred" width="0.000" lat="44.26327450" long="-76.51570453" elevation="52.777"/>
+      <point id="1" curvature="0.080486" heading="117.17" lat="44.26327450" long="-76.51570453" elevation="52.777"/>
+      <point id="2" curvature="0.115775" heading="113.99" lat="44.26324755" long="-76.51572633" elevation="52.819"/>
+      <lane id="1" pointId="1" class="Intersection Lane; Turn Lane; Turn Maneuver Lane" width="3.464" alongSlope="0.5" crossSlope="-0.7" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Bike/Pedestrian" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.409" lat="44.26324436" long="-76.51572890" elevation="52.818"/>
+    </xSection>
+    <xSection id="6">
+      <leftEdge type="Inferred" width="0.000" lat="44.26326901" long="-76.51569146" elevation="52.787"/>
+      <point id="1" curvature="0.088072" heading="123.01" lat="44.26326901" long="-76.51569146" elevation="52.787"/>
+      <point id="2" curvature="0.135332" heading="120.32" lat="44.26324389" long="-76.51571662" elevation="52.829"/>
+      <lane id="1" pointId="1" class="Intersection Lane; Turn Lane; Turn Maneuver Lane" width="3.439" alongSlope="1.1" crossSlope="-0.7" speedLimit="30" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.441" lat="44.26324067" long="-76.51571985" elevation="52.832"/>
+    </xSection>
+    <xSection id="7">
+      <leftEdge type="Inferred" width="0.000" lat="44.26326246" long="-76.51567909" elevation="52.811"/>
+      <point id="1" curvature="0.097357" heading="129.54" lat="44.26326246" long="-76.51567909" elevation="52.811"/>
+      <point id="2" curvature="0.160312" heading="127.66" lat="44.26323953" long="-76.51570771" elevation="52.840"/>
+      <lane id="1" pointId="1" class="Intersection Lane; Turn Lane; Turn Maneuver Lane" width="3.423" alongSlope="1.5" crossSlope="-0.5" speedLimit="30" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.482" lat="44.26323630" long="-76.51571175" elevation="52.843"/>
+    </xSection>
+    <xSection id="8">
+      <leftEdge type="Inferred" width="0.000" lat="44.26325475" long="-76.51566762" elevation="52.844"/>
+      <point id="1" curvature="0.112423" heading="137.04" lat="44.26325475" long="-76.51566762" elevation="52.844"/>
+      <point id="2" curvature="0.187683" heading="135.93" lat="44.26323458" long="-76.51569992" elevation="52.849"/>
+      <lane id="1" pointId="1" class="Intersection Lane; Turn Lane; Turn Maneuver Lane" width="3.417" alongSlope="1.1" crossSlope="-0.1" speedLimit="30" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.524" lat="44.26323149" long="-76.51570487" elevation="52.850"/>
+    </xSection>
+    <xSection id="9">
+      <leftEdge type="Inferred" width="0.000" lat="44.26324585" long="-76.51565753" elevation="52.867"/>
+      <point id="1" curvature="0.124940" heading="145.70" lat="44.26324585" long="-76.51565753" elevation="52.867"/>
+      <point id="2" curvature="0.214751" heading="145.14" lat="44.26322907" long="-76.51569326" elevation="52.854"/>
+      <lane id="1" pointId="1" class="Intersection Lane; Turn Lane; Turn Maneuver Lane" width="3.407" alongSlope="1.0" crossSlope="0.2" speedLimit="30" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.560" lat="44.26322632" long="-76.51569912" elevation="52.855"/>
+    </xSection>
+    <xSection id="10">
+      <leftEdge type="Inferred" width="0.000" lat="44.26323570" long="-76.51564966" elevation="52.889"/>
+      <point id="1" curvature="0.138999" heading="155.51" lat="44.26323570" long="-76.51564966" elevation="52.889"/>
+      <point id="2" curvature="0.224723" heading="155.72" lat="44.26322275" long="-76.51568850" elevation="52.863"/>
+      <lane id="1" pointId="1" class="Intersection Lane; Turn Lane; Turn Maneuver Lane" width="3.419" alongSlope="0.9" crossSlope="0.4" speedLimit="30" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.557" lat="44.26322064" long="-76.51569483" elevation="52.867"/>
+    </xSection>
+    <xSection id="11">
+      <leftEdge type="Inferred" width="0.000" lat="44.26322469" long="-76.51564442" elevation="52.910"/>
+      <point id="1" curvature="0.140057" heading="166.17" lat="44.26322469" long="-76.51564442" elevation="52.910"/>
+      <point id="2" curvature="0.213485" heading="165.69" lat="44.26321599" long="-76.51568534" elevation="52.876"/>
+      <lane id="1" pointId="1" class="Intersection Lane; Turn Lane; Turn Maneuver Lane" width="3.408" alongSlope="0.9" crossSlope="0.6" speedLimit="30" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.556" lat="44.26321457" long="-76.51569203" elevation="52.884"/>
+    </xSection>
+    <xSection id="12">
+      <leftEdge type="Inferred" width="0.000" lat="44.26321327" long="-76.51564189" elevation="52.931"/>
+      <point id="1" curvature="0.107972" heading="175.62" lat="44.26321327" long="-76.51564189" elevation="52.931"/>
+      <point id="2" curvature="0.197922" heading="175.20" lat="44.26320892" long="-76.51568359" elevation="52.889"/>
+      <lane id="1" pointId="1" class="Intersection Lane; Turn Lane; Turn Maneuver Lane" width="3.366" alongSlope="0.9" crossSlope="0.7" speedLimit="30" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <marker id="2" pointId="2" width="0.000" type="Virtual Inferred Line" color="Unknown"/>
+      <rightEdge type="Paved to Non-Paved" width="0.538" lat="44.26320823" long="-76.51569026" elevation="52.894"/>
+    </xSection>
+  </segment>
+  <segment id="21067096">
+    <xSection id="0">
+      <leftEdge type="Inferred" width="0.000" lat="44.26388923" long="-76.51564382" elevation="51.530"/>
+      <point id="1" curvature="0.002562" heading="359.27" lat="44.26388923" long="-76.51564382" elevation="51.530"/>
+      <point id="2" curvature="0.000254" heading="359.95" lat="44.26388928" long="-76.51560361" elevation="51.490"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.211" alongSlope="-1.2" crossSlope="0.7" speedLimit="30" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.731" lat="44.26388930" long="-76.51559446" elevation="51.470"/>
+    </xSection>
+    <xSection id="1">
+      <leftEdge type="Inferred" width="0.000" lat="44.26389861" long="-76.51564397" elevation="51.508"/>
+      <point id="1" curvature="0.002402" heading="359.42" lat="44.26389861" long="-76.51564397" elevation="51.508"/>
+      <point id="2" curvature="0.000254" heading="359.96" lat="44.26389865" long="-76.51560362" elevation="51.466"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.222" alongSlope="-1.2" crossSlope="0.8" speedLimit="30" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.729" lat="44.26389866" long="-76.51559449" elevation="51.463"/>
+    </xSection>
+    <xSection id="2">
+      <leftEdge type="Inferred" width="0.000" lat="44.26390799" long="-76.51564409" elevation="51.486"/>
+      <point id="1" curvature="0.002243" heading="359.56" lat="44.26390799" long="-76.51564409" elevation="51.486"/>
+      <point id="2" curvature="0.000254" heading="359.98" lat="44.26390801" long="-76.51560363" elevation="51.441"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.231" alongSlope="-1.3" crossSlope="0.8" speedLimit="30" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.727" lat="44.26390802" long="-76.51559453" elevation="51.455"/>
+    </xSection>
+    <xSection id="3">
+      <leftEdge type="Inferred" width="0.000" lat="44.26391737" long="-76.51564417" elevation="51.463"/>
+      <point id="1" curvature="0.002083" heading="359.69" lat="44.26391737" long="-76.51564417" elevation="51.463"/>
+      <point id="2" curvature="0.000254" heading="359.99" lat="44.26391738" long="-76.51560363" elevation="51.416"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.238" alongSlope="-1.3" crossSlope="0.8" speedLimit="30" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.724" lat="44.26391738" long="-76.51559457" elevation="51.444"/>
+    </xSection>
+    <xSection id="4">
+      <leftEdge type="Inferred" width="0.000" lat="44.26392675" long="-76.51564423" elevation="51.439"/>
+      <point id="1" curvature="0.001923" heading="359.80" lat="44.26392675" long="-76.51564423" elevation="51.439"/>
+      <point id="2" curvature="0.000254" heading="0.01" lat="44.26392674" long="-76.51560363" elevation="51.392"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.242" alongSlope="-1.3" crossSlope="0.8" speedLimit="30" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.721" lat="44.26392674" long="-76.51559462" elevation="51.431"/>
+    </xSection>
+    <xSection id="5">
+      <leftEdge type="Inferred" width="0.000" lat="44.26393613" long="-76.51564426" elevation="51.414"/>
+      <point id="1" curvature="0.001763" heading="359.91" lat="44.26393613" long="-76.51564426" elevation="51.414"/>
+      <point id="2" curvature="0.000254" heading="0.02" lat="44.26393610" long="-76.51560363" elevation="51.367"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.245" alongSlope="-1.4" crossSlope="0.8" speedLimit="30" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.717" lat="44.26393611" long="-76.51559466" elevation="51.417"/>
+    </xSection>
+    <xSection id="6">
+      <leftEdge type="Inferred" width="0.000" lat="44.26394551" long="-76.51564427" elevation="51.389"/>
+      <point id="1" curvature="0.001603" heading="0.02" lat="44.26394551" long="-76.51564427" elevation="51.389"/>
+      <point id="2" curvature="0.000254" heading="0.04" lat="44.26394547" long="-76.51560362" elevation="51.342"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.246" alongSlope="-1.4" crossSlope="0.8" speedLimit="30" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.713" lat="44.26394547" long="-76.51559472" elevation="51.400"/>
+    </xSection>
+    <xSection id="7">
+      <leftEdge type="Inferred" width="0.000" lat="44.26395489" long="-76.51564426" elevation="51.364"/>
+      <point id="1" curvature="0.001443" heading="0.11" lat="44.26395489" long="-76.51564426" elevation="51.364"/>
+      <point id="2" curvature="0.000254" heading="0.05" lat="44.26395483" long="-76.51560361" elevation="51.317"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.246" alongSlope="-1.4" crossSlope="0.8" speedLimit="30" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.709" lat="44.26395483" long="-76.51559477" elevation="51.381"/>
+    </xSection>
+    <xSection id="8">
+      <leftEdge type="Inferred" width="0.000" lat="44.26396427" long="-76.51564422" elevation="51.338"/>
+      <point id="1" curvature="0.001282" heading="0.19" lat="44.26396427" long="-76.51564422" elevation="51.338"/>
+      <point id="2" curvature="0.000254" heading="0.07" lat="44.26396420" long="-76.51560360" elevation="51.292"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.244" alongSlope="-1.4" crossSlope="0.8" speedLimit="30" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.703" lat="44.26396420" long="-76.51559484" elevation="51.361"/>
+    </xSection>
+    <xSection id="9">
+      <leftEdge type="Inferred" width="0.000" lat="44.26397365" long="-76.51564417" elevation="51.312"/>
+      <point id="1" curvature="0.001122" heading="0.26" lat="44.26397365" long="-76.51564417" elevation="51.312"/>
+      <point id="2" curvature="0.000254" heading="0.08" lat="44.26397356" long="-76.51560358" elevation="51.267"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.241" alongSlope="-1.5" crossSlope="0.8" speedLimit="30" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.697" lat="44.26397356" long="-76.51559490" elevation="51.338"/>
+    </xSection>
+    <xSection id="10">
+      <leftEdge type="Inferred" width="0.000" lat="44.26398303" long="-76.51564410" elevation="51.286"/>
+      <point id="1" curvature="0.000962" heading="0.32" lat="44.26398303" long="-76.51564410" elevation="51.286"/>
+      <point id="2" curvature="0.000254" heading="0.10" lat="44.26398293" long="-76.51560356" elevation="51.241"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.238" alongSlope="-1.5" crossSlope="0.8" speedLimit="30" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.690" lat="44.26398293" long="-76.51559497" elevation="51.313"/>
+    </xSection>
+    <xSection id="11">
+      <leftEdge type="Inferred" width="0.000" lat="44.26399241" long="-76.51564403" elevation="51.259"/>
+      <point id="1" curvature="0.000802" heading="0.37" lat="44.26399241" long="-76.51564403" elevation="51.259"/>
+      <point id="2" curvature="0.000254" heading="0.11" lat="44.26399230" long="-76.51560354" elevation="51.216"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.233" alongSlope="-1.5" crossSlope="0.7" speedLimit="30" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.682" lat="44.26399230" long="-76.51559504" elevation="51.286"/>
+    </xSection>
+    <xSection id="12">
+      <leftEdge type="Inferred" width="0.000" lat="44.26400178" long="-76.51564393" elevation="51.232"/>
+      <point id="1" curvature="0.000642" heading="0.42" lat="44.26400178" long="-76.51564393" elevation="51.232"/>
+      <point id="2" curvature="0.000254" heading="0.13" lat="44.26400168" long="-76.51560351" elevation="51.191"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.228" alongSlope="-1.5" crossSlope="0.7" speedLimit="30" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.673" lat="44.26400167" long="-76.51559512" elevation="51.258"/>
+    </xSection>
+    <xSection id="13">
+      <leftEdge type="Inferred" width="0.000" lat="44.26401116" long="-76.51564384" elevation="51.204"/>
+      <point id="1" curvature="0.000482" heading="0.45" lat="44.26401116" long="-76.51564384" elevation="51.204"/>
+      <point id="2" curvature="0.000254" heading="0.14" lat="44.26401105" long="-76.51560348" elevation="51.165"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.223" alongSlope="-1.5" crossSlope="0.7" speedLimit="30" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.664" lat="44.26401103" long="-76.51559520" elevation="51.227"/>
+    </xSection>
+    <xSection id="14">
+      <leftEdge type="Inferred" width="0.000" lat="44.26402054" long="-76.51564373" elevation="51.177"/>
+      <point id="1" curvature="0.000322" heading="0.48" lat="44.26402054" long="-76.51564373" elevation="51.177"/>
+      <point id="2" curvature="0.000254" heading="0.16" lat="44.26402042" long="-76.51560344" elevation="51.139"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.217" alongSlope="-1.5" crossSlope="0.7" speedLimit="30" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.654" lat="44.26402040" long="-76.51559529" elevation="51.194"/>
+    </xSection>
+    <xSection id="15">
+      <leftEdge type="Inferred" width="0.000" lat="44.26402992" long="-76.51564362" elevation="51.150"/>
+      <point id="1" curvature="0.000162" heading="0.49" lat="44.26402992" long="-76.51564362" elevation="51.150"/>
+      <point id="2" curvature="0.000254" heading="0.17" lat="44.26402979" long="-76.51560341" elevation="51.114"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.211" alongSlope="-1.5" crossSlope="0.6" speedLimit="30" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.643" lat="44.26402977" long="-76.51559537" elevation="51.159"/>
+    </xSection>
+    <xSection id="16">
+      <leftEdge type="Inferred" width="0.000" lat="44.26403929" long="-76.51564351" elevation="51.122"/>
+      <point id="1" curvature="0.000002" heading="0.49" lat="44.26403929" long="-76.51564351" elevation="51.122"/>
+      <point id="2" curvature="0.000254" heading="0.19" lat="44.26403916" long="-76.51560336" elevation="51.088"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.206" alongSlope="-1.5" crossSlope="0.6" speedLimit="30" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.632" lat="44.26403914" long="-76.51559547" elevation="51.123"/>
+    </xSection>
+    <xSection id="17">
+      <leftEdge type="Inferred" width="0.000" lat="44.26404867" long="-76.51564340" elevation="51.095"/>
+      <point id="1" curvature="-0.000158" heading="0.49" lat="44.26404867" long="-76.51564340" elevation="51.095"/>
+      <point id="2" curvature="0.000254" heading="0.20" lat="44.26404853" long="-76.51560332" elevation="51.062"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.200" alongSlope="-1.5" crossSlope="0.6" speedLimit="30" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.620" lat="44.26404851" long="-76.51559556" elevation="51.084"/>
+    </xSection>
+    <xSection id="18">
+      <leftEdge type="Inferred" width="0.000" lat="44.26405805" long="-76.51564329" elevation="51.067"/>
+      <point id="1" curvature="-0.000318" heading="0.48" lat="44.26405805" long="-76.51564329" elevation="51.067"/>
+      <point id="2" curvature="0.000254" heading="0.22" lat="44.26405790" long="-76.51560327" elevation="51.036"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.195" alongSlope="-1.5" crossSlope="0.6" speedLimit="30" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.607" lat="44.26405788" long="-76.51559567" elevation="51.043"/>
+    </xSection>
+  </segment>
+  <segment id="21067097">
+    <xSection id="0">
+      <leftEdge type="Inferred" width="0.000" lat="44.26379150" long="-76.51564352" elevation="51.770"/>
+      <point id="1" curvature="-0.001476" heading="0.33" lat="44.26379150" long="-76.51564352" elevation="51.770"/>
+      <point id="2" curvature="0.000000" heading="359.78" lat="44.26379156" long="-76.51560308" elevation="51.690"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.230" alongSlope="-1.8" crossSlope="1.4" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.709" lat="44.26379156" long="-76.51559420" elevation="51.680"/>
+    </xSection>
+    <xSection id="1">
+      <leftEdge type="Inferred" width="0.000" lat="44.26380128" long="-76.51564345" elevation="51.736"/>
+      <point id="1" curvature="-0.001476" heading="0.24" lat="44.26380128" long="-76.51564345" elevation="51.736"/>
+      <point id="2" curvature="0.000000" heading="359.78" lat="44.26380132" long="-76.51560313" elevation="51.670"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.220" alongSlope="-1.7" crossSlope="1.2" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.711" lat="44.26380134" long="-76.51559423" elevation="51.659"/>
+    </xSection>
+    <xSection id="2">
+      <leftEdge type="Inferred" width="0.000" lat="44.26381105" long="-76.51564341" elevation="51.705"/>
+      <point id="1" curvature="-0.001476" heading="0.15" lat="44.26381105" long="-76.51564341" elevation="51.705"/>
+      <point id="2" curvature="0.000000" heading="359.78" lat="44.26381110" long="-76.51560319" elevation="51.650"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.212" alongSlope="-1.6" crossSlope="1.0" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.713" lat="44.26381111" long="-76.51559425" elevation="51.638"/>
+    </xSection>
+    <xSection id="3">
+      <leftEdge type="Inferred" width="0.000" lat="44.26382082" long="-76.51564338" elevation="51.675"/>
+      <point id="1" curvature="-0.001475" heading="0.06" lat="44.26382082" long="-76.51564338" elevation="51.675"/>
+      <point id="2" curvature="0.000000" heading="359.78" lat="44.26382087" long="-76.51560324" elevation="51.630"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.206" alongSlope="-1.4" crossSlope="0.8" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.716" lat="44.26382089" long="-76.51559428" elevation="51.617"/>
+    </xSection>
+    <xSection id="4">
+      <leftEdge type="Inferred" width="0.000" lat="44.26383060" long="-76.51564338" elevation="51.648"/>
+      <point id="1" curvature="-0.001475" heading="359.97" lat="44.26383060" long="-76.51564338" elevation="51.648"/>
+      <point id="2" curvature="0.000000" heading="359.78" lat="44.26383065" long="-76.51560329" elevation="51.610"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.201" alongSlope="-1.3" crossSlope="0.7" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.718" lat="44.26383066" long="-76.51559430" elevation="51.596"/>
+    </xSection>
+    <xSection id="5">
+      <leftEdge type="Inferred" width="0.000" lat="44.26384037" long="-76.51564340" elevation="51.623"/>
+      <point id="1" curvature="-0.001475" heading="359.87" lat="44.26384037" long="-76.51564340" elevation="51.623"/>
+      <point id="2" curvature="0.000000" heading="359.78" lat="44.26384043" long="-76.51560335" elevation="51.590"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.198" alongSlope="-1.2" crossSlope="0.6" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.720" lat="44.26384044" long="-76.51559433" elevation="51.575"/>
+    </xSection>
+    <xSection id="6">
+      <leftEdge type="Inferred" width="0.000" lat="44.26385014" long="-76.51564344" elevation="51.600"/>
+      <point id="1" curvature="-0.001475" heading="359.78" lat="44.26385014" long="-76.51564344" elevation="51.600"/>
+      <point id="2" curvature="0.000000" heading="359.78" lat="44.26385020" long="-76.51560340" elevation="51.570"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.197" alongSlope="-1.1" crossSlope="0.5" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.722" lat="44.26385021" long="-76.51559436" elevation="51.554"/>
+    </xSection>
+    <xSection id="7">
+      <leftEdge type="Inferred" width="0.000" lat="44.26385991" long="-76.51564350" elevation="51.579"/>
+      <point id="1" curvature="-0.001475" heading="359.69" lat="44.26385991" long="-76.51564350" elevation="51.579"/>
+      <point id="2" curvature="0.000000" heading="359.78" lat="44.26385997" long="-76.51560345" elevation="51.550"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.198" alongSlope="-1.0" crossSlope="0.5" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.724" lat="44.26385998" long="-76.51559438" elevation="51.533"/>
+    </xSection>
+    <xSection id="8">
+      <leftEdge type="Inferred" width="0.000" lat="44.26386969" long="-76.51564359" elevation="51.561"/>
+      <point id="1" curvature="-0.001475" heading="359.60" lat="44.26386969" long="-76.51564359" elevation="51.561"/>
+      <point id="2" curvature="0.000000" heading="359.78" lat="44.26386974" long="-76.51560350" elevation="51.530"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.201" alongSlope="-0.9" crossSlope="0.5" speedLimit="30" surfaceType="Paved" stacking="None">
+        <crossings>
+          <crossing type="At Grade Access" elevation="3.960"/>
+        </crossings>
+      </lane>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.727" lat="44.26386975" long="-76.51559441" elevation="51.512"/>
+    </xSection>
+    <xSection id="9">
+      <leftEdge type="Inferred" width="0.000" lat="44.26387946" long="-76.51564369" elevation="51.544"/>
+      <point id="1" curvature="-0.001474" heading="359.51" lat="44.26387946" long="-76.51564369" elevation="51.544"/>
+      <point id="2" curvature="0.000000" heading="359.78" lat="44.26387951" long="-76.51560356" elevation="51.510"/>
+      <lane id="1" pointId="1" class="Non-Divided Non-Controlled Access Road Lane" width="3.205" alongSlope="-0.7" crossSlope="0.6" speedLimit="30" surfaceType="Paved" stacking="None"/>
+      <marker id="1" pointId="1" width="0.100" type="Thin Dashed Single Line, No Botts Dots" color="White"/>
+      <marker id="2" pointId="2" width="0.100" type="Thin Solid Single Line, No Botts Dots" color="White"/>
+      <rightEdge type="Paved to Non-Paved" width="0.729" lat="44.26387952" long="-76.51559443" elevation="51.491"/>
+    </xSection>
+  </segment>
+</segments>

@@ -1,0 +1,133 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.52117399,
+          44.26208541,
+          0.0
+        ]
+      },
+      "properties": {
+        "intersection_id": "227390",
+        "roads": "Steve Fonyo Drive",
+        "segments": "7830881,7831088,7831090,7831098,7831333,7831357"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.51751713,
+          44.26228569,
+          0.0
+        ]
+      },
+      "properties": {
+        "intersection_id": "2299250",
+        "roads": "Unknown",
+        "segments": "7830849,7830854,7830859,7830860,7830867,7831129"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.51938079,
+          44.26218499,
+          0.0
+        ]
+      },
+      "properties": {
+        "intersection_id": "2299251",
+        "roads": "Steve Fonyo Drive,Sir John A. Macdonald Parkway",
+        "segments": "7830835,7830851,7830858,7830863,7830866,7830884,7830894,7830895,7831095,7831152,7831245,7831302"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.51647707,
+          44.26513765,
+          0.0
+        ]
+      },
+      "properties": {
+        "intersection_id": "2344648",
+        "roads": "Queen's University Test Track",
+        "segments": "7945189,7945199,7945209,21067084,21067085,21067086,21067091"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.5159343,
+          44.26444772,
+          0.0
+        ]
+      },
+      "properties": {
+        "intersection_id": "2351705",
+        "roads": "Queen's University Test Track",
+        "segments": "21067074,21067077,21067078,21067098"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.51684772,
+          44.2644659,
+          0.0
+        ]
+      },
+      "properties": {
+        "intersection_id": "2351706",
+        "roads": "Queen's University Test Track,Unknown",
+        "segments": "7950866,7951016,21067099,21067100"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.51566593,
+          44.26328794,
+          0.0
+        ]
+      },
+      "properties": {
+        "intersection_id": "2351707",
+        "roads": "Queen's University Test Track",
+        "segments": "21067080,21067083,21067092,21067095"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.51731144,
+          44.26287401,
+          0.0
+        ]
+      },
+      "properties": {
+        "intersection_id": "2352391",
+        "roads": "Queen's University Test Track,Unknown",
+        "segments": "7945206,7945211,7946309,7946325,7950842,7951022"
+      }
+    }
+  ]
+}

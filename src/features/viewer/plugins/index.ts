@@ -19,3 +19,4 @@ export { PointInfoPlugin, usePointInfoStore } from './point-info';
 export { PolygonAnnotationPlugin } from './polygon-annotation';
 export { PlanProfilePlugin } from './plan-profile';
 export { DemVisualizationPlugin } from './dem-visualization';
+export { HdMapPlugin } from './hd-map';

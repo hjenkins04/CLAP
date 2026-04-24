@@ -72,6 +72,36 @@ export function registerIpcHandlers(): void {
     return { path: dir.endsWith('/') ? dir : dir + '/' };
   });
 
+  ipcMain.handle(IpcChannels.OPEN_HDMAP_DIALOG, async () => {
+    const window = getMainWindow();
+    if (!window) return null;
+
+    const result = await dialog.showOpenDialog(window, {
+      title: 'Open HD Map Project',
+      properties: ['openFile'],
+      filters: [
+        { name: 'HD Map Project', extensions: ['hdmap'] },
+        { name: 'All Files', extensions: ['*'] },
+      ],
+    });
+
+    if (result.canceled || result.filePaths.length === 0) return null;
+
+    const filePath = result.filePaths[0];
+    try {
+      const raw = await fs.promises.readFile(filePath, 'utf-8');
+      const project = JSON.parse(raw);
+      // Resolve tilesDir relative to the .hdmap file if it's a relative path
+      if (!path.isAbsolute(project.tilesDir) && !project.tilesDir.startsWith('/')) {
+        project.tilesDir = path.join(path.dirname(filePath), project.tilesDir);
+      }
+      return project;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return { error: `Failed to read HD map project: ${msg}` };
+    }
+  });
+
   ipcMain.handle(IpcChannels.READ_FILE, async (_event, args: { path: string }) => {
     try {
       const resolved = resolveFilePath(args.path);
@@ -129,6 +159,7 @@ export function removeIpcHandlers(): void {
   ipcMain.removeHandler(IpcChannels.GET_PLATFORM);
   ipcMain.removeHandler(IpcChannels.OPEN_FILE_DIALOG);
   ipcMain.removeHandler(IpcChannels.OPEN_POINTCLOUD_DIALOG);
+  ipcMain.removeHandler(IpcChannels.OPEN_HDMAP_DIALOG);
   ipcMain.removeHandler(IpcChannels.READ_FILE);
   ipcMain.removeHandler(IpcChannels.READ_FILE_RANGE);
   ipcMain.removeHandler(IpcChannels.WRITE_FILE);

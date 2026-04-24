@@ -1,0 +1,67 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<?rsgx 3.1 2025-08-04 ?>
+<region id="107" name="CAN_ONTARIO" xmlns="http://www.gm.ca/hdlm">
+  <road id="4015" name="Unknown">
+    <segment id="7831129" numLanes="1" successors="7831249" predecessors="7830859 7830860" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="Unclassified">
+      <laneMap>
+        <map laneId="1" toSegmentId="7831249" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <intersectionReference intersectionId="2299250"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:26.299856Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="220139" name="Steve Fonyo Drive">
+    <segment id="7831152" numLanes="2" successors="None" predecessors="7831114" leftNeighbors="None" rightNeighbors="None" maneuver="Left Turn" class="Unclassified; Secondary">
+      <country code="CAN"/>
+      <objects>
+        <object id="18587190" type="Pedestrian Crossing" lat="44.26202747" long="-76.51939574" elevation="51.650">
+          <edge closed="true">
+            <point lat="44.26201035" long="-76.51955735" elevation="51.650"/>
+            <point lat="44.26203225" long="-76.51957164" elevation="51.590"/>
+            <point lat="44.26204500" long="-76.51921852" elevation="51.620"/>
+            <point lat="44.26202145" long="-76.51923782" elevation="51.680"/>
+          </edge>
+        </object>
+      </objects>
+      <intersectionReference intersectionId="2299251"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:26.299856Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="220139" name="Steve Fonyo Drive">
+    <segment id="7831174" numLanes="1" successors="7830848" predecessors="7831333 7831357" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="Unclassified">
+      <laneMap>
+        <map laneId="1" toSegmentId="7830848" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:25.376939Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="220139" name="Steve Fonyo Drive">
+    <segment id="7831175" numLanes="1" successors="7831098 7831090" predecessors="7831107" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="Unclassified">
+      <laneMap>
+        <map laneId="1" toSegmentId="7831090" toLaneId="1"/>
+        <map laneId="1" toSegmentId="7831098" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:25.376939Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="220139" name="Steve Fonyo Drive">
+    <segment id="7831245" numLanes="2" successors="None" predecessors="7831114" leftNeighbors="None" rightNeighbors="None" maneuver="Right Turn" class="Unclassified; Secondary">
+      <country code="CAN"/>
+      <intersectionReference intersectionId="2299251"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:26.299856Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="4015" name="Unknown">
+    <segment id="7831249" numLanes="1" successors="7830860 7830849" predecessors="7830867 7831129" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="Unclassified">
+      <laneMap>
+        <map laneId="1" toSegmentId="7830849" toLaneId="1"/>
+        <map laneId="1" toSegmentId="7830860" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:26.299856Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+</region>

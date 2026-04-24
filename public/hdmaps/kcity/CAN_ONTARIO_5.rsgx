@@ -1,0 +1,93 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<?rsgx 3.1 2025-08-04 ?>
+<region id="107" name="CAN_ONTARIO" xmlns="http://www.gm.ca/hdlm">
+  <road id="220139" name="Steve Fonyo Drive">
+    <segment id="7831302" numLanes="1" successors="7830847" predecessors="None" leftNeighbors="None" rightNeighbors="None" maneuver="Right Turn" class="Unclassified; Secondary">
+      <laneMap>
+        <map laneId="1" toSegmentId="7830847" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <objects>
+        <object id="18587190" type="Pedestrian Crossing" lat="44.26202747" long="-76.51939574" elevation="51.650">
+          <edge closed="true">
+            <point lat="44.26201035" long="-76.51955735" elevation="51.650"/>
+            <point lat="44.26202145" long="-76.51923782" elevation="51.680"/>
+            <point lat="44.26204500" long="-76.51921852" elevation="51.620"/>
+            <point lat="44.26203225" long="-76.51957164" elevation="51.590"/>
+          </edge>
+        </object>
+      </objects>
+      <intersectionReference intersectionId="2299251"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:26.299856Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="220139" name="Steve Fonyo Drive">
+    <segment id="7831333" numLanes="1" successors="7831174" predecessors="None" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="Unclassified">
+      <laneMap>
+        <map laneId="1" toSegmentId="7831174" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <intersectionReference intersectionId="227390"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:25.376939Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="220139" name="Steve Fonyo Drive">
+    <segment id="7831357" numLanes="1" successors="7831174" predecessors="7830887" leftNeighbors="None" rightNeighbors="None" maneuver="Left Turn" class="Unclassified">
+      <laneMap>
+        <map laneId="1" toSegmentId="7831174" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <intersectionReference intersectionId="227390"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:26.299856Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="87247" name="Queen's University Test Track">
+    <segment id="7945189" numLanes="1" successors="21067101" predecessors="7950865" leftNeighbors="None" rightNeighbors="None" maneuver="Right Turn" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="21067101" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <objects>
+        <object id="29752551" type="Pedestrian Crossing" lat="44.26509686" long="-76.51684521" elevation="50.270">
+          <edge closed="true">
+            <point lat="44.26508847" long="-76.51686647" elevation="50.270"/>
+            <point lat="44.26511016" long="-76.51686313" elevation="50.270"/>
+            <point lat="44.26510563" long="-76.51682323" elevation="50.170"/>
+            <point lat="44.26508291" long="-76.51682885" elevation="50.150"/>
+          </edge>
+        </object>
+        <object id="29752553" type="Yield Bar" lat="44.26514599" long="-76.51680708" elevation="50.250">
+          <edge closed="true">
+            <point lat="44.26514911" long="-76.51683577" elevation="50.250"/>
+            <point lat="44.26514727" long="-76.51680620" elevation="50.190"/>
+            <point lat="44.26514487" long="-76.51683675" elevation="50.250"/>
+            <point lat="44.26514307" long="-76.51680689" elevation="50.180"/>
+            <point lat="44.26514481" long="-76.51677650" elevation="50.120"/>
+            <point lat="44.26514846" long="-76.51677573" elevation="50.130"/>
+          </edge>
+        </object>
+      </objects>
+      <intersectionReference intersectionId="2344648"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:26.299856Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="87247" name="Queen's University Test Track">
+    <segment id="7945192" numLanes="1" successors="7945209 7945199" predecessors="7945200" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="7945199" toLaneId="1"/>
+        <map laneId="1" toSegmentId="7945209" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:26.299856Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+  <road id="87247" name="Queen's University Test Track">
+    <segment id="7945194" numLanes="1" successors="7945200" predecessors="21067093" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="None">
+      <laneMap>
+        <map laneId="1" toSegmentId="7945200" toLaneId="1"/>
+      </laneMap>
+      <country code="CAN"/>
+      <provenanceRecord author="Ushr" published="2025-07-23T11:50:26.299856Z" method="HD Ground Survey"/>
+    </segment>
+  </road>
+</region>

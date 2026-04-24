@@ -1,0 +1,120 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<?risx 3.1 2025-08-04 ?>
+<intersections xmlns="http://www.gm.ca/hdlm">
+  <intersection id="227390">
+    <centroid lat="44.26208541" long="-76.52117399" elevation="0.000"/>
+    <roads>
+      <roadReference roadId="220139" name="Steve Fonyo Drive"/>
+    </roads>
+    <segments>
+      <segmentReference segmentId="7830881"/>
+      <segmentReference segmentId="7831088"/>
+      <segmentReference segmentId="7831090"/>
+      <segmentReference segmentId="7831098"/>
+      <segmentReference segmentId="7831333"/>
+      <segmentReference segmentId="7831357"/>
+    </segments>
+  </intersection>
+  <intersection id="2299250">
+    <centroid lat="44.26228569" long="-76.51751713" elevation="0.000"/>
+    <roads>
+      <roadReference roadId="4015" name="Unknown"/>
+    </roads>
+    <segments>
+      <segmentReference segmentId="7830849"/>
+      <segmentReference segmentId="7830854"/>
+      <segmentReference segmentId="7830859"/>
+      <segmentReference segmentId="7830860"/>
+      <segmentReference segmentId="7830867"/>
+      <segmentReference segmentId="7831129"/>
+    </segments>
+  </intersection>
+  <intersection id="2299251">
+    <centroid lat="44.26218499" long="-76.51938079" elevation="0.000"/>
+    <roads>
+      <roadReference roadId="220139" name="Steve Fonyo Drive"/>
+      <roadReference roadId="97484" name="Sir John A. Macdonald Parkway"/>
+    </roads>
+    <segments>
+      <segmentReference segmentId="7830835"/>
+      <segmentReference segmentId="7830851"/>
+      <segmentReference segmentId="7830858"/>
+      <segmentReference segmentId="7830863"/>
+      <segmentReference segmentId="7830866"/>
+      <segmentReference segmentId="7830884"/>
+      <segmentReference segmentId="7830894"/>
+      <segmentReference segmentId="7830895"/>
+      <segmentReference segmentId="7831095"/>
+      <segmentReference segmentId="7831152"/>
+      <segmentReference segmentId="7831245"/>
+      <segmentReference segmentId="7831302"/>
+    </segments>
+  </intersection>
+  <intersection id="2344648">
+    <centroid lat="44.26513765" long="-76.51647707" elevation="0.000"/>
+    <roads>
+      <roadReference roadId="87247" name="Queen's University Test Track"/>
+    </roads>
+    <segments>
+      <segmentReference segmentId="7945189"/>
+      <segmentReference segmentId="7945199"/>
+      <segmentReference segmentId="7945209"/>
+      <segmentReference segmentId="21067084"/>
+      <segmentReference segmentId="21067085"/>
+      <segmentReference segmentId="21067086"/>
+      <segmentReference segmentId="21067091"/>
+    </segments>
+  </intersection>
+  <intersection id="2351705">
+    <centroid lat="44.26444772" long="-76.51593430" elevation="0.000"/>
+    <roads>
+      <roadReference roadId="87247" name="Queen's University Test Track"/>
+    </roads>
+    <segments>
+      <segmentReference segmentId="21067074"/>
+      <segmentReference segmentId="21067077"/>
+      <segmentReference segmentId="21067078"/>
+      <segmentReference segmentId="21067098"/>
+    </segments>
+  </intersection>
+  <intersection id="2351706">
+    <centroid lat="44.26446590" long="-76.51684772" elevation="0.000"/>
+    <roads>
+      <roadReference roadId="87247" name="Queen's University Test Track"/>
+      <roadReference roadId="4015" name="Unknown"/>
+    </roads>
+    <segments>
+      <segmentReference segmentId="7950866"/>
+      <segmentReference segmentId="7951016"/>
+      <segmentReference segmentId="21067099"/>
+      <segmentReference segmentId="21067100"/>
+    </segments>
+  </intersection>
+  <intersection id="2351707">
+    <centroid lat="44.26328794" long="-76.51566593" elevation="0.000"/>
+    <roads>
+      <roadReference roadId="87247" name="Queen's University Test Track"/>
+    </roads>
+    <segments>
+      <segmentReference segmentId="21067080"/>
+      <segmentReference segmentId="21067083"/>
+      <segmentReference segmentId="21067092"/>
+      <segmentReference segmentId="21067095"/>
+    </segments>
+  </intersection>
+  <intersection id="2352391">
+    <centroid lat="44.26287401" long="-76.51731144" elevation="0.000"/>
+    <roads>
+      <roadReference roadId="87247" name="Queen's University Test Track"/>
+      <roadReference roadId="4015" name="Unknown"/>
+    </roads>
+    <segments>
+      <segmentReference segmentId="7945206"/>
+      <segmentReference segmentId="7945211"/>
+      <segmentReference segmentId="7946309"/>
+      <segmentReference segmentId="7946325"/>
+      <segmentReference segmentId="7950842"/>
+      <segmentReference segmentId="7951022"/>
+    </segments>
+  </intersection>
+</intersections>

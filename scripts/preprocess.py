@@ -821,6 +821,87 @@ def generate_dem(las_path: str, output_path: str, cell_size: float = 1.0) -> Non
 # Step 3 — Potree conversion
 # ---------------------------------------------------------------------------
 
+def convert_tiles_to_potree(
+    tile_paths: list[str],
+    output_dir: str,
+    encoding: str = "UNCOMPRESSED",
+) -> list[dict]:
+    """Convert each pretransformed LAS into its own Potree octree.
+
+    Produces one octree per input under `output_dir/<stem>/` and returns a list
+    of per-tile records usable for a top-level manifest.json. Each record has:
+        {
+            "id":   <stem>,
+            "path": "<stem>/metadata.json",    # relative to output_dir
+            "points": int,
+            "bounds": {                         # three.js local coords
+                "min": [x, y, z],
+                "max": [x, y, z],
+            },
+        }
+    """
+    if not os.path.isfile(POTREE_CONVERTER):
+        print(f"Error: PotreeConverter not found at {POTREE_CONVERTER}")
+        sys.exit(1)
+
+    # Sanity: first tile attribute list so we can verify extras survive per-tile
+    with laspy.LasReader(open(tile_paths[0], 'rb')) as reader:
+        expected_extras = [dim.name for dim in _safe_extra_dims(reader.header.point_format)]
+
+    records: list[dict] = []
+
+    with tqdm(total=len(tile_paths), desc="  PotreeConverter per tile", unit=" tile",
+              file=sys.stdout, dynamic_ncols=True,
+              bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt}  [{elapsed}<{remaining}]") as bar:
+        for tile_path in tile_paths:
+            stem = os.path.splitext(os.path.basename(tile_path))[0]
+            tile_out_dir = os.path.join(output_dir, stem)
+            os.makedirs(tile_out_dir, exist_ok=True)
+            bar.set_postfix(tile=stem, refresh=False)
+
+            cmd = [POTREE_CONVERTER, tile_path, "-o", tile_out_dir, "--encoding", encoding]
+            proc = subprocess.run(cmd, capture_output=True, text=True)
+            if proc.returncode != 0:
+                tqdm.write(f"    stdout: {proc.stdout}")
+                tqdm.write(f"    stderr: {proc.stderr}")
+                print(f"Error: PotreeConverter failed on {stem} (exit {proc.returncode})")
+                sys.exit(1)
+
+            meta_path = os.path.join(tile_out_dir, "metadata.json")
+            if not os.path.isfile(meta_path):
+                print(f"Error: metadata.json missing for tile {stem}")
+                sys.exit(1)
+            with open(meta_path) as f:
+                meta = json.load(f)
+
+            # Verify extras round-tripped
+            attrs = [a["name"] for a in meta.get("attributes", [])]
+            missing_extras = [d for d in expected_extras if d not in attrs]
+            if missing_extras:
+                print(f"Error: tile {stem} dropped extra dims: {', '.join(missing_extras)}")
+                sys.exit(1)
+
+            # Pull actual data bounds from the position attribute (not cubic octree bbox)
+            pos_attr = next((a for a in meta.get("attributes", []) if a["name"] == "position"), None)
+            if pos_attr and pos_attr.get("min") and pos_attr.get("max"):
+                mn = [float(v) for v in pos_attr["min"]]
+                mx = [float(v) for v in pos_attr["max"]]
+            else:
+                bb = meta.get("boundingBox", {})
+                mn = [float(v) for v in bb.get("min", [0, 0, 0])]
+                mx = [float(v) for v in bb.get("max", [0, 0, 0])]
+
+            records.append({
+                "id": stem,
+                "path": f"{stem}/metadata.json",
+                "points": int(meta.get("points", 0)),
+                "bounds": {"min": mn, "max": mx},
+            })
+            bar.update(1)
+
+    return records
+
+
 def convert_to_potree(las_path, output_dir: str, encoding: str = "UNCOMPRESSED") -> None:
     """Convert LAS input to Potree format.
 
@@ -1243,18 +1324,53 @@ def main():
         print(f"[2/3] Parallel pre-transform ({len(las_files)} tiles, {n_workers} workers)")
         print(f"      Temp dir: {pretransform_dir}")
         try:
-            parallel_pretransform(
+            pretransformed_paths = parallel_pretransform(
                 las_files, pretransform_dir, (origin_x, origin_y),
                 forced_utm, max_workers=n_workers,
             )
             print()
 
-            # Step 3 — PotreeConverter on the whole directory
+            # Step 3 — Per-tile PotreeConverter + manifest
+            # Each tile becomes its own octree at output_dir/<stem>/; a top-level
+            # manifest.json lists all tiles with their per-tile bounds so the
+            # viewer can show a picker and load only selected tiles.
+            tile_records: list[dict] = []
             if not args.skip_potree:
-                convert_to_potree(pretransform_dir, output_dir, encoding=args.potree_encoding)
+                print(f"[3/3] Converting {len(pretransformed_paths)} tiles (per-tile octrees)")
+                tile_records = convert_tiles_to_potree(
+                    pretransformed_paths, output_dir, encoding=args.potree_encoding,
+                )
+                print(f"      {len(tile_records)} per-tile octrees written under {output_dir}")
             else:
                 print("[3/3] Skipping Potree conversion")
             print()
+
+            # Union bbox across all tiles (three.js local coords) for dataset-level extent
+            dataset_bounds = None
+            if tile_records:
+                mins = [r["bounds"]["min"] for r in tile_records]
+                maxs = [r["bounds"]["max"] for r in tile_records]
+                dataset_bounds = {
+                    "min": [min(m[i] for m in mins) for i in range(3)],
+                    "max": [max(m[i] for m in maxs) for i in range(3)],
+                }
+
+            # Write manifest.json — the new entry point for tiled datasets.
+            # Legacy viewers can still read per-tile metadata.json files individually.
+            if tile_records:
+                manifest = {
+                    "version": 1,
+                    "type": "tiled",
+                    "totalPoints": sum(r["points"] for r in tile_records),
+                    "origin": {"originX": origin_x, "originY": origin_y},
+                    "crs": crs_info,
+                    "bounds": dataset_bounds,
+                    "tiles": tile_records,
+                }
+                manifest_path = os.path.join(output_dir, "manifest.json")
+                with open(manifest_path, "w") as f:
+                    json.dump(manifest, f, indent=2)
+                print(f"Manifest written: {manifest_path}  ({len(tile_records)} tiles)")
 
             # Write crs.json so the viewer auto-configures the geo world frame
             if crs_info:

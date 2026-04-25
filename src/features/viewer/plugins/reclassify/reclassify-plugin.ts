@@ -334,8 +334,11 @@ export class ReclassifyPlugin implements ViewerPlugin {
     const pointClouds = this.ctx.getPointClouds();
     if (pointClouds.length === 0) return null;
 
-    const mat = pointClouds[0].material;
-    if (mat.clipMode === ClipMode.DISABLED) return null;
+    // Clip state is applied uniformly across all PCOs; find the first one
+    // with clipping enabled (they should all match).
+    const activeMat = pointClouds.find((p) => p.material.clipMode !== ClipMode.DISABLED)?.material;
+    if (!activeMat) return null;
+    const mat = activeMat;
 
     const boxes: ClipInverse[] = [];
     for (const cb of mat.clipBoxes) {

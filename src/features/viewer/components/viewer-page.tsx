@@ -12,6 +12,7 @@ import { TransformCommandPanel } from './transform-command-panel';
 import { VirtualTilesCommandPanel } from './virtual-tiles-command-panel';
 import { PoiOverlay } from './poi-overlay';
 import { VirtualTilesOverlay } from './virtual-tiles-overlay';
+import { TileSelectionPanel } from './tile-selection-panel';
 import { RoiCommandPanel } from './roi-command-panel';
 import { RoiOverlay } from './roi-overlay';
 import { PointSelectOverlay } from './point-select-overlay';
@@ -74,6 +75,7 @@ export function ViewerPage() {
           <VirtualTilesCommandPanel engine={engine} />
           <PoiOverlay engine={engine} />
           <VirtualTilesOverlay engine={engine} />
+          <TileSelectionPanel engine={engine} />
           <RoiCommandPanel engine={engine} />
           <RoiOverlay engine={engine} />
           <PointSelectOverlay engine={engine} />

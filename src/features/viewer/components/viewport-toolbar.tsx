@@ -8,6 +8,7 @@ import {
   PenLine,
   Trash2,
   MapPin,
+  Boxes,
 } from 'lucide-react';
 import {
   Button,
@@ -22,6 +23,7 @@ import {
 } from '@clap/design-system';
 import { useViewerModeStore } from '@/app/stores';
 import { useVirtualTilesStore } from '../plugins/virtual-tiles';
+import { useDatasetTilesStore } from '../plugins/dataset-tiles';
 import { useRoiStore } from '../plugins/roi-selection';
 import { RoiSelectionPlugin } from '../plugins/roi-selection';
 import { useWorldFrameStore } from '../plugins/world-frame';
@@ -40,6 +42,13 @@ export function ViewportToolbar({ engine }: ViewportToolbarProps) {
   const isTiles = mode === 'virtual-tiles';
   const isTilesApplied = tilesPhase === 'applied';
   const isRoi = mode === 'roi-selection';
+
+  // Dataset tile picker (only meaningful when a tiled manifest is loaded)
+  const datasetManifest = useDatasetTilesStore((s) => s.manifest);
+  const datasetPanelOpen = useDatasetTilesStore((s) => s.panelOpen);
+  const toggleDatasetPanel = useDatasetTilesStore((s) => s.togglePanel);
+  const loadedTileCount = useDatasetTilesStore((s) => s.loadedTileIds.size);
+  const hasTiledDataset = !!datasetManifest?.tiles.length;
 
   // ROI applied state
   const roiClipEnabled = useRoiStore((s) => s.clipEnabled);
@@ -83,6 +92,24 @@ export function ViewportToolbar({ engine }: ViewportToolbarProps) {
   return (
     <TooltipProvider delayDuration={300}>
       <div className="flex flex-col items-center gap-0.5 rounded-lg border border-border bg-card/90 p-1 shadow-sm backdrop-blur-sm">
+          {hasTiledDataset && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={datasetPanelOpen || loadedTileCount > 0 ? 'default' : 'ghost'}
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={toggleDatasetPanel}
+                >
+                  <Boxes className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                Dataset Tiles ({loadedTileCount}/{datasetManifest?.tiles.length ?? 0})
+              </TooltipContent>
+            </Tooltip>
+          )}
+
           <Tooltip>
             <TooltipTrigger asChild>
               <Button

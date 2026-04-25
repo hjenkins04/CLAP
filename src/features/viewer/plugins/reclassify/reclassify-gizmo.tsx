@@ -1,8 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { Search, X } from 'lucide-react';
 import { Button, ScrollArea, Separator } from '@clap/design-system';
 import { useReclassifyStore } from './reclassify-store';
-import { CLASSIFICATION_CLASSES } from '../annotate/classification-classes';
+import {
+  useClassificationLegendStore,
+  parseColor,
+} from '../../services/classification-legend';
 
 export function ReclassifyGizmo() {
   const phase = useReclassifyStore((s) => s.phase);
@@ -33,14 +36,28 @@ export function ReclassifyGizmo() {
     el?.scrollIntoView({ block: 'nearest' });
   }, [activeIdx]);
 
+  const legend = useClassificationLegendStore((s) => s.legend);
+
+  // Gizmo rows are keyed by id + name + an RGB tuple derived from the legend's
+  // color strings — cached per legend change.
+  const classRows = useMemo(
+    () =>
+      legend.classes.map((c) => ({
+        id: c.id,
+        name: c.name,
+        color: parseColor(c.color),
+      })),
+    [legend],
+  );
+
   const isSearching = search.trim().length > 0;
   const recentClasses = recentClassIds
-    .map((id) => CLASSIFICATION_CLASSES.find((c) => c.id === id))
-    .filter((c): c is (typeof CLASSIFICATION_CLASSES)[number] => c !== undefined);
-  const remainingClasses = CLASSIFICATION_CLASSES.filter((c) => !recentClassIds.includes(c.id));
+    .map((id) => classRows.find((c) => c.id === id))
+    .filter((c): c is (typeof classRows)[number] => c !== undefined);
+  const remainingClasses = classRows.filter((c) => !recentClassIds.includes(c.id));
 
   const filtered = isSearching
-    ? CLASSIFICATION_CLASSES.filter((cls) => {
+    ? classRows.filter((cls) => {
         const q = search.toLowerCase().trim();
         return cls.name.toLowerCase().includes(q) || String(cls.id).includes(q);
       })

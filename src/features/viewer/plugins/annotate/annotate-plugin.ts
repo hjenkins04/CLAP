@@ -1,6 +1,8 @@
-import { Vector4 } from 'three';
 import type { ViewerPlugin, ViewerPluginContext } from '../../types';
-import { CLASSIFICATION_COLORS } from '../../services/viewer-engine';
+import {
+  useClassificationLegendStore,
+  buildMaterialClassification,
+} from '../../services/classification-legend';
 import { useAnnotateStore } from './annotate-store';
 
 export class AnnotatePlugin implements ViewerPlugin {
@@ -9,44 +11,41 @@ export class AnnotatePlugin implements ViewerPlugin {
   readonly order = 45;
 
   private ctx: ViewerPluginContext | null = null;
-  private unsub: (() => void) | null = null;
+  private unsubVisibility: (() => void) | null = null;
+  private unsubLegend: (() => void) | null = null;
 
   onInit(ctx: ViewerPluginContext): void {
     this.ctx = ctx;
 
-    this.unsub = useAnnotateStore.subscribe((state, prev) => {
-      if (state.classVisibility !== prev.classVisibility) {
-        this.applyVisibility(state.classVisibility);
-      }
+    this.unsubVisibility = useAnnotateStore.subscribe((state, prev) => {
+      if (state.classVisibility !== prev.classVisibility) this.apply();
     });
 
-    // Apply persisted state on init
-    this.applyVisibility(useAnnotateStore.getState().classVisibility);
+    this.unsubLegend = useClassificationLegendStore.subscribe((state, prev) => {
+      if (state.legend !== prev.legend) this.apply();
+    });
+
+    this.apply();
   }
 
   onPointCloudLoaded(): void {
-    this.applyVisibility(useAnnotateStore.getState().classVisibility);
+    this.apply();
   }
 
   dispose(): void {
-    this.unsub?.();
-    this.unsub = null;
+    this.unsubVisibility?.();
+    this.unsubLegend?.();
+    this.unsubVisibility = null;
+    this.unsubLegend = null;
     this.ctx = null;
   }
 
-  private applyVisibility(visibility: Record<string, boolean>): void {
+  private apply(): void {
     if (!this.ctx) return;
 
-    const classification: Record<string, Vector4> = {};
-
-    for (const [key, vec] of Object.entries(CLASSIFICATION_COLORS)) {
-      if (key === 'DEFAULT') {
-        classification[key] = vec.clone();
-        continue;
-      }
-      const visible = visibility[key] ?? true;
-      classification[key] = new Vector4(vec.x, vec.y, vec.z, visible ? vec.w : 0);
-    }
+    const legend = useClassificationLegendStore.getState().legend;
+    const visibility = useAnnotateStore.getState().classVisibility;
+    const classification = buildMaterialClassification(legend, visibility);
 
     for (const pco of this.ctx.getPointClouds()) {
       pco.material.classification = classification as unknown as typeof pco.material.classification;

@@ -13,6 +13,11 @@ import type { ViewerPlugin, ViewerPluginContext } from '../../types';
 import { usePointInfoStore } from './point-info-store';
 import { useViewerModeStore } from '@/app/stores';
 import type { PointInfo } from './point-info-types';
+import {
+  useClassificationLegendStore,
+  isClassVisible,
+} from '../../services/classification-legend';
+import { useAnnotateStore } from '../annotate/annotate-store';
 
 export class PointInfoPlugin implements ViewerPlugin {
   readonly id = 'point-info';
@@ -232,6 +237,11 @@ export class PointInfoPlugin implements ViewerPlugin {
     const worldMatrix = new Matrix4();
     const invMatrix = new Matrix4();
 
+    // Snapshot the legend + user visibility once per pick so the hot inner
+    // loop only reads local variables.
+    const legend = useClassificationLegendStore.getState().legend;
+    const visibility = useAnnotateStore.getState().classVisibility;
+
     for (const pco of pcos) {
       pco.updateMatrix();
 
@@ -254,6 +264,14 @@ export class PointInfoPlugin implements ViewerPlugin {
         const gpsAttr    = geom.getAttribute('gps-time');
 
         for (let i = 0; i < count; i += step) {
+          // Skip points whose class is hidden in the legend panel — Potree
+          // only fades them via material alpha, so without this check picking
+          // would "find" points that the user can't actually see.
+          if (classAttr) {
+            const cls = Math.round(classAttr.getX(i));
+            if (!isClassVisible(cls, legend, visibility)) continue;
+          }
+
           tmp.fromBufferAttribute(posAttr, i);
           const d = localRay.distanceToPoint(tmp);
           if (d < bestDist) {

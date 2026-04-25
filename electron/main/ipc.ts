@@ -62,14 +62,23 @@ export function registerIpcHandlers(): void {
     if (result.canceled || result.filePaths.length === 0) return null;
 
     const dir = result.filePaths[0];
+    const manifestPath = path.join(dir, 'manifest.json');
     const metadataPath = path.join(dir, 'metadata.json');
 
-    if (!fs.existsSync(metadataPath)) {
-      return { error: `No metadata.json found in ${dir}. Select a folder containing a Potree point cloud.` };
+    // Tiled dataset: manifest.json takes precedence over metadata.json
+    if (fs.existsSync(manifestPath)) {
+      return {
+        path: dir.endsWith('/') ? dir : dir + '/',
+        datasetType: 'tiled' as const,
+      };
     }
-
-    // Return the folder path with trailing slash
-    return { path: dir.endsWith('/') ? dir : dir + '/' };
+    if (fs.existsSync(metadataPath)) {
+      return {
+        path: dir.endsWith('/') ? dir : dir + '/',
+        datasetType: 'single' as const,
+      };
+    }
+    return { error: `No manifest.json or metadata.json in ${dir}. Select a folder containing a Potree point cloud or tiled dataset.` };
   });
 
   ipcMain.handle(IpcChannels.OPEN_HDMAP_DIALOG, async () => {

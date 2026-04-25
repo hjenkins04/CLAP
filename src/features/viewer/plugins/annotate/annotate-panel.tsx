@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Eye, EyeOff, X, ChevronLeft, ChevronRight, Target, BoxSelect, LassoSelect } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Eye, EyeOff, X, ChevronLeft, ChevronRight, Target, BoxSelect, LassoSelect, ChevronDown } from 'lucide-react';
 import {
   Button,
   ScrollArea,
@@ -10,24 +10,74 @@ import {
 } from '@clap/design-system';
 import { useViewerModeStore } from '@/app/stores';
 import { useAnnotateStore } from './annotate-store';
-import { CLASSIFICATION_CLASSES } from './classification-classes';
 import { useReclassifyStore } from '../reclassify/reclassify-store';
+import {
+  useClassificationLegendStore,
+  parseColor,
+  type LegendClass,
+  type LegendGroup,
+} from '../../services/classification-legend';
+
+interface GroupBundle {
+  group: LegendGroup;
+  classes: LegendClass[];
+  classIds: string[];
+}
 
 export function AnnotatePanel() {
   const mode = useViewerModeStore((s) => s.mode);
   const exitMode = useViewerModeStore((s) => s.exitMode);
+
   const classVisibility = useAnnotateStore((s) => s.classVisibility);
   const classActive = useAnnotateStore((s) => s.classActive);
   const toggleClassVisibility = useAnnotateStore((s) => s.toggleClassVisibility);
   const toggleClassActive = useAnnotateStore((s) => s.toggleClassActive);
+  const setGroupVisibility = useAnnotateStore((s) => s.setGroupVisibility);
+  const setGroupActive = useAnnotateStore((s) => s.setGroupActive);
   const activateAll = useAnnotateStore((s) => s.activateAll);
   const showAll = useAnnotateStore((s) => s.showAll);
   const hideAll = useAnnotateStore((s) => s.hideAll);
+
+  const legend = useClassificationLegendStore((s) => s.legend);
+  const expanded = useClassificationLegendStore((s) => s.expanded);
+  const toggleGroup = useClassificationLegendStore((s) => s.toggleGroup);
+
   const [collapsed, setCollapsed] = useState(false);
 
   const isReclassify = mode === 'reclassify';
   const activeTool = useReclassifyStore((s) => s.activeTool);
   const setActiveTool = useReclassifyStore((s) => s.setActiveTool);
+
+  const bundles = useMemo<GroupBundle[]>(() => {
+    const map = new Map<string, LegendClass[]>();
+    for (const cls of legend.classes) {
+      const arr = map.get(cls.groupId) ?? [];
+      arr.push(cls);
+      map.set(cls.groupId, arr);
+    }
+    const out: GroupBundle[] = [];
+    for (const group of legend.groups) {
+      const classes = map.get(group.id) ?? [];
+      if (classes.length === 0) continue;
+      out.push({
+        group,
+        classes,
+        classIds: classes.map((c) => String(c.id)),
+      });
+      map.delete(group.id);
+    }
+    // Any classes pointing at groups that don't exist → "Ungrouped" bucket
+    const leftovers: LegendClass[] = [];
+    for (const arr of map.values()) leftovers.push(...arr);
+    if (leftovers.length) {
+      out.push({
+        group: { id: 'ungrouped', name: 'Ungrouped' },
+        classes: leftovers,
+        classIds: leftovers.map((c) => String(c.id)),
+      });
+    }
+    return out;
+  }, [legend]);
 
   if (mode !== 'annotate' && mode !== 'reclassify') return null;
 
@@ -46,17 +96,22 @@ export function AnnotatePanel() {
     );
   }
 
+  // For group-level toggle state: consider group "visible" if any class inside it is visible
+  const isGroupVisible = (b: GroupBundle) =>
+    b.classIds.some((id) => classVisibility[id] ?? true);
+  const isGroupActive = (b: GroupBundle) =>
+    b.classIds.some((id) => classActive[id] ?? true);
+
   return (
     <TooltipProvider delayDuration={400}>
-      <div className="absolute right-3 top-56 z-10 w-56">
-        <div className="overflow-hidden rounded-lg border border-border bg-card/95 shadow-lg backdrop-blur-sm">
+      <div className="absolute right-3 top-56 z-10 w-80 overflow-hidden rounded-lg border border-border bg-card/95 shadow-lg backdrop-blur-sm">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border px-3 py-1.5">
             <div className="flex min-w-0 items-center gap-1.5">
               {isReclassify && (
                 <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-400" />
               )}
-              <span className="truncate text-xs font-medium">
+              <span className="truncate text-xs font-medium" title={legend.name}>
                 {isReclassify ? 'Active Classes' : 'Classification'}
               </span>
             </div>
@@ -106,77 +161,137 @@ export function AnnotatePanel() {
             </div>
           </div>
 
-          {/* Class list */}
-          <ScrollArea className="max-h-[60vh]">
-            <div className="space-y-px p-1.5">
-              {CLASSIFICATION_CLASSES.map((cls) => {
-                const visible = classVisibility[String(cls.id)] ?? true;
-                const active = classActive[String(cls.id)] ?? true;
-                const [r, g, b] = cls.color;
-                const dimmed = !visible || (isReclassify && !active);
-
+          {/* Grouped class list */}
+          <ScrollArea className="max-h-[calc(100vh-22rem)] w-full overflow-y-auto">
+            <div className="w-full min-w-0 p-1.5 pr-3">
+              {bundles.map((bundle) => {
+                const groupExpanded = expanded[bundle.group.id] ?? true;
+                const groupVisible = isGroupVisible(bundle);
+                const groupActive = isGroupActive(bundle);
                 return (
-                  <div
-                    key={cls.id}
-                    className={`flex w-full min-w-0 items-center gap-1.5 rounded px-1.5 py-0.5 text-xs transition-colors hover:bg-muted ${
-                      dimmed ? 'opacity-40' : ''
-                    }`}
-                  >
-                    {/* Color swatch */}
-                    <span
-                      className="h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-black/10"
-                      style={{
-                        backgroundColor: `rgb(${Math.round(r * 255)},${Math.round(g * 255)},${Math.round(b * 255)})`,
-                      }}
-                    />
+                  <div key={bundle.group.id} className="mb-0.5 w-full min-w-0">
+                    {/* Group header */}
+                    <div className="flex w-full min-w-0 items-center gap-1 rounded px-1.5 py-1 hover:bg-muted/60">
+                      <button
+                        type="button"
+                        onClick={() => toggleGroup(bundle.group.id)}
+                        className="text-muted-foreground hover:text-foreground"
+                      >
+                        <ChevronDown
+                          className={`h-3 w-3 transition-transform ${groupExpanded ? '' : '-rotate-90'}`}
+                        />
+                      </button>
+                      <span
+                        className="min-w-0 flex-1 truncate text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
+                        title={bundle.group.name}
+                      >
+                        {bundle.group.name}
+                      </span>
+                      <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground/70">
+                        {bundle.classes.length}
+                      </span>
 
-                    {/* Class name — min-w-0 lets it actually shrink */}
-                    <span className="min-w-0 flex-1 truncate">{cls.name}</span>
+                      {isReclassify && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-5 w-5 shrink-0"
+                              onClick={() => setGroupActive(bundle.classIds, !groupActive)}
+                            >
+                              <Target
+                                className={`h-3 w-3 ${groupActive ? 'text-cyan-400' : 'text-muted-foreground'}`}
+                              />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="left">
+                            {groupActive ? 'Deactivate group' : 'Activate group'}
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-5 w-5 shrink-0"
+                            onClick={() => setGroupVisibility(bundle.classIds, !groupVisible)}
+                          >
+                            {groupVisible ? (
+                              <Eye className="h-3 w-3" />
+                            ) : (
+                              <EyeOff className="h-3 w-3 text-muted-foreground" />
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="left">
+                          {groupVisible ? 'Hide group' : 'Show group'}
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
 
-                    {/* ID badge */}
-                    <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">
-                      {cls.id}
-                    </span>
+                    {/* Group members */}
+                    {groupExpanded &&
+                      bundle.classes.map((cls) => {
+                        const key = String(cls.id);
+                        const visible = classVisibility[key] ?? (cls.enabledByDefault ?? true);
+                        const active = classActive[key] ?? true;
+                        const [r, g, b] = parseColor(cls.color);
+                        const dimmed = !visible || (isReclassify && !active);
 
-                    {/* Active toggle */}
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className={`h-5 w-5 shrink-0 ${!isReclassify ? 'opacity-25' : ''}`}
-                          onClick={() => toggleClassActive(String(cls.id))}
-                        >
-                          <Target
-                            className={`h-3 w-3 ${active ? 'text-cyan-400' : 'text-muted-foreground'}`}
-                          />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="left">
-                        {active ? 'Deactivate (exclude from selection)' : 'Activate (include in selection)'}
-                      </TooltipContent>
-                    </Tooltip>
+                        return (
+                          <Tooltip key={cls.id}>
+                            <TooltipTrigger asChild>
+                              <div
+                                className={`flex w-full min-w-0 items-center gap-1.5 rounded px-1.5 py-0.5 pl-4 text-xs transition-colors hover:bg-muted ${
+                                  dimmed ? 'opacity-40' : ''
+                                }`}
+                              >
+                                <span
+                                  className="h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-black/10"
+                                  style={{
+                                    backgroundColor: `rgb(${Math.round(r * 255)},${Math.round(g * 255)},${Math.round(b * 255)})`,
+                                  }}
+                                />
+                                <span className="min-w-0 flex-1 truncate">{cls.name}</span>
+                                <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">
+                                  {cls.id}
+                                </span>
 
-                    {/* Visibility toggle */}
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-5 w-5 shrink-0"
-                          onClick={() => toggleClassVisibility(String(cls.id))}
-                        >
-                          {visible ? (
-                            <Eye className="h-3 w-3" />
-                          ) : (
-                            <EyeOff className="h-3 w-3 text-muted-foreground" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="left">
-                        {visible ? 'Hide class' : 'Show class'}
-                      </TooltipContent>
-                    </Tooltip>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className={`h-5 w-5 shrink-0 ${!isReclassify ? 'opacity-25' : ''}`}
+                                  onClick={() => toggleClassActive(key)}
+                                >
+                                  <Target
+                                    className={`h-3 w-3 ${active ? 'text-cyan-400' : 'text-muted-foreground'}`}
+                                  />
+                                </Button>
+
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-5 w-5 shrink-0"
+                                  onClick={() => toggleClassVisibility(key)}
+                                >
+                                  {visible ? (
+                                    <Eye className="h-3 w-3" />
+                                  ) : (
+                                    <EyeOff className="h-3 w-3 text-muted-foreground" />
+                                  )}
+                                </Button>
+                              </div>
+                            </TooltipTrigger>
+                            {cls.description && (
+                              <TooltipContent side="left" className="max-w-xs">
+                                {cls.description}
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+                        );
+                      })}
                   </div>
                 );
               })}
@@ -229,7 +344,6 @@ export function AnnotatePanel() {
               </p>
             </div>
           )}
-        </div>
       </div>
     </TooltipProvider>
   );

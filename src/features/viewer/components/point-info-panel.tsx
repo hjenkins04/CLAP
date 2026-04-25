@@ -6,32 +6,51 @@ import { useScanFilterStore } from '../plugins/scan-filter';
 import { ScanFilterPlugin } from '../plugins/scan-filter';
 import { CommandPopup } from './command-popup';
 import type { ViewerEngine } from '../services/viewer-engine';
-
-const CLASSIFICATION_LABELS: Record<number, string> = {
-  0:  'Created / Never Classified',
-  1:  'Unclassified',
-  2:  'Ground',
-  3:  'Low Vegetation',
-  4:  'Medium Vegetation',
-  5:  'High Vegetation',
-  6:  'Building',
-  7:  'Low Point (Noise)',
-  9:  'Water',
-  10: 'Rail',
-  11: 'Road Surface',
-  13: 'Wire – Guard',
-  14: 'Wire – Conductor',
-  15: 'Transmission Tower',
-  17: 'Bridge Deck',
-  18: 'High Noise',
-};
-
-function classLabel(c: number): string {
-  return CLASSIFICATION_LABELS[c] ?? `Class ${c}`;
-}
+import {
+  useClassificationLegendStore,
+  findLegendClass,
+  parseColor,
+  type ClassificationLegend,
+  type LegendClass,
+} from '../services/classification-legend';
 
 interface Props {
   engine: ViewerEngine | null;
+}
+
+function getGroupName(legend: ClassificationLegend, groupId: string): string | null {
+  return legend.groups.find((g) => g.id === groupId)?.name ?? null;
+}
+
+function ClassRow({ classId, legend }: { classId: number; legend: ClassificationLegend }) {
+  const resolved: LegendClass | null = findLegendClass(classId, legend);
+  const label = resolved?.name ?? `Class ${classId}`;
+  const groupName = resolved ? getGroupName(legend, resolved.groupId) : null;
+  const [r, g, b] = parseColor(resolved?.color ?? legend.defaultColor ?? '#808080');
+  return (
+    <div className="flex items-baseline justify-between gap-2">
+      <span className="shrink-0 text-xs text-muted-foreground">Class</span>
+      <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5">
+        <span
+          className="h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-black/10"
+          style={{
+            backgroundColor: `rgb(${Math.round(r * 255)},${Math.round(g * 255)},${Math.round(b * 255)})`,
+          }}
+        />
+        <span className="min-w-0 truncate text-right text-xs" title={label}>
+          {label}
+        </span>
+        <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">
+          {classId}
+        </span>
+        {groupName && (
+          <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-muted-foreground">
+            {groupName}
+          </span>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export function PointInfoPanel({ engine }: Props) {
@@ -42,6 +61,7 @@ export function PointInfoPanel({ engine }: Props) {
   const pickedPoint  = usePointInfoStore((s) => s.pickedPoint);
   const previewPoint = usePointInfoStore((s) => s.previewPoint);
   const clear        = usePointInfoStore((s) => s.clear);
+  const legend       = useClassificationLegendStore((s) => s.legend);
 
   const isPicking = mode === 'point-info';
 
@@ -98,10 +118,7 @@ export function PointInfoPanel({ engine }: Props) {
             )}
 
             {displayPoint.classification !== null && (
-              <InfoRow
-                label="Class"
-                value={`${displayPoint.classification} · ${classLabel(displayPoint.classification)}`}
-              />
+              <ClassRow classId={displayPoint.classification} legend={legend} />
             )}
 
             {displayPoint.intensity !== null && (

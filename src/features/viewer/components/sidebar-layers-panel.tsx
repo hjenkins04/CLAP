@@ -16,6 +16,7 @@ import {
   Globe,
   Loader2,
   Box,
+  Boxes,
 } from 'lucide-react';
 import { useViewerStore } from '@/app/stores';
 import { useBaseMapStore } from '../plugins/base-map';
@@ -23,6 +24,7 @@ import { useGridStore } from '../plugins/grid/grid-store';
 import { usePoiStore } from '../plugins/poi/poi-store';
 import { useWorldFrameStore } from '../plugins/world-frame';
 import { useOsmFeaturesStore, OSM_LAYER_KEYS, type OsmLayerKey } from '../plugins/osm-features/osm-features-store';
+import { useDatasetTilesStore } from '../plugins/dataset-tiles';
 import { useStaticObstacleStore } from '../plugins/static-obstacle';
 import { usePolyAnnotStore } from '../plugins/polygon-annotation';
 import { Pentagon } from 'lucide-react';
@@ -127,6 +129,11 @@ export function SidebarLayersPanel() {
   const gridVisible = useGridStore((s) => s.visible);
   const setGridVisible = useGridStore((s) => s.setVisible);
 
+  const datasetManifest = useDatasetTilesStore((s) => s.manifest);
+  const tileBoundsVisible = useDatasetTilesStore((s) => s.boundsLayerVisible);
+  const setTileBoundsVisible = useDatasetTilesStore((s) => s.setBoundsLayerVisible);
+  const hasTiledDataset = !!datasetManifest?.tiles.length;
+
   const poiPosition = usePoiStore((s) => s.position);
   const poiMarkerVisible = usePoiStore((s) => s.markerVisible);
   const setPoiMarkerVisible = usePoiStore((s) => s.setMarkerVisible);
@@ -202,6 +209,15 @@ export function SidebarLayersPanel() {
         visible={gridVisible}
         onToggle={() => setGridVisible(!gridVisible)}
       />
+
+      {hasTiledDataset && (
+        <LayerRow
+          icon={<Boxes className="h-3.5 w-3.5" />}
+          name="Tile Bounds"
+          visible={tileBoundsVisible}
+          onToggle={() => setTileBoundsVisible(!tileBoundsVisible)}
+        />
+      )}
 
       <LayerRow
         icon={<Crosshair className="h-3.5 w-3.5" />}

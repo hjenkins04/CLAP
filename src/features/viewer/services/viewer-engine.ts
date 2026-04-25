@@ -5,7 +5,6 @@ import {
   OrthographicCamera,
   WebGLRenderer,
   Vector3,
-  Vector4,
   Box3,
   AmbientLight,
   MOUSE,
@@ -28,32 +27,6 @@ import { electronFetch } from './electron-fetch';
 import { loadGeometryAnnotations } from './geometry-annotations-io';
 import { geoAnnotHistory } from './geometry-annotations-history';
 
-/**
- * Classification color map for the AutoDrive / FLAINet dataset.
- * Keys are classification IDs, values are RGBA Vector4 (0-1 range).
- */
-export const CLASSIFICATION_COLORS: Record<string, Vector4> = {
-  1:  new Vector4(0.50, 0.50, 0.50, 1.0), // Other — gray
-  2:  new Vector4(0.40, 0.40, 0.40, 1.0), // Roads — dark gray
-  3:  new Vector4(0.70, 0.70, 0.70, 1.0), // Sidewalks — light gray
-  4:  new Vector4(0.55, 0.45, 0.30, 1.0), // OtherGround — brown
-  5:  new Vector4(0.80, 0.80, 0.20, 1.0), // TrafficIslands — yellow-green
-  6:  new Vector4(0.90, 0.30, 0.20, 1.0), // Buildings — red
-  7:  new Vector4(0.10, 0.65, 0.15, 1.0), // Trees — green
-  8:  new Vector4(0.40, 0.80, 0.30, 1.0), // OtherVegetation — light green
-  9:  new Vector4(1.00, 0.85, 0.00, 1.0), // TrafficLights — amber
-  10: new Vector4(1.00, 0.55, 0.00, 1.0), // TrafficSigns — orange
-  11: new Vector4(0.00, 0.70, 0.90, 1.0), // Wires — cyan
-  12: new Vector4(0.60, 0.30, 0.80, 1.0), // Masts — purple
-  13: new Vector4(1.00, 0.40, 0.70, 1.0), // Pedestrians — pink
-  15: new Vector4(0.00, 0.45, 0.85, 1.0), // TwoWheel — blue
-  16: new Vector4(0.20, 0.20, 0.80, 1.0), // MobFourWheel — dark blue
-  17: new Vector4(0.00, 0.30, 0.60, 1.0), // StaFourWheel — navy
-  18: new Vector4(0.90, 0.10, 0.10, 1.0), // Noise — bright red
-  40: new Vector4(0.55, 0.35, 0.15, 1.0), // TreeTrunks — dark brown
-  DEFAULT: new Vector4(0.30, 0.30, 0.30, 1.0),
-};
-
 export class ViewerEngine implements PluginHost {
   private scene: Scene;
   private worldRoot: Group;
@@ -66,6 +39,7 @@ export class ViewerEngine implements PluginHost {
   private potree: Potree;
   private potreeRenderer: PotreeRenderer;
   private pointClouds: PointCloudOctree[] = [];
+  private tilePcos: Map<string, PointCloudOctree> = new Map();
   private editor: PointCloudEditor;
   private plugins: Map<string, ViewerPlugin> = new Map();
   private pluginCtx: ViewerPluginContext;
@@ -254,8 +228,8 @@ export class ViewerEngine implements PluginHost {
     // Apply gamma to spread mid-tones for better intensity visualization
     pco.material.intensityGamma = 0.6;
 
-    // Custom classification colors
-    pco.material.classification = CLASSIFICATION_COLORS;
+    // Classification colours are applied by annotate-plugin.onPointCloudLoaded
+    // using the currently loaded legend (+ any user visibility toggles).
 
     this.worldRoot.add(pco);
     this.pointClouds.push(pco);
@@ -274,6 +248,140 @@ export class ViewerEngine implements PluginHost {
     for (const plugin of this.plugins.values()) {
       plugin.onPointCloudLoaded?.(pco);
     }
+  }
+
+  // --- Tiled datasets (multi-PCO) ---
+
+  /**
+   * Load a single tile as an additional PointCloudOctree. Used for tiled
+   * datasets where many PCOs coexist in the scene and the user enables/disables
+   * them explicitly. Does not call editor.attach() — the editor is scoped to
+   * single-PCO workflows and annotation editing on tiled datasets is not
+   * supported yet.
+   *
+   * If this is the first tile loaded, sets baseUrl and fits the camera to it.
+   * Subsequent tiles are just added to the scene without recentring.
+   */
+  async loadTile(
+    tileId: string,
+    metadataUrl: string,
+    baseUrl: string,
+  ): Promise<void> {
+    if (this.tilePcos.has(tileId)) return;
+
+    this.pcBaseUrl = baseUrl;
+    const requestManager = {
+      getUrl: async (relativeUrl: string) => `${baseUrl}${relativeUrl}`,
+      fetch: electronFetch,
+    };
+    const pco = await this.potree.loadPointCloud(metadataUrl, requestManager);
+    pco.name = `tile:${tileId}`;
+    pco.userData.tileId = tileId;
+
+    pco.material.size = 0.1;
+    pco.material.minSize = 1.5;
+    pco.material.maxSize = 12;
+    pco.material.shape = 2;
+    pco.material.inputColorEncoding = 1;
+    pco.material.outputColorEncoding = 1;
+    pco.showBoundingBox = false;
+
+    if (this.intensityRange) {
+      pco.material.intensityRange = this.intensityRange;
+    }
+    pco.material.intensityGamma = 0.6;
+
+    // Classification colours: applied by annotate-plugin on onPointCloudLoaded.
+
+    // Match colour mode to whatever the rest of the scene is using
+    pco.material.pointColorType = COLOR_MODE_MAP[this.activeColorMode];
+
+    this.worldRoot.add(pco);
+    this.pointClouds.push(pco);
+    this.tilePcos.set(tileId, pco);
+
+    const isFirst = this.pointClouds.length === 1;
+    if (isFirst) {
+      this.fitCameraToPointCloud(pco);
+    }
+
+    for (const plugin of this.plugins.values()) {
+      plugin.onPointCloudLoaded?.(pco);
+    }
+  }
+
+  unloadTile(tileId: string): void {
+    const pco = this.tilePcos.get(tileId);
+    if (!pco) return;
+    this.tilePcos.delete(tileId);
+
+    const idx = this.pointClouds.indexOf(pco);
+    if (idx >= 0) this.pointClouds.splice(idx, 1);
+
+    if (pco.parent) pco.parent.remove(pco);
+    pco.dispose();
+
+    if (this.pointClouds.length === 0) {
+      for (const plugin of this.plugins.values()) {
+        plugin.onPointCloudsUnloaded?.();
+      }
+      this.intensityRangeRefined = false;
+    }
+  }
+
+  getLoadedTileIds(): string[] {
+    return [...this.tilePcos.keys()];
+  }
+
+  fitCameraToLoadedTiles(): void {
+    if (this.pointClouds.length === 0) return;
+
+    const transformGroup = this.editor.getTransformGroup();
+    transformGroup.updateMatrixWorld(true);
+
+    const worldBox = new Box3();
+    for (const pco of this.pointClouds) {
+      const localBox = pco.pcoGeometry.boundingBox;
+      const corners = [
+        new Vector3(localBox.min.x, localBox.min.y, localBox.min.z),
+        new Vector3(localBox.min.x, localBox.min.y, localBox.max.z),
+        new Vector3(localBox.min.x, localBox.max.y, localBox.min.z),
+        new Vector3(localBox.min.x, localBox.max.y, localBox.max.z),
+        new Vector3(localBox.max.x, localBox.min.y, localBox.min.z),
+        new Vector3(localBox.max.x, localBox.min.y, localBox.max.z),
+        new Vector3(localBox.max.x, localBox.max.y, localBox.min.z),
+        new Vector3(localBox.max.x, localBox.max.y, localBox.max.z),
+      ];
+      for (const corner of corners) {
+        corner.add(pco.position);
+        corner.applyMatrix4(transformGroup.matrixWorld);
+        worldBox.expandByPoint(corner);
+      }
+    }
+
+    const center = worldBox.getCenter(new Vector3());
+    const size = worldBox.getSize(new Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const distance = maxDim * 1.2;
+
+    const camPos = new Vector3(
+      center.x + distance * 0.5,
+      center.y + distance * 0.5,
+      center.z + distance * 0.5,
+    );
+
+    this.perspCamera.position.copy(camPos);
+    this.perspCamera.near = distance * 0.001;
+    this.perspCamera.far = distance * 10;
+    this.perspCamera.updateProjectionMatrix();
+
+    this.orthoCamera.position.copy(camPos);
+    this.orthoCamera.near = distance * 0.001;
+    this.orthoCamera.far = distance * 10;
+
+    this.controls.target.copy(center);
+    this.controls.update();
+    this.syncOrthoFrustum();
   }
 
   async loadDem(url: string): Promise<void> {
@@ -303,10 +411,11 @@ export class ViewerEngine implements PluginHost {
     }
     this.editor.detach();
     this.pointClouds.forEach((pco) => {
-      this.worldRoot.remove(pco);
+      if (pco.parent) pco.parent.remove(pco);
       pco.dispose();
     });
     this.pointClouds = [];
+    this.tilePcos.clear();
     this.intensityRange = null;
     this.intensityRangeRefined = false;
     if (this.dem) {

@@ -9,7 +9,9 @@
  */
 
 import {
+  DoubleSide,
   Group,
+  Matrix4,
   Vector2,
   Vector3,
   type Camera,
@@ -43,8 +45,10 @@ function distPointToSegment2D(p: Vec2, a: Vec2, b: Vec2): number {
   return Math.hypot(dx, dy);
 }
 
-function toScreen(v3: Vector3, camera: Camera, w: number, h: number): Vec2 {
-  const c = v3.clone().project(camera);
+function toScreen(v3: Vector3, camera: Camera, w: number, h: number, transform?: Matrix4): Vec2 {
+  const v = v3.clone();
+  if (transform) v.applyMatrix4(transform);
+  const c = v.project(camera);
   return [(c.x + 1) * w / 2, (1 - c.y) * h / 2];
 }
 
@@ -77,6 +81,11 @@ function makeLine2(positions: number[], color: number, linewidth: number, opacit
     transparent: opacity < 1,
     depthTest: false,
     resolution,
+    // DoubleSide: when worldRoot's scale has a negative axis (axis-flip plugin),
+    // the model matrix has a negative determinant. The renderer auto-flips the
+    // front face for such matrices, which would cull these screen-space line
+    // quads. DoubleSide bypasses that.
+    side: DoubleSide,
   });
   const line = new Line2(geo, mat);
   line.computeLineDistances();
@@ -99,11 +108,13 @@ function circlePositions(cx: number, cy: number, cz: number, radius: number, dy:
 export class HdMapScenePicker {
   private readonly highlightGroup = new Group();
   private highlightObjects: (Line2)[] = [];
+  private readonly worldRoot: Group;
 
   // Viewport resolution — needed by LineMaterial
   private vpRes = new Vector2(window.innerWidth, window.innerHeight);
 
   constructor(worldRoot: Group) {
+    this.worldRoot = worldRoot;
     this.highlightGroup.name = 'hdmap-selection-highlight';
     worldRoot.add(this.highlightGroup);
 
@@ -137,21 +148,28 @@ export class HdMapScenePicker {
     let bestId: string | null = null;
     let bestDist = Infinity;
 
+    // Element vertices are in worldRoot-local coords; the rendered geometry
+    // sits under worldRoot and inherits its transform (including axis-flip
+    // scale ±1). We must apply the same transform before screen projection,
+    // otherwise picks miss everything when an axis is flipped.
+    this.worldRoot.updateWorldMatrix(true, false);
+    const xform = this.worldRoot.matrixWorld;
+
     for (const elem of elements) {
       if (elem.deleted || elem.hidden) continue;
       const pts = elementWorldPoints(elem, proj_, elevOff);
 
       if (elem.kind === 'sign') {
         const v = new Vector3(pts[0][0], pts[0][1], pts[0][2]);
-        const [ex, ey] = toScreen(v, camera, w, h);
+        const [ex, ey] = toScreen(v, camera, w, h, xform);
         const d = Math.hypot(sx - ex, sy - ey);
         if (d < SIGN_PICK_RADIUS_PX && d < bestDist) { bestDist = d; bestId = elem.id; }
       } else {
         for (let i = 0; i < pts.length - 1; i++) {
           const va = new Vector3(...pts[i]);
           const vb = new Vector3(...pts[i + 1]);
-          const sa = toScreen(va, camera, w, h);
-          const sb = toScreen(vb, camera, w, h);
+          const sa = toScreen(va, camera, w, h, xform);
+          const sb = toScreen(vb, camera, w, h, xform);
           const d  = distPointToSegment2D([sx, sy], sa, sb);
           if (d < PICK_THRESHOLD_PX && d < bestDist) { bestDist = d; bestId = elem.id; }
         }

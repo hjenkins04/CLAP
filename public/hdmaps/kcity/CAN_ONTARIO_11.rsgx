@@ -17,8 +17,8 @@
           <edge closed="true">
             <point lat="44.26332931" long="-76.51574604" elevation="52.660"/>
             <point lat="44.26332787" long="-76.51575229" elevation="52.650"/>
-            <point lat="44.26332787" long="-76.51575229" elevation="52.650"/>
             <point lat="44.26324709" long="-76.51575210" elevation="52.800"/>
+            <point lat="44.26324853" long="-76.51574585" elevation="52.810"/>
           </edge>
         </object>
         <object id="29777747" type="Pedestrian Crossing" lat="44.26328984" long="-76.51571676" elevation="52.670">

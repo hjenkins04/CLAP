@@ -37,6 +37,10 @@ export interface RsgxSegment {
   id: number;
   roadId: number;
   roadName: string;
+  /** Segment IDs that this segment flows into. Empty for terminal segments. */
+  successors: number[];
+  /** Segment IDs that flow into this segment. Empty for source segments. */
+  predecessors: number[];
   objects: RsgxObject[];
   signs: RsgxSign[];
 }
@@ -95,6 +99,15 @@ function parseObject(el: Element): RsgxObject {
     edgeClosed,
     edgePoints,
   };
+}
+
+function parseSegmentRefs(s: string): number[] {
+  // GM DMP encodes "no neighbours" as either an empty attr or the literal "None".
+  // Multiple refs are space-separated, e.g. successors="7945189 7950870".
+  if (!s || s === 'None') return [];
+  return s.split(/\s+/).filter(Boolean)
+    .map(t => parseInt(t, 10))
+    .filter(n => Number.isFinite(n));
 }
 
 function parseSign(el: Element): RsgxSign {
@@ -161,6 +174,8 @@ export function parseRsgx(xmlText: string): RsgxFile {
         id: parseInt(attr(segEl, 'id'), 10),
         roadId,
         roadName,
+        successors:   parseSegmentRefs(attr(segEl, 'successors')),
+        predecessors: parseSegmentRefs(attr(segEl, 'predecessors')),
         objects,
         signs,
       });

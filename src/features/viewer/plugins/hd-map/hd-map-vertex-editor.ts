@@ -16,6 +16,7 @@
  * see HdMapSignMover (a separate, simpler helper at the bottom of this file).
  */
 
+import { Matrix4, Vector3 } from 'three';
 import { ShapeEditorEngine } from '../../modules/shape-editor/shape-editor-engine';
 import type { PolylineShape, EditorShape } from '../../modules/shape-editor/shape-editor-types';
 import type { ViewerPluginContext } from '../../types';
@@ -56,6 +57,24 @@ function geoArrayToVecs(
   return pts.map(g => toWorld(g, proj_, elevOff));
 }
 
+/**
+ * Transform local-space (worldRoot frame) coords into scene-space coords by
+ * applying the worldRoot's matrix. Used because ShapeEditorEngine renders
+ * outside worldRoot, so its handles must be placed in true scene space to
+ * line up with the rendered HD map (which IS under worldRoot and inherits
+ * its scale, including any axis-flip).
+ */
+function localToScene(
+  pts: { x: number; y: number; z: number }[],
+  worldMatrix: Matrix4,
+): { x: number; y: number; z: number }[] {
+  const v = new Vector3();
+  return pts.map(p => {
+    v.set(p.x, p.y, p.z).applyMatrix4(worldMatrix);
+    return { x: v.x, y: v.y, z: v.z };
+  });
+}
+
 // ── Main editor class ─────────────────────────────────────────────────────────
 
 export class HdMapVertexEditor {
@@ -69,6 +88,12 @@ export class HdMapVertexEditor {
   private vertexUndoStack: GeoPoint[][] = [];
   private vertexRedoStack: GeoPoint[][] = [];
   private _skipHistoryPush = false;
+
+  // worldRoot matrices captured at activate(). Kept stable for the editing
+  // session so handle positions don't drift if the user toggles axis flip
+  // mid-edit (they shouldn't, but we don't want surprises).
+  private worldMatrix = new Matrix4();
+  private invWorldMatrix = new Matrix4();
 
   /** Callback invoked each time the user moves a vertex (live preview). */
   onLiveUpdate?: (id: string, pts: GeoPoint[]) => void;
@@ -91,8 +116,25 @@ export class HdMapVertexEditor {
     this.elevOff = elevOff;
     this.elem    = elem;
 
+    // Capture worldRoot's transform: we render handles in scene space, but the
+    // HD map renderer is under worldRoot and inherits its scale (axis-flip).
+    // Apply worldMatrix on the way in (local→scene) and invWorldMatrix on the
+    // way out (scene→local) so handles always line up with the visual.
+    ctx.worldRoot.updateWorldMatrix(true, false);
+    this.worldMatrix.copy(ctx.worldRoot.matrixWorld);
+    this.invWorldMatrix.copy(this.worldMatrix).invert();
+
     const demTerrain = ctx.getDem();
-    const elevFn = (wx: number, wz: number) => demTerrain?.getElevation(wx, wz) ?? elevOff;
+    const inv = this.invWorldMatrix;
+    const tmp = new Vector3();
+    const elevFn = (wx: number, wz: number) => {
+      // Engine passes scene-space (wx, wz); DEM is keyed by worldRoot-local coords.
+      tmp.set(wx, 0, wz).applyMatrix4(inv);
+      const localY = demTerrain?.getElevation(tmp.x, tmp.z) ?? elevOff;
+      // Convert the local elevation back to scene-space Y for the engine.
+      tmp.set(0, localY, 0).applyMatrix4(this.worldMatrix);
+      return tmp.y;
+    };
 
     this.engine = new ShapeEditorEngine(ctx, {
       rootGroupName:          'hdmap-vertex-editor',
@@ -111,7 +153,7 @@ export class HdMapVertexEditor {
     const shape: PolylineShape = {
       type:     'polyline',
       id:       EDITOR_SHAPE_ID,
-      points:   geoArrayToVecs(geoPoints, proj_, elevOff),
+      points:   localToScene(geoArrayToVecs(geoPoints, proj_, elevOff), this.worldMatrix),
       closed:   elem.kind === 'road-object' && elem.edgeClosed,
       metadata: {},
     };
@@ -128,7 +170,12 @@ export class HdMapVertexEditor {
     // Track per-drag history; engine.dispose() clears all handlers automatically
     this.engine.on('shape-updated', (updated: EditorShape) => {
       if (updated.type !== 'polyline' || !this.proj_) return;
-      const geos = updated.points.map(p => toGeo(p.x, p.y, p.z, this.proj_!, this.elevOff));
+      // Engine emits scene-space points; convert back to worldRoot-local first.
+      const localPts = updated.points.map(p => {
+        const v = new Vector3(p.x, p.y, p.z).applyMatrix4(this.invWorldMatrix);
+        return { x: v.x, y: v.y, z: v.z };
+      });
+      const geos = localPts.map(p => toGeo(p.x, p.y, p.z, this.proj_!, this.elevOff));
       if (!this._skipHistoryPush) {
         this.vertexUndoStack.push([...this.currentGeos]);
         this.vertexRedoStack = [];
@@ -150,7 +197,7 @@ export class HdMapVertexEditor {
     this.engine.updateShape({
       type: 'polyline',
       id: EDITOR_SHAPE_ID,
-      points: geoArrayToVecs(this.currentGeos, this.proj_, this.elevOff),
+      points: localToScene(geoArrayToVecs(this.currentGeos, this.proj_, this.elevOff), this.worldMatrix),
       closed: (this.elem as import('./hd-map-edit-model').HdMapObjectElement)?.edgeClosed ?? false,
       metadata: {},
     });
@@ -166,7 +213,7 @@ export class HdMapVertexEditor {
     this.engine.updateShape({
       type: 'polyline',
       id: EDITOR_SHAPE_ID,
-      points: geoArrayToVecs(this.currentGeos, this.proj_, this.elevOff),
+      points: localToScene(geoArrayToVecs(this.currentGeos, this.proj_, this.elevOff), this.worldMatrix),
       closed: (this.elem as import('./hd-map-edit-model').HdMapObjectElement)?.edgeClosed ?? false,
       metadata: {},
     });
@@ -182,7 +229,12 @@ export class HdMapVertexEditor {
     if (!this.engine || !this.proj_) return null;
     const shape = this.engine.getShape(EDITOR_SHAPE_ID);
     if (!shape || shape.type !== 'polyline') return null;
-    return shape.points.map(p => toGeo(p.x, p.y, p.z, this.proj_!, this.elevOff));
+    // Engine points are scene-space; convert to worldRoot-local before unproject
+    const v = new Vector3();
+    return shape.points.map(p => {
+      v.set(p.x, p.y, p.z).applyMatrix4(this.invWorldMatrix);
+      return toGeo(v.x, v.y, v.z, this.proj_!, this.elevOff);
+    });
   }
 
   /** Forward per-frame update to ShapeEditorEngine (call from plugin.onUpdate). */

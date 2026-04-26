@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { HdMapProject } from './hd-map-project';
-import type { HdMapElement, GeoPoint } from './hd-map-edit-model';
+import type { HdMapElement, HdMapEdgeElement, GeoPoint, VertexLinkRef } from './hd-map-edit-model';
 
 export type HdMapLoadState = 'idle' | 'loading' | 'loaded' | 'error';
 export type HdMapEditorMode = 'none' | 'vertex' | 'sign-move';
@@ -56,6 +56,15 @@ interface HdMapState {
   vertexUndoCount:        number;
   vertexRedoCount:        number;
   setVertexHistoryCounts: (undo: number, redo: number) => void;
+
+  /**
+   * Vertex link map — when an edge endpoint is also a successor segment's
+   * starting endpoint (i.e. they are the same physical road point), edits
+   * propagate across the link so the boundary stays continuous.
+   * Key: `${elementId}|${vertexIndex}`. Value: list of OTHER linked vertices.
+   */
+  vertexLinks:    Map<string, VertexLinkRef[]>;
+  setVertexLinks: (links: Map<string, VertexLinkRef[]>) => void;
 }
 
 export const useHdMapStore = create<HdMapState>((set) => ({
@@ -74,6 +83,7 @@ export const useHdMapStore = create<HdMapState>((set) => ({
   dirtyFiles:      new Set(),
   vertexUndoCount: 0,
   vertexRedoCount: 0,
+  vertexLinks:     new Map(),
 
   setProject: (p) => set({
     project:         p,
@@ -85,6 +95,7 @@ export const useHdMapStore = create<HdMapState>((set) => ({
     editorMode:      'none',
     isDirty:         false,
     dirtyFiles:      new Set(),
+    vertexLinks:     new Map(),
   }),
   setLoadState:       (s, err = null) => set({ loadState: s, error: err ?? null }),
   setElevationOffset: (v) => set({ elevationOffset: v }),
@@ -114,12 +125,38 @@ export const useHdMapStore = create<HdMapState>((set) => ({
   }),
 
   updateEdgePoints: (id, geoPoints) => set((s) => {
-    const fileKey = fileKeyFromId(id);
-    return {
-      elements:   s.elements.map(e => e.id === id ? { ...e, geoPoints } as HdMapElement : e),
-      isDirty:    true,
-      dirtyFiles: new Set([...s.dirtyFiles, fileKey]),
-    };
+    const dirtyFiles = new Set(s.dirtyFiles);
+    dirtyFiles.add(fileKeyFromId(id));
+
+    // Apply primary update + per-vertex link propagation in one pass.
+    // For each linked endpoint of any vertex in this update, write the same
+    // geo into the linked element's corresponding vertex and mark its file
+    // dirty too — keeps boundary continuity automatic.
+    const propagated = new Map<string, GeoPoint[]>();   // linked element id → new geoPoints
+    for (let i = 0; i < geoPoints.length; i++) {
+      const refs = s.vertexLinks.get(`${id}|${i}`);
+      if (!refs) continue;
+      for (const ref of refs) {
+        const target = s.elements.find(e => e.id === ref.elementId);
+        if (!target) continue;
+        if (target.kind !== 'edge-left' && target.kind !== 'edge-right' && target.kind !== 'marker-line') continue;
+        const targetGeos = (target as HdMapEdgeElement).geoPoints;
+        if (ref.vertexIndex < 0 || ref.vertexIndex >= targetGeos.length) continue;
+        const draft = propagated.get(ref.elementId) ?? [...targetGeos];
+        draft[ref.vertexIndex] = { ...geoPoints[i] };
+        propagated.set(ref.elementId, draft);
+        dirtyFiles.add(fileKeyFromId(ref.elementId));
+      }
+    }
+
+    const elements = s.elements.map(e => {
+      if (e.id === id) return { ...e, geoPoints } as HdMapElement;
+      const draft = propagated.get(e.id);
+      if (draft) return { ...e, geoPoints: draft } as HdMapElement;
+      return e;
+    });
+
+    return { elements, isDirty: true, dirtyFiles };
   }),
 
   updateObjectPoints: (id, edgePoints) => set((s) => {
@@ -159,6 +196,8 @@ export const useHdMapStore = create<HdMapState>((set) => ({
   clearDirty: () => set({ isDirty: false, dirtyFiles: new Set() }),
 
   setVertexHistoryCounts: (undo, redo) => set({ vertexUndoCount: undo, vertexRedoCount: redo }),
+
+  setVertexLinks: (links) => set({ vertexLinks: links }),
 }));
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

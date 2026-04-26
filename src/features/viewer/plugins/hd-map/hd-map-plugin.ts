@@ -18,7 +18,7 @@
  *   saveAllTiles() — patches raw XML for every dirty tile, writes via WRITE_FILE
  */
 
-import { Raycaster, Vector2, Plane, Vector3 } from 'three';
+import { Raycaster, Vector2, Plane, Vector3, Matrix4 } from 'three';
 import type { ViewerPlugin, ViewerPluginContext } from '../../types';
 import { HdMapRenderer } from './hd-map-renderer';
 import { loadHdMapTiles } from './hd-map-loader';
@@ -26,7 +26,7 @@ import { useHdMapStore } from './hd-map-store';
 import { HdMapPanel } from './hd-map-panel';
 import { HdMapScenePicker } from './hd-map-scene-picker';
 import { HdMapVertexEditor, HdMapSignMover } from './hd-map-vertex-editor';
-import { buildEditModel } from './hd-map-edit-model';
+import { buildEditModel, buildVertexLinks } from './hd-map-edit-model';
 import { wgs84ToUtm } from './projection';
 import { patchLxsx, patchRsgx } from './serializers/xml-patcher';
 import { hdMapHistory } from './hd-map-history';
@@ -197,6 +197,11 @@ export class HdMapPlugin implements ViewerPlugin {
     const { elements, project } = store;
     const errors: string[] = [];
 
+    // Track bridge promotions across the save run so we can update in-memory
+    // state once at the end (segmentId → newly-assigned xSectionId).
+    type BridgePromotion = { segmentId: number; newXSectionId: number };
+    const bridgePromotionsByFile = new Map<number, BridgePromotion[]>();
+
     for (const key of store.dirtyFiles) {
       const [kind, idxStr] = key.split('_');
       const fi = parseInt(idxStr, 10);
@@ -208,29 +213,99 @@ export class HdMapPlugin implements ViewerPlugin {
 
         if (kind === 'lxsx') {
           const fileElems = elements.filter(e => e.fileIndex === fi && !e.id.startsWith('rsgx'));
+
+          // Collect per-segment boundary bridges (edges + markers). One xSection
+          // insert per segment, regardless of how many bridge sources contribute
+          // (left edge, right edge, marker pointId N, ...). The new xSection's
+          // id is max(existingIds) + 1.
+          type BridgeAcc = {
+            left?:  import('./hd-map-edit-model').GeoPoint;
+            right?: import('./hd-map-edit-model').GeoPoint;
+            points: Array<{ id: number; geo: import('./hd-map-edit-model').GeoPoint }>;
+            maxXsId: number;
+          };
+          const bridgesBySeg = new Map<number, BridgeAcc>();
+          const accFor = (segId: number, segXsIds: number[]): BridgeAcc => {
+            let acc = bridgesBySeg.get(segId);
+            if (!acc) {
+              acc = { points: [], maxXsId: -Infinity };
+              bridgesBySeg.set(segId, acc);
+            }
+            const segMax = segXsIds.length ? Math.max(...segXsIds) : 0;
+            acc.maxXsId = Math.max(acc.maxXsId, segMax);
+            return acc;
+          };
+
+          for (const e of fileElems) {
+            if (e.deleted) continue;
+            if (e.kind === 'edge-left' || e.kind === 'edge-right') {
+              const edge = e as import('./hd-map-edit-model').HdMapEdgeElement;
+              if (!edge.bridge) continue;
+              const acc = accFor(edge.segmentId, edge.xSectionIds);
+              const bridgeGeo = edge.geoPoints[edge.geoPoints.length - 1];
+              if (edge.kind === 'edge-left') acc.left = bridgeGeo;
+              else                            acc.right = bridgeGeo;
+            } else if (e.kind === 'marker-line') {
+              const m = e as import('./hd-map-edit-model').HdMapMarkerLineElement;
+              if (!m.bridge) continue;
+              const acc = accFor(m.segmentId, m.xSectionIds);
+              const bridgeGeo = m.geoPoints[m.geoPoints.length - 1];
+              acc.points.push({ id: m.pointId, geo: bridgeGeo });
+            }
+          }
+
+          const xSectionInserts: import('./serializers/xml-patcher').LxsxXSectionInsert[] = [];
+          const filePromotions: BridgePromotion[] = [];
+          for (const [segmentId, b] of bridgesBySeg) {
+            const newXSectionId = b.maxXsId + 1;
+            xSectionInserts.push({
+              segmentId,
+              newXSectionId,
+              leftEdge:     b.left,
+              rightEdge:    b.right,
+              pointUpdates: b.points.length > 0 ? b.points : undefined,
+            });
+            filePromotions.push({ segmentId, newXSectionId });
+          }
+
           patched = patchLxsx(originalXml, {
             edgeUpdates: fileElems
               .filter(e => e.kind === 'edge-left' || e.kind === 'edge-right')
               .filter(e => !e.deleted)
-              .map(e => ({
-                segmentId:   e.segmentId,
-                side:        e.kind === 'edge-left' ? 'left' : 'right',
-                xSectionIds: (e as import('./hd-map-edit-model').HdMapEdgeElement).xSectionIds,
-                geoPoints:   (e as import('./hd-map-edit-model').HdMapEdgeElement).geoPoints,
-              })),
+              .map(e => {
+                const edge = e as import('./hd-map-edit-model').HdMapEdgeElement;
+                // Drop the trailing bridge point (if any) — persisted via xSectionInserts
+                const n = edge.xSectionIds.length;
+                return {
+                  segmentId:   edge.segmentId,
+                  side:        edge.kind === 'edge-left' ? 'left' : 'right',
+                  xSectionIds: edge.xSectionIds,
+                  geoPoints:   edge.geoPoints.slice(0, n),
+                };
+              }),
             markerUpdates: fileElems
               .filter(e => e.kind === 'marker-line')
               .filter(e => !e.deleted)
-              .map(e => ({
-                segmentId:   e.segmentId,
-                pointId:     (e as import('./hd-map-edit-model').HdMapMarkerLineElement).pointId,
-                xSectionIds: (e as import('./hd-map-edit-model').HdMapMarkerLineElement).xSectionIds,
-                geoPoints:   (e as import('./hd-map-edit-model').HdMapMarkerLineElement).geoPoints,
-              })),
+              .map(e => {
+                const m = e as import('./hd-map-edit-model').HdMapMarkerLineElement;
+                // Same: drop the trailing bridge point on markers
+                const n = m.xSectionIds.length;
+                return {
+                  segmentId:   m.segmentId,
+                  pointId:     m.pointId,
+                  xSectionIds: m.xSectionIds,
+                  geoPoints:   m.geoPoints.slice(0, n),
+                };
+              }),
             segmentDeletes: [...new Set(
               fileElems.filter(e => e.deleted).map(e => e.segmentId)
             )].map(segmentId => ({ segmentId })),
+            xSectionInserts,
           });
+
+          if (filePromotions.length > 0) {
+            bridgePromotionsByFile.set(fi, filePromotions);
+          }
         } else {
           const fileElems = elements.filter(e => e.fileIndex === fi && e.id.startsWith('rsgx'));
           patched = patchRsgx(originalXml, {
@@ -278,6 +353,31 @@ export class HdMapPlugin implements ViewerPlugin {
     }
 
     if (errors.length === 0) {
+      // Promote any bridges we just persisted (edges + markers): extend their
+      // xSectionIds with the freshly-assigned id and clear the bridge marker,
+      // so a subsequent save in the same session doesn't re-insert a duplicate
+      // xSection.
+      if (bridgePromotionsByFile.size > 0) {
+        const current = useHdMapStore.getState().elements;
+        const promoted = current.map(e => {
+          if (e.kind === 'edge-left' || e.kind === 'edge-right') {
+            const edge = e as import('./hd-map-edit-model').HdMapEdgeElement;
+            if (!edge.bridge) return e;
+            const promo = bridgePromotionsByFile.get(edge.fileIndex)?.find(p => p.segmentId === edge.segmentId);
+            if (!promo) return e;
+            return { ...edge, xSectionIds: [...edge.xSectionIds, promo.newXSectionId], bridge: undefined };
+          }
+          if (e.kind === 'marker-line') {
+            const m = e as import('./hd-map-edit-model').HdMapMarkerLineElement;
+            if (!m.bridge) return e;
+            const promo = bridgePromotionsByFile.get(m.fileIndex)?.find(p => p.segmentId === m.segmentId);
+            if (!promo) return e;
+            return { ...m, xSectionIds: [...m.xSectionIds, promo.newXSectionId], bridge: undefined };
+          }
+          return e;
+        });
+        useHdMapStore.getState().setElements(promoted);
+      }
       useHdMapStore.getState().clearDirty();
     } else {
       useHdMapStore.getState().setLoadState('error', errors.join('\n'));
@@ -287,7 +387,7 @@ export class HdMapPlugin implements ViewerPlugin {
   // ── Private ─────────────────────────────────────────────────────────────────
 
   private async loadTiles(project: HdMapProject): Promise<void> {
-    const { setLoadState, setElements } = useHdMapStore.getState();
+    const { setLoadState, setElements, setVertexLinks } = useHdMapStore.getState();
     setLoadState('loading');
 
     try {
@@ -298,9 +398,11 @@ export class HdMapPlugin implements ViewerPlugin {
       tiles.lxsxTexts.forEach((t, i) => this.rawXml.set(`lxsx_${i}`, t));
       tiles.rsgxTexts.forEach((t, i) => this.rawXml.set(`rsgx_${i}`, t));
 
-      // Build edit model
+      // Build edit model + vertex links so segment-boundary edits stay continuous
       const elements = buildEditModel(tiles.lxsx, tiles.rsgx);
+      const links    = buildVertexLinks(elements, tiles.rsgx);
       setElements(elements);
+      setVertexLinks(links);
       setLoadState('loaded');
       hdMapHistory.reset();
 
@@ -388,12 +490,21 @@ export class HdMapPlugin implements ViewerPlugin {
       const ndcX   = ((e.clientX - rect.left) / rect.width)  * 2 - 1;
       const ndcY   = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
-      // Ray vs horizontal plane at current elevation offset
+      // Ray vs horizontal plane at current elevation offset (world space).
+      // The plane sits at world Y because the axis-flip plugin only ever
+      // flips X/Z (Y stays positive), so the rendered ground stays at +Y.
       const raycaster = new Raycaster();
       raycaster.setFromCamera(new Vector2(ndcX, ndcY), camera);
       const plane = new Plane(new Vector3(0, 1, 0), -state.elevationOffset + 0.4);
       const hit   = new Vector3();
       raycaster.ray.intersectPlane(plane, hit);
+
+      // The hit is in true world space; the DEM and applyClick expect
+      // worldRoot-LOCAL coords (the reference frame that project() emits in).
+      // Applying inverse(worldRoot.matrixWorld) undoes the axis-flip scale.
+      this.ctx.worldRoot.updateWorldMatrix(true, false);
+      const invWorld = new Matrix4().copy(this.ctx.worldRoot.matrixWorld).invert();
+      hit.applyMatrix4(invWorld);
 
       const dem   = this.ctx.getDem();
       const demY  = dem?.getElevation(hit.x, hit.z) ?? state.elevationOffset;

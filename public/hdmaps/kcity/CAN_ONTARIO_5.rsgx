@@ -60,10 +60,10 @@
           <edge closed="true">
             <point lat="44.26514911" long="-76.51683577" elevation="50.250"/>
             <point lat="44.26514727" long="-76.51680620" elevation="50.190"/>
-            <point lat="44.26514487" long="-76.51683675" elevation="50.250"/>
-            <point lat="44.26514307" long="-76.51680689" elevation="50.180"/>
-            <point lat="44.26514481" long="-76.51677650" elevation="50.120"/>
             <point lat="44.26514846" long="-76.51677573" elevation="50.130"/>
+            <point lat="44.26514481" long="-76.51677650" elevation="50.120"/>
+            <point lat="44.26514307" long="-76.51680689" elevation="50.180"/>
+            <point lat="44.26514487" long="-76.51683675" elevation="50.250"/>
           </edge>
         </object>
       </objects>

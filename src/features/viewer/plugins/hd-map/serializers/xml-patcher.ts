@@ -51,10 +51,37 @@ export interface LxsxSegmentDelete {
   segmentId: number;
 }
 
+/**
+ * Append a new <xSection> to a segment to persist render-time boundary
+ * bridges (edge gaps and/or marker-line gaps at segment boundaries).
+ *
+ * Implementation strategy: deep-clone the segment's last existing <xSection>
+ * (which already has the correct <leftEdge>/<point>/<lane>/<marker>/<rightEdge>
+ * structure), then apply targeted geo updates. This means a single insert
+ * naturally covers edges + any number of bridged marker pointIds, and any
+ * structural fields we don't care about (lane/marker metadata, point
+ * curvature/heading, etc.) are inherited from the source segment unchanged.
+ *
+ * Geo fields not provided are left at the cloned position (which is the
+ * predecessor's last-xSection position — close to the bridge target, but
+ * a small offset for non-bridged interior points). That's a known minor
+ * geometric inaccuracy on un-bridged points, accepted in exchange for
+ * structural completeness.
+ */
+export interface LxsxXSectionInsert {
+  segmentId:     number;
+  newXSectionId: number;     // computed by caller (max existing + 1)
+  leftEdge?:     GeoPoint;   // overrides cloned <leftEdge> position when set
+  rightEdge?:    GeoPoint;   // overrides cloned <rightEdge> position when set
+  /** Per-pointId geo overrides for cloned <point id="N"> children. */
+  pointUpdates?: Array<{ id: number; geo: GeoPoint }>;
+}
+
 export interface LxsxPatchSet {
-  edgeUpdates:    LxsxEdgeUpdate[];
-  markerUpdates:  LxsxMarkerUpdate[];
-  segmentDeletes: LxsxSegmentDelete[];
+  edgeUpdates:      LxsxEdgeUpdate[];
+  markerUpdates:    LxsxMarkerUpdate[];
+  segmentDeletes:   LxsxSegmentDelete[];
+  xSectionInserts?: LxsxXSectionInsert[];
 }
 
 export function patchLxsx(xmlText: string, patches: LxsxPatchSet): string {
@@ -89,6 +116,32 @@ export function patchLxsx(xmlText: string, patches: LxsxPatchSet): string {
       if (!ptEl) continue;
       setGeo(ptEl, upd.geoPoints[i]);
     }
+  }
+
+  for (const ins of patches.xSectionInserts ?? []) {
+    const segEl = doc.querySelector(`segment[id="${ins.segmentId}"]`);
+    if (!segEl) continue;
+    const xsEls = Array.from(segEl.querySelectorAll(':scope > xSection'));
+    const tpl = xsEls[xsEls.length - 1];
+    if (!tpl) continue;   // no template to clone; skip rather than emit empty xSection
+
+    const newXs = tpl.cloneNode(true) as Element;
+    newXs.setAttribute('id', String(ins.newXSectionId));
+
+    if (ins.leftEdge) {
+      const left = newXs.querySelector(':scope > leftEdge');
+      if (left) setGeo(left, ins.leftEdge);
+    }
+    if (ins.rightEdge) {
+      const right = newXs.querySelector(':scope > rightEdge');
+      if (right) setGeo(right, ins.rightEdge);
+    }
+    for (const pu of ins.pointUpdates ?? []) {
+      const ptEl = newXs.querySelector(`:scope > point[id="${pu.id}"]`);
+      if (ptEl) setGeo(ptEl, pu.geo);
+    }
+
+    segEl.appendChild(newXs);
   }
 
   return serializeXml(doc);

@@ -1,6 +1,4 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<?rsgx 3.1 2025-08-04 ?>
-<region id="107" name="CAN_ONTARIO" xmlns="http://www.gm.ca/hdlm">
+<?xml version="1.0" encoding="UTF-8"?><?rsgx 3.1 2025-08-04 ?><region xmlns="http://www.gm.ca/hdlm" id="107" name="CAN_ONTARIO">
   <road id="220139" name="Steve Fonyo Drive">
     <segment id="7830858" numLanes="1" successors="7830847" predecessors="7830848" leftNeighbors="None" rightNeighbors="None" maneuver="Straight" class="Unclassified">
       <laneMap>
@@ -8,26 +6,26 @@
       </laneMap>
       <country code="CAN"/>
       <signs>
-        <sign id="18585695" type="Vertical Stack Red Yellow Green Traffic Light" azimuth="96.42984464579752" lat="44.26211064" long="-76.51970929" elevation="57.090">
+        <sign id="18585695" type="Vertical Stack Red Yellow Green Traffic Light" azimuth="96.4298" lat="44.262110640" long="-76.519709290" elevation="57.0900">
           <assignment lanes="1" startXsectionId="3" endXsectionId="3"/>
         </sign>
-        <sign id="18585696" type="Vertical Stack Red Yellow Green Traffic Light" azimuth="87.20948541533278" lat="44.26219470" long="-76.51971378" elevation="57.180">
+        <sign id="18585696" type="Vertical Stack Red Yellow Green Traffic Light" azimuth="87.2095" lat="44.262194700" long="-76.519713780" elevation="57.1800">
           <assignment lanes="1" startXsectionId="3" endXsectionId="3"/>
         </sign>
-        <sign id="18834022" type="Vertical Stack Red Yellow Green Traffic Light" azimuth="251.07433530161134" lat="44.26221537" long="-76.51908337" elevation="57.038">
+        <sign id="18834022" type="Vertical Stack Red Yellow Green Traffic Light" azimuth="251.0743" lat="44.262215370" long="-76.519083370" elevation="57.0380">
           <assignment lanes="1" startXsectionId="3" endXsectionId="3"/>
         </sign>
-        <sign id="18834023" type="Vertical Stack Red Yellow Green Traffic Light" azimuth="267.79531107966307" lat="44.26215414" long="-76.51908009" elevation="57.090">
+        <sign id="18834023" type="Vertical Stack Red Yellow Green Traffic Light" azimuth="267.7953" lat="44.262154140" long="-76.519080090" elevation="57.0900">
           <assignment lanes="1" startXsectionId="3" endXsectionId="3"/>
         </sign>
       </signs>
       <objects>
         <object id="18584554" type="Stop Bar" lat="44.26213506" long="-76.51967363" elevation="51.500">
           <edge closed="true">
-            <point lat="44.26215637" long="-76.51967895" elevation="51.500"/>
-            <point lat="44.26215629" long="-76.51967069" elevation="51.490"/>
-            <point lat="44.26211312" long="-76.51966845" elevation="51.460"/>
-            <point lat="44.26211390" long="-76.51967643" elevation="51.450"/>
+            <point lat="44.262156370" long="-76.519678950" elevation="51.5000"/>
+            <point lat="44.262156290" long="-76.519670690" elevation="51.4900"/>
+            <point lat="44.262113120" long="-76.519668450" elevation="51.4600"/>
+            <point lat="44.262113900" long="-76.519676430" elevation="51.4500"/>
           </edge>
         </object>
         <object id="18584555" type="Pedestrian Crossing" lat="44.26214918" long="-76.51964281" elevation="51.310">
@@ -51,17 +49,17 @@
       </laneMap>
       <country code="CAN"/>
       <signs>
-        <sign id="18834071" type="Stop Sign" azimuth="14.780340489879734" lat="44.26234436" long="-76.51756023" elevation="54.613">
+        <sign id="18834071" type="Stop Sign" azimuth="14.7803" lat="44.262344360" long="-76.517560230" elevation="54.6130">
           <assignment lanes="1" startXsectionId="11" endXsectionId="11"/>
         </sign>
       </signs>
       <objects>
         <object id="18584334" type="Stop Bar" lat="44.26234677" long="-76.51751154" elevation="52.490">
           <edge closed="true">
-            <point lat="44.26234911" long="-76.51748667" elevation="52.490"/>
-            <point lat="44.26234442" long="-76.51748576" elevation="52.480"/>
-            <point lat="44.26234468" long="-76.51753753" elevation="52.400"/>
-            <point lat="44.26234888" long="-76.51753811" elevation="52.410"/>
+            <point lat="44.262349111" long="-76.517486670" elevation="52.4900"/>
+            <point lat="44.262344421" long="-76.517485760" elevation="52.4800"/>
+            <point lat="44.262344681" long="-76.517537530" elevation="52.4000"/>
+            <point lat="44.262348881" long="-76.517538110" elevation="52.4100"/>
           </edge>
         </object>
       </objects>
@@ -102,10 +100,10 @@
         </object>
         <object id="18587190" type="Pedestrian Crossing" lat="44.26202747" long="-76.51939574" elevation="51.650">
           <edge closed="true">
-            <point lat="44.26201035" long="-76.51955735" elevation="51.650"/>
-            <point lat="44.26203225" long="-76.51957164" elevation="51.590"/>
-            <point lat="44.26204500" long="-76.51921852" elevation="51.620"/>
-            <point lat="44.26202145" long="-76.51923782" elevation="51.680"/>
+            <point lat="44.262010350" long="-76.519557350" elevation="51.6500"/>
+            <point lat="44.262032250" long="-76.519571640" elevation="51.5900"/>
+            <point lat="44.262045000" long="-76.519218520" elevation="51.6200"/>
+            <point lat="44.262021450" long="-76.519237820" elevation="51.6800"/>
           </edge>
         </object>
       </objects>
@@ -130,10 +128,10 @@
       <objects>
         <object id="18585905" type="Stop Bar" lat="44.26231446" long="-76.51947088" elevation="51.440">
           <edge closed="true">
-            <point lat="44.26232114" long="-76.51940116" elevation="51.440"/>
-            <point lat="44.26231149" long="-76.51940069" elevation="51.450"/>
-            <point lat="44.26230708" long="-76.51954151" elevation="51.220"/>
-            <point lat="44.26231851" long="-76.51953332" elevation="51.240"/>
+            <point lat="44.262321140" long="-76.519401160" elevation="51.4400"/>
+            <point lat="44.262311490" long="-76.519400690" elevation="51.4500"/>
+            <point lat="44.262307080" long="-76.519541510" elevation="51.2200"/>
+            <point lat="44.262318510" long="-76.519533320" elevation="51.2400"/>
           </edge>
         </object>
       </objects>
